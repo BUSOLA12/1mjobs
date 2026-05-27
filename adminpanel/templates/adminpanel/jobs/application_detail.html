@@ -1,0 +1,55 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h4>Application Detail</h4>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>Applicant:</strong> {{ application.user }}</p>
+            <p><strong>Email:</strong> {{ application.user.email }}</p>
+            <p><strong>Job:</strong> {{ application.job.title }}</p>
+            <p><strong>Applied On:</strong> {{ application.created_at }}</p>
+
+            {% if application.files %}
+            <p><strong>Attached Files:</strong></p>
+            <ul>
+                {% for file in application.files.all %}
+                <li>
+                    {{ file.filename }} -
+                    <a href="{{ file.file.url }}" target="_blank" class="btn btn-outline-secondary btn-sm"></a>>
+                        View
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    {% for key, value in status_choices %}
+                        <option value="{{ key }}" {% if application.status == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-success">Update Status</button>
+            </div>
+        </div>
+    </form>
+
+    <a href="{% url 'admin_job_applications' application.job.id%}" class="btn btn-link mt-3">
+        ← Back to Applications
+    </a>
+</div>
+
+{% endblock %}

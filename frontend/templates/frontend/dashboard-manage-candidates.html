@@ -1,0 +1,576 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+<header id="header-container" class="fullwidth dashboard-header not-sticky">
+
+	<!-- Header -->
+	{% include 'frontend/partials/headers.html' %}
+	<!-- Header / End -->
+
+</header>
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>Manage Candidates</h3>
+				<span class="margin-top-7">Job Applications for <a href="#" class="Job-title Top">Full Stack PHP Developer</a></span>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="#">Home</a></li>
+						<li><a href="#">Dashboard</a></li>
+						<li>Manage Candidates</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-material-outline-supervisor-account"></i> <span class="appCount">0 </span>  Candidates</h3>
+						</div>
+
+						<div class="content">
+							<ul class="dashboard-box-list applicants">
+								
+								
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Send Direct Message Popup
+================================================== -->
+<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab">Send Message</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Direct Message To <span class="AppName"></span></h3>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="send-pm">
+					<textarea name="textarea" cols="10" placeholder="Message" class="with-border" required></textarea>
+				</form>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect" type="button">Send <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+
+		</div>
+
+	</div>
+</div>
+<!-- Send Direct Message Popup / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+
+<script>
+
+function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+async function fetchcurrentuserDetails(userId) {
+    try {
+        const response = await fetchProtected(`/api/users/currentuser/${userId}/`);
+        if (!response.ok) {
+			Snackbar.show({
+          text: 'Network response was not ok',
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0404ff",
+        });
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+		Snackbar.show({
+          text: 'Error fetching user ID',
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0404ff",
+        });
+        return null;
+    }
+}
+
+async function createConversation(jobId, participant) {
+	try {
+	
+		const response = await fetchProtected(`/api/messaging/jobconversationcreate/`, {
+			method: "POST",
+			body: JSON.stringify({
+				"job_id": jobId,
+				"participants": participant,
+			}),
+		});
+		if (response.ok) {
+			Snackbar.show({
+          text: "Conversation Created successfully",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#04fa41ff",
+        });
+			const data = await response.json();
+			return data;
+		} else {
+			Snackbar.show({
+          text: "Response not ok",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0418ff",
+        });
+			return null;
+			
+		}
+		
+		
+	} catch (error) {
+		Snackbar.show({
+          text: `response not ok. Error: ${error.message || error.response?.data?.message || error.toString()}`,
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0418ff",
+        });
+	}
+}
+
+
+
+async function sendMessage(conversation_id, sender, recipient, content) {
+	try {
+		showLoading("Sending Message");
+		const response = await fetchProtected(`/api/messaging/messagecreate/`, {
+			method: "POST",
+			body: JSON.stringify({
+				"conversation_id": conversation_id,
+				"sender": sender,
+				"recipient": recipient,
+				"content": content,
+			}),
+		});
+		if (response.ok) {
+			hideLoading();
+			Snackbar.show({
+          text: "Message sent successfully",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#04fa25ff",
+        });
+			const data = await response.json();
+			if ($.magnificPopup) {
+				$.magnificPopup.close();
+			}
+			return data;
+		} else {
+			hideLoading();
+			alert("Response not ok");
+			Snackbar.show({
+          text: "Response not ok",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0410ff",
+        });
+			return null;
+			
+		}
+		
+		
+	} catch (error) {
+		alert(`response not ok. Error: ${error}`);
+	}
+}
+
+async function getJobDetails(jobId) {
+	try {
+		const response = await fetchProtected(`/api/jobs/detail/${jobId}/`);
+		if (!response.ok) {
+			throw new Error('Network response was not ok');
+		}
+		const data = await response.json();
+        return data;
+	} catch (error) {
+        console.error('Error fetching job details:', error);
+        return null;
+    }
+}
+
+async function deleteApplication(appId, appName) {
+	if (confirm("Are you sure you want to delete this application?")) {
+	try {
+		showLoading("Deleting Application");
+		const response = await fetchProtected(`/api/jobs/deleteapplication/${appId}/`, {method: "DELETE"});
+		if (response.ok) {
+			hideLoading();
+			Snackbar.show({
+          text: `Job Application for ${appName} was deleted successfully`,
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#04fa2dff",
+        });
+		}
+
+	} catch (error) {
+		hideLoading();
+		console.error("Error deleting application:", error);
+	}
+} else {
+	Snackbar.show({
+          text: `Job Application for ${appName} deletion cancelled successfully`,
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#04fa2dff",
+        });
+		location.reload();
+}
+}	
+async function fetchJobApplication() {
+	showLoading("Loading Job Applications");
+	const jobId = window.location.pathname.split("/").filter(Boolean).pop();
+	const jobDetails = await getJobDetails(jobId);
+	
+	console.log("Job Details:", jobDetails);
+	const response = await fetchProtected(`/api/jobs/getapplication/${jobId}/`);
+	const applicationsData = await response.json();
+	console.log("Applications response:", applicationsData);
+	const jobTitleElement = document.querySelector(".Job-title.Top");
+	if (jobDetails && jobDetails.title) {
+		jobTitleElement.textContent = jobDetails.title;
+	} else {
+		jobTitleElement.textContent = "Unknown Job Title";
+	}
+	let applicantsList = document.querySelector(".dashboard-box-list.applicants");
+	applicantsList.innerHTML = "";
+
+	for (const app of applicationsData) {
+		//const userDetails = await fetchcurrentuserDetails(app.user);
+		//console.log("User Details:", userDetails);
+		const appListItem =`
+		<li>
+				<!-- Overview -->
+				<div class="freelancer-overview manage-candidates">
+					<div class="freelancer-overview-inner">
+
+						<!-- Avatar -->
+						<div class="freelancer-avatar">
+							<div class="verified-badge"></div>
+							<a href="#"><img src="${app.applicant_info?.avatar || 'images/user-avatar-big-03.jpg'}" alt=""></a>
+						</div>
+
+						<!-- Name -->
+						<div class="freelancer-name">
+							<h4><a href="#">${app.name} <img class="flag" src="images/flags/au.svg" alt="" title="Australia" data-tippy-placement="top"></a></h4>
+
+							<!-- Details -->
+							<span class="freelancer-detail-item"><a href="#"><i class="icon-feather-mail"></i> ${app.email}</a></span>
+							<!-- Rating -->
+							<div class="freelancer-rating">
+								<div class="star-rating" data-rating="5.0"></div>
+							</div>
+
+							<!-- Buttons -->
+							<div class="buttons-to-right always-visible margin-top-25 margin-bottom-5">
+								<a href="${app.files}" class="button ripple-effect" download="${app.name}_CV.pdf"><i class="icon-feather-file-text"></i> Download CV</a>
+								<a href="#small-dialog" class="popup-with-zoom-anim button dark ripple-effect" data-recipient="${app.name.trim().split(" ")[0]}" data-recId="${app.user}"><i class="icon-feather-mail"></i> Send Message</a>
+								<a href="#" class="button gray ripple-effect ico delApp" title="Remove Candidate" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</li>
+
+		`;
+
+		applicantsList.insertAdjacentHTML('beforeend', appListItem);
+		const lastListItem = applicantsList.querySelector("li:last-child");
+		let delAppButton = lastListItem.querySelector(".button.gray.ripple-effect.ico.delApp");
+		
+			delAppButton.addEventListener("click", async (e) => {
+				e.preventDefault();
+				
+			await deleteApplication(app.id, app.name);
+			lastListItem.remove();
+		});
+		
+		
+
+	
+	}
+	hideLoading();
+	let recipientId = null;
+	applicantsList.addEventListener("click", function(e) {
+		if (e.target.closest(".popup-with-zoom-anim")) {
+			const recipientName = e.target.closest(".popup-with-zoom-anim").dataset.recipient;
+			recipientId = e.target.closest(".popup-with-zoom-anim").dataset.recid;
+
+			document.querySelector(".welcome-text h3").textContent = `Direct Message To ${recipientName}`;
+		}
+	});
+
+	document.querySelector(".button.full-width.button-sliding-icon.ripple-effect").addEventListener("click", async (e) => {
+		e.preventDefault();
+		const content = document.querySelector("#send-pm textarea").value;
+		let participant = [];
+		participant.push(jobDetails.user);
+
+		participant.push(parseInt(recipientId));
+		console.log("participant:", participant);
+		const convData = await createConversation(jobId, participant);
+		console.log("Conversation Data:", convData);
+		const conversation_id = convData.id;
+		const sender = jobDetails.user;
+		const recipient = recipientId;
+		 
+
+		//Create message
+		const messageData = await sendMessage(conversation_id, sender, recipient, content);
+
+		console.log("messageData:", messageData);
+		$.magnificPopup.close();
+
+		});
+	const appCount = applicantsList.querySelectorAll("li").length;
+	let appCountDisplay = document.querySelector(".appCount");
+
+	if (appCountDisplay) {
+	appCountDisplay.textContent = appCount;
+	}
+
+	if ($.magnificPopup) {
+		$('.popup-with-zoom-anim').magnificPopup({
+			type: 'inline',
+			fixedContentPos: false,
+			fixedBgPos: true,
+			overflowY: 'auto',
+			closeBtnInside: true,
+			preloader: false,
+			midClick: true,
+			removalDelay: 300,
+			mainClass: 'my-mfp-zoom-in'
+		});
+	}
+}
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", fetchJobApplication); 
+</script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+</body>
+</html>

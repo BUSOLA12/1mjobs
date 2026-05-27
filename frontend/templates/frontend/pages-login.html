@@ -1,0 +1,210 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+</head>
+<body>
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+
+<!-- Header Container / End -->
+
+<!-- Titlebar
+================================================== -->
+<div id="titlebar" class="gradient">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+
+				<h2>Log In</h2>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li>Log In</li>
+					</ul>
+				</nav>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Page Content
+================================================== -->
+<div class="container">
+	<div class="row">
+		<div class="col-xl-5 offset-xl-3">
+
+
+			<div class="login-register-page">
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>We're glad to see you again!</h3>
+					<span>Don't have an account? <a href="{%  url 'register' %}">Sign Up!</a></span>
+				</div>
+					
+				<!-- Form -->
+				 
+				<form method="post" id="login-form">
+					<div class="input-with-icon-left">
+						<i class="icon-material-baseline-mail-outline"></i>
+						<input type="text" class="input-text with-border" name="emailaddress" id="emailaddress" placeholder="Email Address" required/>
+					</div>
+
+					<div class="input-with-icon-left">
+						<i class="icon-material-outline-lock"></i>
+						<input type="password" class="input-text with-border" name="password" id="password" placeholder="Password" required/>
+					</div>
+					<a href="{% url 'password-reset-request' %}" class="forgot-password">Forgot Password?</a>
+				</form>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect margin-top-10" type="submit" form="login-form">Log In <i class="icon-material-outline-arrow-right-alt"></i></button>
+				
+				<!-- Social Login -->
+				<div class="social-login-separator"><span>or</span></div>
+				<div class="social-login-buttons">
+					<button class="facebook-login ripple-effect"><i class="icon-brand-facebook-f"></i> Log In via Facebook</button>
+					<button class="google-login ripple-effect"><i class="icon-brand-google-plus-g"></i> Log In via Google+</button>
+				</div>
+				
+			</div>
+
+		</div>
+	</div>
+</div>
+
+{% include 'frontend/partials/overlay_message.html' %}
+{% include 'frontend/partials/two_factor_overlay.html' %}
+
+
+<!-- Spacer -->
+<div class="margin-top-70"></div>
+<!-- Spacer / End-->
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+ <!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3>Logging In</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/pages-login.js' %}"></script>
+
+
+<script>
+	document.querySelector(".google-login").addEventListener("click", function () {
+		window.location.href = "{% url 'google_init' %}";
+	});
+</script>
+
+<script>
+	document.querySelector(".facebook-login").addEventListener("click", () => {
+		window.location.href = "{% url 'facebook_login' %}";
+	});
+</script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+	$('#snackbar-user-status label').click(function() { 
+		Snackbar.show({
+			text: 'Your status has been changed!',
+			pos: 'bottom-center',
+			showAction: false,
+			actionText: "Dismiss",
+			duration: 3000,
+			textColor: '#fff',
+			backgroundColor: '#383838'
+		}); 
+	}); 
+</script>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<!-- Facebook SDK -->
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" 
+  src="https://connect.facebook.net/en_US/sdk.js"></script>
+
+<!-- <script>
+	window.onload = function () {
+    	// Initialize Google button
+		google.accounts.id.initialize({
+			client_id: "{{ GOOGLE_OAUTH2_CLIENT_ID }}",
+			callback: async function (response) {
+				console.log("Google Response:", response);
+				// response.credential contains the ID token
+				await sendBrowserSocialLogin("google", response.credential);
+			}
+		});
+
+		google.accounts.id.renderButton(
+			document.querySelector(".google-auth"),
+			{ theme: "outline", size: "large", width: "250" }
+		);
+
+		// Optional: automatic one-tap sign-in
+		// google.accounts.id.prompt();
+	};
+
+
+	// facebook button
+	window.fbAsyncInit = function () {
+		FB.init({
+			appId: "832198486188408",
+			cookie: true,
+			xfbml: false,   // we handle button manually
+			version: "v16.0"
+		});
+	};
+
+	document.querySelector(".facebook-login").addEventListener("click", function () {
+		FB.login(async function (response) {
+			if (response.authResponse) {
+				const accessToken = response.authResponse.accessToken;
+				await sendBrowserSocialLogin("facebook", accessToken);
+			} else {
+				alert("Facebook login cancelled or not authorized.");
+			}
+		}, { scope: "email" });
+	});
+
+</script> -->
+
+
+</body>
+</html>

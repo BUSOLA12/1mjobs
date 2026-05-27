@@ -1,0 +1,343 @@
+<!-- Accordion List for Work History -->
+<div id="workHistoryAccordion" class="accordion js-accordion margin-bottom-30"></div>
+
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
+<!-- Button to open popup -->
+<button id="openWorkHistoryPopup" class="button ripple-effect">Add Work History</button>
+
+<style>
+    .pop-up-container {
+        position: absolute;
+        width: 100%;
+        height: 100vh;
+    }
+    .popup {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000000;
+    }
+
+    .popup-content {
+        background: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        width: 500px;
+    }
+
+    .input-field {
+        margin-bottom: 15px;
+    }
+</style>
+
+<script>
+    // -------------------------------
+    // Popup Logic
+    // -------------------------------
+    let workHistoryPopup = null;
+    function initialPopupSetup() {
+        workHistoryPopup = document.getElementById("workHistoryPopup");
+        document.getElementById("openWorkHistoryPopup").addEventListener("click", () => {
+            // clear the form
+            document.getElementById("workRole").value = "";
+            document.getElementById("companyName").value = "";
+            document.getElementById("startDate").value = "";
+            document.getElementById("endDate").value = "";
+            document.getElementById("presentCheckbox").checked = false;
+            document.getElementById("workDescription").value = "";
+            
+            // Show submit button, hide update button
+            document.getElementById("submitWorkHistory").style.display = "inline-block";
+            document.getElementById("updateWorkHistory").style.display = "none";
+            workHistoryPopup.style.display = "flex";
+        });
+        document.getElementById("closeWorkHistoryPopup").addEventListener("click", () => workHistoryPopup.style.display = "none");
+    }
+
+    // -------------------------------
+    // Notification Generator
+    // -------------------------------
+    function showNotification(type, message) {
+        const container = document.getElementById("notificationContainer");
+        const div = document.createElement("div");
+        div.className = `notification ${type} closeable`;
+        div.innerHTML = `<p>${message}</p><a class="close" href="#"></a>`;
+        container.appendChild(div);
+
+        setTimeout(() => div.remove(), 4000);
+    }
+
+    // -------------------------------
+    // Submit Work History
+    // -------------------------------
+    function submitWorkHistory() {
+        document.getElementById("submitWorkHistory").addEventListener("click", async () => {
+            const role = document.getElementById("workRole").value;
+            const company = document.getElementById("companyName").value;
+            const start = document.getElementById("startDate").value;
+            const end = document.getElementById("endDate").value;
+            const present = document.getElementById("presentCheckbox").checked;
+            const description = document.getElementById("workDescription").value;
+
+            if (!role || !company || !start || !description) {
+                appendError("Please fill in all required fields");
+                workHistoryPopup.style.display = "none";
+                return;
+            }
+
+            const payload = {
+                work_role: role,
+                company_name: company,
+                start_month_year: start,
+                end_month_year: present ? "Present" : end,
+                responsibilities: description
+            };
+
+            try {
+                const response = await fetchProtected("/api/users/work-history/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error();
+
+                const data = await response.json();
+
+                console.log("Submitted work history:", data);  // For debugging
+                appendError("Work history submitted successfully", "success");
+                workHistoryPopup.style.display = "none";
+
+                // Add accordion item
+                addAccordionItem(data.id, payload);
+
+            } catch (err) {
+                appendError("Failed to submit work history");
+                workHistoryPopup.style.display = "none";
+            }
+        });
+    }
+
+    // -------------------------------
+    // Build Accordion Item
+    // -------------------------------
+    function addAccordionItem(id, item) {
+        const container = document.getElementById("workHistoryAccordion");
+
+        const accordion = document.createElement("div");
+        accordion.className = "accordion__item js-accordion-item";
+        accordion.dataset.id = id;
+
+        accordion.innerHTML = `
+        <div class="accordion-header js-accordion-header">
+            <span><strong>${item.work_role}</strong> — ${item.company_name}</span>
+        </div> 
+
+        <!-- Accordtion Body -->
+        <div class="accordion-body js-accordion-body">
+
+            <!-- Accordion Content -->
+            <div class="accordion-body__contents">
+                <p><strong>Role:</strong> ${item.work_role}</p>
+                <p><strong>Company:</strong> ${item.company_name}</p>
+                <p><strong>Duration:</strong> ${item.start_month_year} - ${item.end_month_year}</p>
+                <p><strong>Responsibilities:</strong> ${item.responsibilities}</p>
+
+                <a href="#" class="button gray ripple-effect-dark edit-work-history-btn-btn">Edit</a>
+                <a href="#" class="button dark ripple-effect delete-work-history-btn-btn">Delete</a>
+            </div>
+
+        </div>
+        <!-- Accordion Body / End -->
+    `;
+
+        container.appendChild(accordion);
+
+        // Delete button → call deleteWorkHistory(id)
+        accordion.querySelector(".delete-work-history-btn-btn").addEventListener("click", () => {
+            deleteWorkHistory(id, accordion);
+        });
+
+        // Edit button → call editWorkHistory(id)
+        accordion.querySelector(".edit-work-history-btn-btn").addEventListener("click", () => {
+            openEditWorkHistory(id, item, accordion);
+        });
+    }
+
+    // DELETE WORK HISTORY
+    async function deleteWorkHistory(id, element) {
+        try {
+            const response = await fetchProtected(`/api/users/work-history/${id}/`, {
+                method: "DELETE",
+            });
+
+            if (response.ok) {
+                appendError("Work history deleted successfully", "success");
+                element.remove();
+            } else {
+                appendError("Failed to delete work history");
+            }
+
+        } catch (err) {
+            appendError("Network error while deleting");
+        }
+    }
+
+
+    // When edit button is clicked
+    function openEditWorkHistory(id, data, element) {
+        const modal = document.getElementById("workHistoryPopup");
+
+        // Populate the form
+        document.getElementById("companyName").value = data.company_name;
+        document.getElementById("workRole").value = data.work_role;
+        document.getElementById("startDate").value = data.start_month_year;
+        document.getElementById("endDate").value = data.end_month_year;
+        document.getElementById("workDescription").value = data.responsibilities;
+
+        // Show update button, hide submit button
+        document.getElementById("submitWorkHistory").style.display = "none";
+        document.getElementById("updateWorkHistory").style.display = "inline-block";
+
+        // add event listener to update button and pass it the id
+        document.getElementById("updateWorkHistory").addEventListener("click", async () => {
+            await submitUpdatedWorkHistory(id);
+        })
+
+        // Toggle modal
+        modal.style.display = "flex";
+    }
+
+    // UPDATE WORK HISTORY
+    async function submitUpdatedWorkHistory(id) {
+
+        const payload = {
+            company_name: document.getElementById("companyName").value,
+            work_role: document.getElementById("workRole").value,
+            start_month_year: document.getElementById("startDate").value,
+            end_month_year: document.getElementById("endDate").value,
+            responsibilities: document.getElementById("workDescription").value
+        };
+
+        try {
+            const response = await fetchProtected(`/api/users/work-history/${id}/`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                appendError("Failed to update work history");
+                return;
+            }
+
+            const updatedData = await response.json();
+
+            // Update UI immediately
+            updateAccordionItem(id, updatedData);
+
+            appendError("Work history updated successfully", "success");
+
+            document.getElementById("workHistoryPopup").style.display = "none";
+
+            // hide update button, show submit button
+            document.getElementById("submitWorkHistory").style.display = "block";
+            document.getElementById("updateWorkHistory").style.display = "none";
+
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    function updateAccordionItem(id, data) {
+        const item = document.querySelector(`.accordion__item[data-id="${id}"].js-accordion-item`);
+
+        if (!item) return;
+
+        item.querySelector(".accordion-header").innerHTML =
+            `<span><strong>${data.work_role}</strong> — ${data.company_name}</span>`;
+
+        item.querySelector(".accordion-body__contents").innerHTML = `
+        <p><strong>Role:</strong> ${data.work_role}</p>
+        <p><strong>Company:</strong> ${data.company_name}</p>
+        <p><strong>Duration:</strong> ${data.start_month_year} - ${data.end_month_year}</p>
+        <p><strong>Responsibilities:</strong> ${data.responsibilities}</p>
+
+        <button class="button gray ripple-effect edit-work-history-btn-btn" 
+            data-id="${data.id}">
+            Edit
+        </button>
+
+        <button class="button dark ripple-effect delete-work-history-btn-btn" 
+            data-id="${data.id}">
+            Delete
+        </button>
+    `;
+
+        // Delete button → call deleteWorkHistory(id)
+        item.querySelector(".delete-work-history-btn-btn").addEventListener("click", () => {
+            deleteWorkHistory(id, item);
+        });
+
+        // Edit button → call editWorkHistory(id)
+        item.querySelector(".edit-work-history-btn-btn").addEventListener("click", () => {
+            openEditWorkHistory(id, data, item);
+        });
+    }
+
+    function attachWorkHistoryListeners() {
+        document.querySelectorAll(".delete-work-history-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const id = this.dataset.id;
+                deleteWorkHistory(id, this);
+            });
+        });
+
+        document.querySelectorAll(".edit-work-history-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const id = this.dataset.id;
+
+                const item = this.closest(".accordion-item");
+                const data = JSON.parse(item.dataset.entry); // stored earlier
+
+                openEditWorkHistory(id, data, this);
+            });
+        });
+    }
+
+    async function loadUserWorkHistory() {
+        try {
+            const response = await fetch("/api/users/work-history/", 
+            { 
+                method: "GET", 
+                headers: { "Content-Type": "application/json" }, 
+            }); 
+            if (!response.ok) throw new Error(); 
+            const data = await response.json(); 
+            console.log("Users work history:", data); // For debugging 
+            // // Populate accordion with existing work history 
+            data.forEach((item) => { 
+                addAccordionItem(item.id, item); 
+            }); 
+        } catch (err) { 
+            console.error("error", "Failed to Get Work History: ", err); 
+        } 
+    }
+
+
+// On document load
+document.addEventListener('DOMContentLoaded', async function () {
+    loadUserWorkHistory();
+    initialPopupSetup();
+    submitWorkHistory()
+});
+</script>

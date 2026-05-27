@@ -1,0 +1,134 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4>Jobs Management</h4>
+</div>
+
+<div class="container-fluid">
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="q" class="form-control"
+               placeholder="Search title, employer, location"
+               value="{{ q }}">
+    </div>
+
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">All Status</option>
+            {% for key, value in status_choices %}
+                <option value="{{ key }}" {% if status == key %}selected{% endif %}>
+                    {{ value }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <select name="approved" class="form-select">
+            <option value="">Approval</option>
+            <option value="true" {% if approved == "true" %}selected{% endif %}>Approved</option>
+            <option value="false" {% if approved == "false" %}selected{% endif %}>Not Approved</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <select name="job_type" class="form-select">
+            <option value="">Job Type</option>
+            {% for key, value in job_types %}
+                <option value="{{ key }}" {% if job_type == key %}selected{% endif %}>
+                    {{ value }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
+</form>
+
+<div class="card">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Employer</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Approved</th>
+                <th>Applications</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.title }}</td>
+                <td>{{ job.user.email }}</td>
+                <td>{{ job.get_job_type_display }}</td>
+
+                <td>
+                    <span class="badge bg-secondary">
+                        {{ job.get_status_display }}
+                    </span>
+                </td>
+
+                <td>
+                    {% if job.approved %}
+                        <span class="badge bg-success">Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">No</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ job.applications_count }}</td>
+                <td>{{ job.created_at|date:"Y-m-d" }}</td>
+
+                <td>
+                    <a href="{% url 'admin_job_detail' job.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    No jobs found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<nav class="mt-4">
+    <ul class="pagination">
+        {% if jobs.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ jobs.previous_page_number }}">&laquo;</a>
+            </li>
+        {% endif %}
+
+        {% for page in jobs.paginator.page_range %}
+            <li class="page-item {% if jobs.number == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+            </li>
+        {% endfor %}
+
+        {% if jobs.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ jobs.next_page_number }}">&raquo;</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+    {% include "adminpanel/pagination.html" %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'adminpanel/base.html' %}
+{% load static %}
+
+{% block title %}Manage Jobs - Admin{% endblock %}
+
+{% block content %}
+
+<style>
+    /* 1. Status Switcher Styling */
+    .status-switcher {
+        display: flex;
+        background: #f2f2f2;
+        padding: 5px;
+        border-radius: 4px;
+        margin-left: auto;
+    }
+
+    .switcher-btn {
+        background: transparent;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #888;
+        cursor: pointer;
+        transition: 0.3s;
+        text-decoration: none; /* Make links look like buttons */
+        display: inline-block;
+    }
+
+    .switcher-btn:hover { color: #333; text-decoration: none; }
+    
+    /* Logic to highlight the active tab based on View Context */
+    .switcher-btn.active {
+        background-color: #2a41e8;
+        color: #fff;
+        box-shadow: 0 2px 5px rgba(42, 65, 232, 0.25);
+    }
+
+    /* 2. Action Button Colors */
+    .btn-approve { background-color: #28b661 !important; color: white !important; }
+    .btn-reject { background-color: #e03b3b !important; color: white !important; }
+    .btn-email { background-color: #333 !important; color: white !important; }
+
+
+    /* Make sure the container expands properly */
+    .freelancer-overview-inner {
+        display: flex;
+        flex-wrap: wrap; /* allow items to stack if necessary */
+        align-items: flex-start; /* align content to the top */
+        position: relative; /* ensures absolute children are relative to this container */
+    }
+
+    .buttons-to-right {
+        display: flex;
+        gap: 10px; /* spacing between buttons */
+        margin-top: 10px;
+        justify-content: flex-start; /* aligns buttons to left initially */
+        padding-left: 20px; /* match the left padding of the bid-info container */
+    }
+
+    /* Optional: responsive alignment */
+    @media (min-width: 768px) {
+        .buttons-to-right {
+            padding-left: 40px; /* adjust to match desktop layout */
+        }
+    }
+    /* Optional: make buttons always float to the right */
+    .buttons-to-right.always-visible {
+        position: relative; /* remove absolute if it was added */
+        display: flex;
+        gap: 5px; /* spacing between buttons */
+    }
+
+    /* Optional: ensure job title and details have enough width */
+    .freelancer-name {
+        flex: 1; /* take remaining space */
+        min-width: 200px; /* minimum width to prevent overlap */
+    }
+
+    .dashboard-task-info.bid-info {
+        display: flex;
+        gap: 20px; /* spacing between salary and type */
+    }
+</style>
+
+<div class="dashboard-headline">
+    <h3>Manage Jobs</h3>
+    
+    <nav id="breadcrumbs" class="dark">
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Admin</a></li>
+            <li>Manage Jobs</li>
+        </ul>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-xl-12">
+        <div class="dashboard-box margin-top-0">
+
+            <div class="headline">
+                <h3><i class="icon-material-outline-assignment"></i> Job Requests</h3>
+                
+                <div class="status-switcher">
+                    <a href="?status=pending" class="switcher-btn {% if current_status == 'pending' %}active{% endif %}">Pending</a>
+                    <a href="?status=approved" class="switcher-btn {% if current_status == 'approved' %}active{% endif %}">Approved</a>
+                    <a href="?status=rejected" class="switcher-btn {% if current_status == 'rejected' %}active{% endif %}">Rejected</a>
+                </div>
+            </div>
+
+            <div class="content">
+                <ul class="dashboard-box-list">
+                    
+                    {% for job in job_list %}
+                    <li>
+                        <div class="freelancer-overview manage-candidates">
+                            <div class="freelancer-overview-inner">
+
+                                <div class="freelancer-avatar">
+                                    <a href="#">
+                                        {% if job.company.logo %}
+                                            <img src="{{ job.company.logo.url }}" alt="{{ job.job.title }}">
+                                        {% else %}
+                                            <img src="{% static 'images/company-logo-placeholder.png' %}" alt="Default">
+                                        {% endif %}
+                                    </a>
+                                </div>
+
+                                <div class="freelancer-name">
+                                    <h4><a href="#">{{ job.job.title }}</a></h4>
+                                    
+                                    <span class="freelancer-detail-item">
+                                        <a href="#"><i class="icon-feather-user"></i> {{ job.job.user.first_name }}</a>
+                                    </span>
+                                    <span class="freelancer-detail-item">
+                                        <i class="icon-feather-clock"></i> {{ job.job.created_at|date:"M d, Y" }}
+                                    </span>
+
+                                    <ul class="dashboard-task-info bid-info">
+                                        <li><strong>${{ job.job.salary_min }} - ${{ job.job.salary_max }}</strong><span>Salary</span></li>
+                                        <li><strong>{{ job.job.job_type }}</strong><span>Type</span></li>
+                                    </ul>
+
+                                    <div class="buttons-to-right always-visible margin-top-25 margin-bottom-0">
+                                        
+                                        {% if current_status == 'pending' %}
+                                            <a href="{% url 'change_job_status' job.job.id 'approve' %}?from_status=pending" class="button ripple-effect btn-approve" title="Approve" data-tippy-placement="top">
+                                                <i class="icon-material-outline-check"></i> Approve
+                                            </a>
+                                            <a href="{% url 'change_job_status' job.job.id 'reject' %}?from_status=pending" class="button ripple-effect btn-reject" title="Reject" data-tippy-placement="top">
+                                                <i class="icon-feather-x"></i> Reject
+                                            </a>
+                                        
+                                        {% elif current_status == 'approved' %}
+                                            <a href="{% url 'change_job_status' job.job.id 'reject' %}?from_status=approved" class="button ripple-effect btn-reject" title="Reject / Revoke" data-tippy-placement="top">
+                                                <i class="icon-feather-x"></i> Reject
+                                            </a>
+
+                                        {% elif current_status == 'rejected' %}
+                                            <a href="{% url 'change_job_status' job.job.id 'approve' %}?from_status=rejected" class="button ripple-effect btn-approve" title="Re-Approve" data-tippy-placement="top">
+                                                <i class="icon-material-outline-check"></i> Approve
+                                            </a>
+                                        {% endif %}
+
+                                        <a href="mailto:{{ job.job.email }}" class="button ripple-effect btn-email" title="Send Email" data-tippy-placement="top">
+                                            <i class="icon-feather-mail"></i>
+                                        </a>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li style="text-align:center; padding:50px;">
+                        <i class="icon-line-awesome-frown-o" style="font-size: 40px; color:#ccc;"></i>
+                        <p style="margin-top:15px; font-size:16px;">No <strong>{{ current_status }}</strong> jobs found.</p>
+                    </li>
+                    {% endfor %}
+
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize tooltips since we loaded new HTML from server
+    // (Usually handles automatically by main scripts, but just in case)
+    $(document).ready(function() {
+        if(typeof tippy !== 'undefined') tippy('[data-tippy-placement]'); 
+    });
+</script>
+{% endblock %}

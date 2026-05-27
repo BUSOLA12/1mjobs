@@ -1,0 +1,173 @@
+<!-- Overlay -->
+<div id="overall-overlay" class="overall-overlay"></div>
+
+<!-- Popup -->
+<div id="overall-popup" class="overall-popup">
+    <div class="overall-popup-content">
+        <div></div>    
+        <button id="overall-complete-btn" class="button ripple-effect"></button>
+    </div>
+</div>
+
+<style>
+    /* Overlay */
+.overall-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all .3s ease;
+    z-index: 999999;
+}
+
+/* Popup box */
+.overall-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: #fff;
+    width: 90%;
+    max-width: 380px;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000000;
+}
+
+.overall-popup-content {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.overall-popup-content h2 {
+    margin: 0 0 10px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+}
+
+.overall-popup-content p {
+    margin-bottom: 20px;
+    font-size: 15px;
+    color: #555;
+    line-height: 1.4;
+}
+
+/* Button */
+.overall-action-btn {
+    background: #007bff;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    transition: background .2s ease;
+}
+
+.overall-action-btn:hover {
+    background: #0069d9;
+}
+
+/* Active classes */
+.overall-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.overall-popup.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+</style>
+
+
+<script>
+let incomplete = false;
+
+async function confirmUserProfileCompletion() {
+    try {
+        const response = await fetchProtected("/api/users/me/");
+        const data = await response.json();
+
+        // fields to validate
+        const fieldsToCheck = [
+            "avatar",
+            "bio",
+            "hourly_rate",
+            "nationality",
+            "skills",
+            "status",
+            "tagline"
+        ];
+
+        fieldsToCheck.forEach(field => {
+            if (!data[field] || data[field] === "") {
+                incomplete = true;
+            }
+        });
+
+        // you can also validate nested user fields if needed
+        const nestedUserFields = ["first_name", "last_name", "email", "role"];
+        nestedUserFields.forEach(field => {
+            if (!data.user[field] || data.user[field] === "") {
+                incomplete = true;
+            }
+        });
+
+        if (incomplete) {
+            const content = `<h2>Complete Your Profile</h2>
+                            <p>Your overall details are incomplete. Please update your profile to continue.</p>`;
+            const actionText = "Complete Now";
+
+            showOverAllPopup(content, actionText, "/dashboard/settings/");
+        }
+
+        return data;
+
+    } catch (error) {
+        console.error("Error fetching overall:", error);
+    }
+}
+
+function showOverAllPopup(content, actionText, url) {
+    const overlay = document.getElementById("overall-overlay");
+    const popup = document.getElementById("overall-popup");
+    const popupContent = document.querySelector(".overall-popup-content");
+    const actionBtn = document.getElementById("overall-complete-btn");
+
+    overlay.classList.add("active");
+    popup.classList.add("active");
+
+    // Popup content
+    popupContent.querySelector("div").innerHTML = content;
+
+    // Button action
+    actionBtn.innerHTML = actionText;
+
+    actionBtn.onclick = () => {
+        window.location.href = url;
+    };
+
+    // Clicking overlay closes popup
+    overlay.onclick = () => {
+        overlay.classList.remove("active");
+        popup.classList.remove("active");
+    };
+}
+</script>

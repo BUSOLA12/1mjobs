@@ -1,0 +1,401 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+
+
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3 id="dashboard-greet">Howdy!</h3>
+				<span>We are glad to see you again!</span>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li>Dashboard</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Fun Facts Container -->
+			<div class="fun-facts-container">
+				<div class="fun-fact" data-fun-fact-color="#36bd78" id="task-bid-won" style="display:none">
+					<div class="fun-fact-text">
+						<span>Task Bids Won</span>
+						<h4 class="task-bid-won"></h4>
+					</div>
+					<div class="fun-fact-icon"><i class="icon-material-outline-gavel"></i></div>
+				</div>
+				<div class="fun-fact" data-fun-fact-color="#b81b7f" id="job-applied-for", style="display:none">
+					<div class="fun-fact-text">
+						<span>Jobs Applied</span>
+						<h4 class="job-applied-for"></h4>
+					</div>
+					<div class="fun-fact-icon"><i class="icon-material-outline-business-center"></i></div>
+				</div>
+				<div class="fun-fact" data-fun-fact-color="#efa80f">
+					<div class="fun-fact-text">
+						<span>Reviews</span>
+						<h4>28</h4>
+					</div>
+					<div class="fun-fact-icon"><i class="icon-material-outline-rate-review"></i></div>
+				</div>
+
+				<!-- Last one has to be hidden below 1600px, sorry :( -->
+				<div class="fun-fact" data-fun-fact-color="#2a41e6">
+					<div class="fun-fact-text">
+						<span>This Month Views</span>
+						<h4>987</h4>
+					</div>
+					<div class="fun-fact-icon"><i class="icon-feather-trending-up"></i></div>
+				</div>
+			</div>
+			
+			<!-- Row -->
+			<div class="row">
+
+				<div class="col-xl-8">
+					<!-- Dashboard Box -->
+					<div class="dashboard-box main-box-in-row">
+						<div class="headline">
+							<h3><i class="icon-feather-bar-chart-2"></i> Your Profile Views</h3>
+							<div class="sort-by">
+								<select class="selectpicker hide-tick">
+									<option>Last 6 Months</option>
+									<option>This Year</option>
+									<option>This Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="content">
+							<!-- Chart -->
+							<div class="chart">
+								<canvas id="chart" width="100" height="45"></canvas>
+							</div>
+						</div>
+					</div>
+					<!-- Dashboard Box / End -->
+				</div>
+				<div class="col-xl-4">
+
+					<!-- Dashboard Box -->
+					<!-- If you want adjust height of two boxes 
+						 add to the lower box 'main-box-in-row' 
+						 and 'child-box-in-row' to the higher box -->
+					<div class="dashboard-box child-box-in-row"> 
+						<div class="headline">
+							<h3><i class="icon-material-outline-note-add"></i> Notes</h3>
+						</div>	
+
+						<div class="content with-padding">
+							<!-- Note -->
+							<div class="dashboard-note">
+								<p>Meeting with candidate at 3pm who applied for Bilingual Event Support Specialist</p>
+								<div class="note-footer">
+									<span class="note-priority high">High Priority</span>
+									<div class="note-buttons">
+										<a href="#" title="Edit" data-tippy-placement="top"><i class="icon-feather-edit"></i></a>
+										<a href="#" title="Remove" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>
+									</div>
+								</div>
+							</div>
+							<!-- Note -->
+							<div class="dashboard-note">
+								<p>Extend premium plan for next month</p>
+								<div class="note-footer">
+									<span class="note-priority low">Low Priority</span>
+									<div class="note-buttons">
+										<a href="#" title="Edit" data-tippy-placement="top"><i class="icon-feather-edit"></i></a>
+										<a href="#" title="Remove" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>
+									</div>
+								</div>
+							</div>
+							<!-- Note -->
+							<div class="dashboard-note">
+								<p>Send payment to David Peterson</p>
+								<div class="note-footer">
+									<span class="note-priority medium">Medium Priority</span>
+									<div class="note-buttons">
+										<a href="#" title="Edit" data-tippy-placement="top"><i class="icon-feather-edit"></i></a>
+										<a href="#" title="Remove" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>
+									</div>
+								</div>
+							</div>
+						</div>
+							<div class="add-note-button">
+								<a href="#small-dialog" class="popup-with-zoom-anim button full-width button-sliding-icon">Add Note <i class="icon-material-outline-arrow-right-alt"></i></a>
+							</div>
+					</div>
+					<!-- Dashboard Box / End -->
+				</div>
+			</div>
+			<!-- Row / End -->
+
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-6">
+					<div class="dashboard-box">
+						<div class="headline">
+							<h3><i class="icon-material-baseline-notifications-none"></i> Notifications</h3>
+							<button class="mark-as-read ripple-effect-dark not-box" data-tippy-placement="left" title="Mark all as read">
+									<i class="icon-feather-check-square"></i>
+							</button>
+						</div>
+						<div class="content">
+							<ul class="dashboard-box-list notifications">
+								<!--Notifications List-->
+								
+								
+						
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-6">
+					<div class="dashboard-box" id="orders-list">
+						<div class="headline">
+							<h3><i class="icon-material-outline-assignment"></i> Orders</h3>
+						</div>
+						<div class="content">
+							<ul class="dashboard-box-list">
+								<li>You don't have any order</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Apply for a job popup
+================================================== -->
+<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab">Add Note</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Do Not Forget 😎</h3>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="add-note">
+
+					<select class="selectpicker with-border default margin-bottom-20" data-size="7" title="Priority">
+						<option>Low Priority</option>
+						<option>Medium Priority</option>
+						<option>High Priority</option>
+					</select>
+
+					<textarea name="textarea" cols="10" placeholder="Note" class="with-border"></textarea>
+
+				</form>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect" type="submit" form="add-note">Add Note <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Apply for a job popup / End -->
+
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/dashboard.js' %}"></script>
+
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<script src="{% static 'js/for/dashboard-notification-list.js' %}"></script>
+
+
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<!-- Chart.js // documentation: http://www.chartjs.org/docs/latest/ -->
+<script src="js/chart.min.js"></script>
+<script>
+	Chart.defaults.global.defaultFontFamily = "Nunito";
+	Chart.defaults.global.defaultFontColor = '#888';
+	Chart.defaults.global.defaultFontSize = '14';
+
+	var ctx = document.getElementById('chart').getContext('2d');
+
+	var chart = new Chart(ctx, {
+		type: 'line',
+
+		// The data for our dataset
+		data: {
+			labels: ["January", "February", "March", "April", "May", "June"],
+			// Information about the dataset
+	   		datasets: [{
+				label: "Views",
+				backgroundColor: 'rgba(42,65,232,0.08)',
+				borderColor: '#2a41e8',
+				borderWidth: "3",
+				data: [196,132,215,362,210,252],
+				pointRadius: 5,
+				pointHoverRadius:5,
+				pointHitRadius: 10,
+				pointBackgroundColor: "#fff",
+				pointHoverBackgroundColor: "#fff",
+				pointBorderWidth: "2",
+			}]
+		},
+
+		// Configuration options
+		options: {
+
+		    layout: {
+		      padding: 10,
+		  	},
+
+			legend: { display: false },
+			title:  { display: false },
+
+			scales: {
+				yAxes: [{
+					scaleLabel: {
+						display: false
+					},
+					gridLines: {
+						 borderDash: [6, 10],
+						 color: "#d8d8d8",
+						 lineWidth: 1,
+	            	},
+				}],
+				xAxes: [{
+					scaleLabel: { display: false },  
+					gridLines:  { display: false },
+				}],
+			},
+
+		    tooltips: {
+		      backgroundColor: '#333',
+		      titleFontSize: 13,
+		      titleFontColor: '#fff',
+		      bodyFontColor: '#fff',
+		      bodyFontSize: 13,
+		      displayColors: false,
+		      xPadding: 10,
+		      yPadding: 10,
+		      intersect: false
+		    }
+		},
+
+
+});
+
+</script>
+
+<script>
+
+	
+	//Just here
+	flElementIdList = ["task-bid-won", "job-applied-for"];
+	for (const id of flElementIdList) {
+		showForRole("freelancer", id);
+	}
+
+	//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+
+</body>
+</html>

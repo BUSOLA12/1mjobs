@@ -1,0 +1,585 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+</head>
+<body>
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+<!-- Page Content
+================================================== -->
+<div class="full-page-container with-map">
+
+	<div class="full-page-sidebar hidden-sidebar">
+		<div class="full-page-sidebar-inner" data-simplebar>
+
+			<div class="sidebar-container">
+				<!-- Keywords -->
+				<div class="sidebar-widget">
+					<h3>Keywords</h3>
+					<div class="keywords-container">
+						<div class="keyword-input-container">
+							<input type="text" class="keyword-input" placeholder="e.g. job title"/>
+							<button class="keyword-input-button ripple-effect"><i class="icon-material-outline-add"></i></button>
+						</div>
+						<div class="keywords-list"><!-- keywords go here --></div>
+						<div class="clearfix"></div>
+					</div>
+				</div>
+				
+				<!-- Category -->
+				<div class="sidebar-widget">
+					<h3>Category</h3>
+					<select class="selectpicker default" multiple data-selected-text-format="count" data-size="7" title="All Categories" >
+						<option>Admin Support</option>
+						<option>Customer Service</option>
+						<option>Data Analytics</option>
+						<option>Design & Creative</option>
+						<option>Legal</option>
+						<option>Software Developing</option>
+						<option>IT & Networking</option>
+						<option>Writing</option>
+						<option>Translation</option>
+						<option>Sales & Marketing</option>
+					</select>
+				</div>
+				
+				<!-- Job Types -->
+				<div class="sidebar-widget">
+					<h3>Job Type</h3>
+
+					<div class="switches-list">
+						<div class="switch-container">
+							<label class="switch"><input type="checkbox"><span class="switch-button"></span> Freelance</label>
+						</div>
+
+						<div class="switch-container">
+							<label class="switch"><input type="checkbox"><span class="switch-button"></span> Full Time</label>
+						</div>
+
+						<div class="switch-container">
+							<label class="switch"><input type="checkbox"><span class="switch-button"></span> Part Time</label>
+						</div>
+
+						<div class="switch-container">
+							<label class="switch"><input type="checkbox"><span class="switch-button"></span> Internship</label>
+						</div>
+						<div class="switch-container">
+							<label class="switch"><input type="checkbox"><span class="switch-button"></span> Temporary</label>
+						</div>
+					</div>
+
+				</div>
+
+				<!-- Salary -->
+				<div class="sidebar-widget">
+					<h3>Salary</h3>
+					<div class="margin-top-55"></div>
+
+					<!-- Range Slider -->
+					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="150000" data-slider-max="500000" data-slider-step="1000" data-slider-value="[150000,500000]"/>
+				</div>
+
+				<!-- Tags -->
+				<div class="sidebar-widget">
+					<h3>Tags</h3>
+
+					<div class="tags-container">
+						<div class="tag">
+							<input type="checkbox" id="tag1"/>
+							<label for="tag1">front-end dev</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag2"/>
+							<label for="tag2">angular</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag3"/>
+							<label for="tag3">react</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag4"/>
+							<label for="tag4">vue js</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag5"/>
+							<label for="tag5">web apps</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag6"/>
+							<label for="tag6">design</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag7"/>
+							<label for="tag7">wordpress</label>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+				</div>
+
+			</div>
+			<!-- Sidebar Container / End -->
+
+			<!-- Search Button -->
+			<div class="sidebar-search-button-container">
+				<button class="button ripple-effect">Search</button>
+			</div>
+			<!-- Search Button / End-->
+
+		</div>
+	</div>
+	<!-- Full Page Sidebar / End -->
+	
+
+	<!-- Full Page Content -->
+	<div class="full-page-content-container" data-simplebar>
+		<div class="full-page-content-inner">
+
+			<h3 class="page-title">Search Results</h3>
+
+			<div class="notify-box margin-top-15">
+				<div class="switch-container">
+					<label class="switch"><input type="checkbox"><span class="switch-button"></span><span class="switch-text">Turn on email alerts for this search</span></label>
+				</div>
+
+				<div class="sort-by">
+					<span>Sort by:</span>
+					<select class="selectpicker hide-tick">
+						<option>Relevance</option>
+						<option>Newest</option>
+						<option>Oldest</option>
+						<option>Random</option>
+					</select>
+				</div>
+			</div>
+
+			<!-- listings-container start -->
+			<div class="listings-container grid-layout margin-top-35">
+				
+			</div>
+			<!-- listings-container end -->
+
+			<!-- Pagination -->
+			<div class="clearfix"></div>
+			<div class="pagination-container margin-top-20 margin-bottom-20">
+				<nav class="pagination">
+					<ul id="pagination-list">
+						<!--<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+						<li><a href="#" class="ripple-effect">1</a></li>
+						<li><a href="#" class="ripple-effect current-page">2</a></li>
+						<li><a href="#" class="ripple-effect">3</a></li>
+						<li><a href="#" class="ripple-effect">4</a></li>
+						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>-->
+					</ul>
+				</nav>
+			</div>
+			<div class="clearfix"></div>
+			<!-- Pagination / End -->
+
+			<!-- Footer -->
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Full Page Content / End -->
+
+
+	<!-- Full Page Map -->
+	<div class="full-page-map-container">
+		
+		<!-- Enable Filters Button -->
+		<div class="filter-button-container">
+			<button class="enable-filters-button">
+				<i class="enable-filters-button-icon"></i>
+				<span class="show-text">Show Filters</span>
+				<span class="hide-text">Hide Filters</span>
+			</button>
+			<div class="filter-button-tooltip">Click to expand sidebar with filters!</div>
+		</div>
+		
+		<!-- Map -->
+	    <div id="map" data-map-zoom="12"  data-map-scroll="true" data-background-image="{% static 'images/blog-06a.jpg' %}"></div>
+	</div>
+	<!-- Full Page Map / End -->
+
+</div>
+
+
+</div>
+<!-- Wrapper / End -->
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+
+<!-- Leaflet // Docs: https://leafletjs.com/ -->
+<script src="js/leaflet.min.js"></script>
+
+<!-- Leaflet Maps Scripts (locations are stored in leaflet-hireo.js) -->
+<script src="js/leaflet-markercluster.min.js"></script>
+<script src="js/leaflet-gesture-handling.min.js"></script>
+<script src="js/leaflet-hireo.js"></script>
+
+<!-- Leaflet Geocoder + Search Autocomplete // Docs: https://github.com/perliedman/leaflet-control-geocoder -->
+<script src="js/leaflet-autocomplete.js"></script>
+<script src="js/leaflet-control-geocoder.js"></script>
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3>Loading Jobs</h3>
+        <p>Please wait while we fetch the latest opportunities...</p>
+    </div>
+</div>
+
+
+<script>
+let currentPage = 1;
+let pageSize = 5;
+let totalPages = 1;
+let lastQuery = ""; // will store a clean query string (no leading '?')
+
+/**
+ * fetchjobs accepts:
+ *  - query: string (like "search=foo&category=bar") OR URLSearchParams OR {} (object)
+ *  - page: number
+ */
+
+ function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+async function fetchjobs(query = "", page = 1) {
+    console.log("Program Start");
+    const container = document.querySelector(".listings-container");
+    showLoading();
+
+    try {
+        // Normalize query into a URLSearchParams instance
+        let params;
+        if (query instanceof URLSearchParams) {
+            params = new URLSearchParams(query.toString());
+        } else if (typeof query === "string") {
+            const clean = query.startsWith('?') ? query.slice(1) : query;
+            params = new URLSearchParams(clean);
+        } else if (query && typeof query === "object") {
+            params = new URLSearchParams(query);
+        } else {
+            params = new URLSearchParams();
+        }
+
+        // Save clean lastQuery (string without leading '?')
+        lastQuery = params.toString();
+
+        // Ensure page and page_size are set (overwrites existing keys)
+        params.set("page", page);
+        params.set("page_size", pageSize);
+
+        const baseUrl = "/api/jobs/list";
+        const finalUrl = `${baseUrl}?${params.toString()}`;
+
+        console.log("Fetching URL:", finalUrl);
+        const response = await fetch(finalUrl);
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        currentPage = page;
+        totalPages = Math.ceil((data.count || 0) / pageSize);
+
+        const jobs = data.results || [];
+
+        if (jobs.length === 0) {
+            container.innerHTML = "<p>No jobs found</p>";
+            updatePaginationControls();
+            hideLoading();
+            return;
+        }
+
+        container.innerHTML = "";
+
+        jobs.forEach(job => {
+            const jobHtml = `
+            <a href="/job-page/${job.id}/" class="job-listing">
+                <div class="job-listing-details">
+                    <div class="job-listing-company-logo">
+                        <img src="${job.company_info !== null ? job.company_info.logo_url : ''}" alt="">
+                    </div>
+                    <div class="job-listing-description">
+                        <h4 class="job-listing-company">Web79</h4>
+                        <h3 class="job-listing-title">${job.title || ''}</h3>
+                    </div>
+                </div>
+                <div class="job-listing-footer">
+                    <ul>
+                        <li><i class="icon-material-outline-location-on"></i> ${job.location || ''}</li>
+                        <li><i class="icon-material-outline-business-center"></i> ${job.job_type || ''}</li>
+                        <li><i class="icon-material-outline-account-balance-wallet"></i> $${job.salary_min || ''}-$${job.salary_max || ''}</li>
+                        <li><i class="icon-material-outline-access-time"></i> ${job.updated_at ? new Date(job.updated_at).toDateString() : ''}</li>
+                    </ul>
+                </div>
+            </a>
+            `;
+            container.insertAdjacentHTML("beforeend", jobHtml);
+        });
+
+        updatePaginationControls();
+        hideLoading();
+
+    } catch (error) {
+        container.innerHTML = "<p>Failed to load jobs.</p>";
+        console.error(error);
+    }
+}
+
+// INITIAL call — pass an empty string (no leading '?')
+//fetchjobs("", 1);
+
+function applyFilters() {
+    const params = new URLSearchParams();
+
+    // 1. Keywords
+    const keywordInputs = Array.from(document.querySelectorAll(".keywords-list .keyword-text"))
+        .map(el => el.textContent.trim())
+        .filter(k => k.length > 0);
+    console.log("keywordInputs:", keywordInputs);
+    // If you want to allow searching with zero keywords remove the alert below.
+    if (keywordInputs.length === 0) {
+        alert("Please add at least one skill before submitting!");
+        return;
+    }
+    if (keywordInputs.length) params.append("search", keywordInputs.join(", "));
+
+    // 2. Categories (multi-select)
+    const selectedCategories = [...document.querySelectorAll('.sidebar-widget select option:checked')]
+        .map(option => option.value);
+    console.log("selectedCategories:", selectedCategories);
+    selectedCategories.forEach(cat => params.append("category", cat));
+
+    // 3. Job Types (checkboxes)
+    const selectedJobTypes = [...document.querySelectorAll('.sidebar-widget .switches-list input[type="checkbox"]:checked')]
+        .map(cb => cb.parentElement.textContent.trim());
+    console.log("selectedJobTypes:", selectedJobTypes);
+    selectedJobTypes.forEach(type => params.append("job_type", type));
+
+    // 4. Salary Range (extract from the range slider)
+    const salarySlider = document.querySelector('.range-slider');
+    if (salarySlider) {
+        const salaryValue = salarySlider.getAttribute('data-slider-value'); // e.g. "[150000,500000]"
+        try {
+            const [minSalary, maxSalary] = JSON.parse(salaryValue);
+            params.append("min_salary", minSalary);
+            params.append("max_salary", maxSalary);
+        } catch (e) {
+            // fallback: if it's like "150000,500000"
+            const parts = (salaryValue || "").replace(/[\[\]\s]/g, "").split(",");
+            if (parts.length === 2) {
+                params.append("min_salary", parts[0]);
+                params.append("max_salary", parts[1]);
+            }
+        }
+    }
+
+    // 5. Tags (checkboxes)
+    const selectedTags = [...document.querySelectorAll('.tags-container input[type="checkbox"]:checked')]
+        .map(cb => cb.nextElementSibling.textContent.trim());
+    selectedTags.forEach(tag => params.append("tags", tag));
+
+    // 6. Sorting (if applicable)
+    const sortSelect = document.querySelector('.sort-by select');
+    if (sortSelect && sortSelect.value) {
+        params.append("sort", sortSelect.value.toLowerCase());
+    }
+
+    // 7. Fetch jobs — pass URLSearchParams (no leading '?')
+    fetchjobs(params, 1);
+}
+
+function getAndApplyFilters() {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get("search");
+    const location = params.get("location");
+    const category = params.get("category");
+    const city = params.get("city");
+
+    console.log("search:", search, "location:", location, "category:", category, "city:", city);
+
+    if (search || location || category || city) {
+        fetchjobs(params, 1);
+    } else {
+        fetchjobs("", 1);
+    }
+}
+
+function updatePaginationControls() {
+    const paginationContainer = document.querySelector(".pagination ul");
+    if (!paginationContainer) return;
+    paginationContainer.innerHTML = "";
+
+    if (totalPages <= 1) {
+        const pc = document.querySelector(".pagination-container");
+        if (pc) pc.style.display = "none";
+        return;
+    } else {
+        const pc = document.querySelector(".pagination-container");
+        if (pc) pc.style.display = "block";
+    }
+
+    // Previous button
+    const prevLi = document.createElement("li");
+    prevLi.classList.add("pagination-arrow");
+    prevLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a>`;
+    if (currentPage === 1) {
+        prevLi.classList.add("disabled");
+    } else {
+        prevLi.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(lastQuery, currentPage - 1);
+        });
+    }
+    paginationContainer.appendChild(prevLi);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const pageLi = document.createElement("li");
+        const pageLink = document.createElement("a");
+        pageLink.href = "#";
+        pageLink.textContent = i;
+        pageLink.classList.add("ripple-effect");
+        if (i === currentPage) pageLink.classList.add("current-page");
+
+        pageLink.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(lastQuery, i);
+        });
+
+        pageLi.appendChild(pageLink);
+        paginationContainer.appendChild(pageLi);
+    }
+
+    // Next button
+    const nextLi = document.createElement("li");
+    nextLi.classList.add("pagination-arrow");
+    nextLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a>`;
+    if (currentPage === totalPages) {
+        nextLi.classList.add("disabled");
+    } else {
+        nextLi.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(lastQuery, currentPage + 1);
+        });
+    }
+    paginationContainer.appendChild(nextLi);
+}
+
+document.querySelector(".sidebar-search-button-container button").addEventListener("click", applyFilters);
+document.addEventListener('DOMContentLoaded', getAndApplyFilters);
+</script>
+
+
+</body>
+</html>

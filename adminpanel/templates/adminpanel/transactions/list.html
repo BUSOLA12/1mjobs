@@ -1,0 +1,71 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <input type="text" name="search" class="form-control"
+               placeholder="Search reference or user"
+               value="{{ search }}">
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All Status</option>
+            <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+            <option value="success" {% if status == "success" %}selected{% endif %}>Success</option>
+            <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
+</form>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Reference</th>
+            <th>Order</th>
+            <th>User</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for tx in page_obj %}
+        <tr>
+            <td>{{ tx.reference }}</td>
+            <td>#{{ tx.order.id }}</td>
+            <td>{{ tx.order.user.email }}</td>
+            <td>{{ tx.amount }}</td>
+            <td>
+                <span class="badge 
+                {% if tx.status == 'success' %}bg-success
+                {% elif tx.status == 'pending' %}bg-warning
+                {% else %}bg-danger{% endif %}">
+                    {{ tx.status|upper }}
+                </span>
+            </td>
+            <td>{{ tx.created_at }}</td>
+            <td>
+                <a href="{% url 'admin_transaction_detail' tx.id %}"
+                   class="btn btn-sm btn-outline-primary">
+                    View
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No transactions found</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% include "adminpanel/pagination.html" %}
+
+
+{% endblock %}

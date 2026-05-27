@@ -1,0 +1,101 @@
+from django.urls import path
+from .views import base_views
+from .views.dashboard import admin_dashboard
+from .views import ext, ext1
+
+# app_name = 'adminpanel'
+
+urlpatterns = [
+
+    # ------------------
+    # HASSAN
+    # ------------------
+
+    path("", base_views.AdminDashboardView.as_view(), name="admin-user-dashboard"),
+    path("dashboard/", admin_dashboard, name="admin-dashboard"),
+
+    # User management
+    path('users/<int:pk>/edit/', base_views.UserUpdateView.as_view(), name='user-edit'),
+
+    path("users/<int:pk>/suspend/", base_views.suspend_user, name="user-suspend"),
+    path("users/<int:pk>/unsuspend/", base_views.unsuspend_user, name="user-unsuspend"),
+    path("users/<int:pk>/ban/", base_views.ban_user, name="user-ban"),
+    path("users/<int:pk>/unban/", base_views.unban_user, name="user-unban"),
+
+    path("logs/admin-actions/", base_views.admin_action_logs, name="admin-action-logs"),
+    path("logs/user-actions/", base_views.user_activity_logs, name="user-action-logs"),
+
+    # New User Management
+    path("users/", ext.admin_user_list, name="admin_user_list"),
+    path("users/<int:user_id>/", ext.admin_user_detail, name="admin_user_detail"),
+
+    path("users/<int:user_id>/billing/", ext.admin_user_billing_history, name="admin_user_billing_history"),
+
+
+
+
+
+    # Pricing management
+    path("pricing/", base_views.AdminPlanListView.as_view(), name="admin-pricing-list"),
+    path("pricing/create/", base_views.AdminPlanCreateView.as_view(), name="admin-pricing-create"),
+    path("pricing/<int:pk>/", base_views.AdminPlanDetailView.as_view(), name="admin-pricing-detail"),
+    path("pricing/<int:pk>/edit/", base_views.AdminPlanEditView.as_view(),name="admin-pricing-edit"),
+
+    # Features management
+    path("pricing/<int:plan_id>/features/add/", base_views.AdminPlanFeatureCreateView.as_view(), name="admin-feature-add"),
+    path("features/<int:feature_id>/edit/", base_views.AdminPlanFeatureUpdateView.as_view(), name="admin-feature-edit"),
+    path("features/<int:feature_id>/delete/", base_views.AdminPlanFeatureDeleteView.as_view(), name="admin-feature-delete"),
+
+    # Order management
+    path("orders/<int:pk>/mark-paid/", base_views.admin_mark_order_paid, name="admin_mark_order_paid"),
+    path("orders/<int:pk>/cancel/", base_views.admin_cancel_order, name="admin_cancel_order"),
+    path("orders/<int:pk>/fail/", base_views.admin_fail_order, name="admin_fail_order"),
+    path("orders/", base_views.admin_order_list, name="admin_order_list"),
+    path("orders/<int:pk>/", base_views.admin_order_detail, name="admin_order_detail"),
+
+    # Transaction management
+    path("transactions/", base_views.admin_transaction_list, name="admin_transaction_list"),
+    path("transactions/<int:pk>/", base_views.admin_transaction_detail, name="admin_transaction_detail"),
+
+    # Subscription management
+    path("subscriptions/", base_views.admin_subscription_list, name="admin_subscription_list"),
+    path("subscriptions/<int:pk>/", base_views.admin_subscription_detail, name="admin_subscription_detail"),
+    path("subscriptions/<int:pk>/deactivate/", base_views.admin_subscription_deactivate, name="admin_subscription_deactivate"),
+    path("subscriptions/<int:pk>/activate/", base_views.admin_subscription_activate, name="admin_subscription_activate"),
+
+
+    # Job Management
+    path("jobs/", ext1.admin_job_list, name="admin_job_list"),
+    path("jobs/<int:job_id>/", ext1.admin_job_detail, name="admin_job_detail"),
+    path('admin/job-applications/<int:job_id>/', ext1.admin_job_applications_list, name='admin_job_applications'),
+    path('admin/job-applications-detail/<int:pk>/', ext1.admin_job_application_detail, name='admin_job_application_detail'),
+
+    # Task Management
+    path('admin/tasks/', ext1.admin_task_list, name='admin_task_list'),
+    path('admin/tasks/<int:task_id>/', ext1.admin_task_detail, name='admin_task_detail'),
+    path('admin/tasks/<int:task_id>/toggle-feature/', ext1.admin_toggle_task_feature, name='admin_toggle_task_feature'),
+    path('admin/tasks/<int:task_id>/update-status/', ext1.admin_update_task_status, name='admin_update_task_status'),
+    path('admin/tasks/<int:task_id>/delete/', ext1.admin_delete_task, name='admin_delete_task'),
+
+    path('admin/tasks/<int:task_id>/bids/', ext1.admin_task_bidding_list, name='admin_task_bidding_list'),
+    path('admin/task-bids/<int:bid_id>/update-status/', ext1.admin_update_task_bid_status, name='admin_update_task_bid_status'),
+
+
+
+
+
+
+
+
+
+    # ------------------
+    # BUSOLA
+    # ------------------
+
+    
+    path('admin-jobs/', base_views.manage_jobs, name='manage_jobs'),
+    
+    path('admin-jobs/<int:job_id>/status/<str:action>/', base_views.change_job_status, name='change_job_status'),
+]
+
+

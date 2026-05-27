@@ -1,0 +1,543 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+</head>
+<body id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+
+<!-- Titlebar
+================================================== -->
+<div class="single-page-header" data-background-image="images/single-task.jpg">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="single-page-header-inner">
+					<div class="left-side">
+						<div class="header-image"><a href="#"><img src="" alt=""></a></div>
+						<div class="header-details">
+							<h3 class="project-name"></h3>
+							<h5>About the Employer</h5>
+							<ul>
+								<li><a href="#" id="company-name"><i class="icon-material-outline-business"></i></a></li>
+								<li><div class="star-rating" data-rating="5.0"></div></li>
+								<li><img class="flag" src="" alt=""> <span id="country-name"></span></li>
+								<li><div class="verified-badge-with-title">Verified</div></li>
+							</ul>
+						</div>
+					</div>
+					<div class="right-side">
+						<div class="salary-box">
+							<div class="salary-type">Project Budget</div>
+							<div class="budget-amount"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Page Content
+================================================== -->
+<div class="container">
+	<div class="row">
+		
+		<!-- Content -->
+		<div class="col-xl-8 col-lg-8 content-right-offset">
+			
+			<!-- Description -->
+			<div class="single-page-section">
+				<h3 class="margin-bottom-25">Project Description</h3>
+				<p class="task-description-text"></p>
+			</div>
+
+			<!-- Atachments -->
+			<div class="single-page-section">
+				<h3>Attachments</h3>
+				<div class="attachments-container">
+				</div>
+			</div>
+
+			<!-- Skills -->
+			<div class="single-page-section">
+				<h3>Skills Required</h3>
+				<div class="task-tags">
+					<span class="task-skills"></span>
+				</div>
+			</div>
+			<div class="clearfix"></div>
+			
+			<!-- Freelancers Bidding -->
+			<div class="boxed-list margin-bottom-60">
+				<div class="boxed-list-headline">
+					<h3><i class="icon-material-outline-group"></i> Freelancers Bidding</h3>
+				</div>
+				<ul class="boxed-list-ul">
+					{% comment %} <li>
+						<div class="bid">
+							<!-- Avatar -->
+							<div class="bids-avatar">
+								<div class="freelancer-avatar">
+									<div class="verified-badge"></div>
+									<a href="single-freelancer-profile.html"><img src="images/user-avatar-big-01.jpg" alt=""></a>
+								</div>
+							</div>
+							
+							<!-- Content -->
+							<div class="bids-content">
+								<!-- Name -->
+								<div class="freelancer-name">
+									<h4><a href="single-freelancer-profile.html">Tom Smith <img class="flag" src="images/flags/gb.svg" alt="" title="United Kingdom" data-tippy-placement="top"></a></h4>
+									<div class="star-rating" data-rating="4.9"></div>
+								</div>
+							</div>
+							
+							<!-- Bid -->
+							<div class="bids-bid">
+								<div class="bid-rate">
+									<div class="rate">$4,400</div>
+									<span>in 7 days</span>
+								</div>
+							</div>
+						</div>
+					</li>
+					<li>
+						<div class="bid">
+							<!-- Avatar -->
+							<div class="bids-avatar">
+								<div class="freelancer-avatar">
+									<div class="verified-badge"></div>
+									<a href="single-freelancer-profile.html"><img src="images/user-avatar-big-02.jpg" alt=""></a>
+								</div>
+							</div>
+							
+							<!-- Content -->
+							<div class="bids-content">
+								<!-- Name -->
+								<div class="freelancer-name">
+									<h4><a href="single-freelancer-profile.html">David Peterson <img class="flag" src="images/flags/de.svg" alt="" title="Germany" data-tippy-placement="top"></a></h4>
+									<div class="star-rating" data-rating="4.2"></div>
+								</div>
+							</div>
+							
+							<!-- Bid -->
+							<div class="bids-bid">
+								<div class="bid-rate">
+									<div class="rate">$2,200</div>
+									<span>in 14 days</span>
+								</div>
+							</div>
+						</div>
+					</li>
+					<li>
+						<div class="bid">
+							<!-- Avatar -->
+							<div class="bids-avatar">
+								<div class="freelancer-avatar">
+									<a href="single-freelancer-profile.html"><img src="images/user-avatar-placeholder.png" alt=""></a>
+								</div>
+							</div>
+							
+							<!-- Content -->
+							<div class="bids-content">
+								<!-- Name -->
+								<div class="freelancer-name">
+									<h4><a href="single-freelancer-profile.html">Marcin Kowalski <img class="flag" src="images/flags/pl.svg" alt="" title="Poland" data-tippy-placement="top"></a></h4>
+									<span class="not-rated">Minimum of 3 votes required</span>
+
+								</div>
+							</div>
+							
+							<!-- Bid -->
+							<div class="bids-bid">
+								<div class="bid-rate">
+									<div class="rate">$3,800</div>
+									<span>In 20 days</span>
+								</div>
+							</div>
+						</div>
+					</li>
+					<li>
+						<div class="bid">
+							<!-- Avatar -->
+							<div class="bids-avatar">
+								<div class="freelancer-avatar">
+									<a href="single-freelancer-profile.html"><img src="images/user-avatar-placeholder.png" alt=""></a>
+								</div>
+							</div>
+							
+							<!-- Content -->
+							<div class="bids-content">
+								<!-- Name -->
+								<div class="freelancer-name">
+									<h4><a href="single-freelancer-profile.html">Sebastiano Piccio <img class="flag" src="images/flags/it.svg" alt="" title="Italy" data-tippy-placement="top"></a></h4>
+									<div class="star-rating" data-rating="4.5"></div>
+								</div>
+							</div>
+							
+							<!-- Bid -->
+							<div class="bids-bid">
+								<div class="bid-rate">
+									<div class="rate">$3,400</div>
+									<span>In 10 days</span>
+								</div>
+							</div>
+						</div>
+					</li> {% endcomment %}
+				</ul>
+			</div>
+
+		</div>
+		
+
+		<!-- Sidebar -->
+		<div class="col-xl-4 col-lg-4">
+			<div class="sidebar-container">
+
+				<div class="countdown green margin-bottom-35" id="task-countdown"></div>
+
+				<div class="sidebar-widget" id="bid-task-cont">
+					<div class="bidding-widget">
+						<div class="bidding-headline"><h3>Bid on this task!</h3></div>
+						<div class="bidding-inner">
+
+							<!-- Headline -->
+							<span class="bidding-detail">Set your <strong>minimal rate</strong></span>
+
+							<!-- Price Slider -->
+							<div class="bidding-value">$<span id="biddingVal"></span></div>
+							<input class="bidding-slider" type="text" value="" data-slider-handle="custom" data-slider-currency="$" data-slider-min="2500" data-slider-max="4500" data-slider-value="auto" data-slider-step="50" data-slider-tooltip="hide" />
+							
+							<!-- Headline -->
+							<span class="bidding-detail margin-top-30">Set your <strong>delivery time</strong></span>
+
+							<!-- Fields -->
+							<div class="bidding-fields">
+								<div class="bidding-field">
+									<!-- Quantity Buttons -->
+									<div class="qtyButtons">
+										<div class="qtyDec"></div>
+										<input type="text" name="qtyInput" id="day-number" value="1">
+										<div class="qtyInc"></div>
+									</div>
+								</div>
+								<div class="bidding-field">
+									<select class="selectpicker default">
+										<option selected>Days</option>
+										<option>Hours</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Button -->
+							<button id="snackbar-place-bid" class="button ripple-effect move-on-hover full-width margin-top-30"><span>Place a Bid</span></button>
+							<button
+								id="message-employer-btn"
+								class="button full-width margin-bottom-20 popup-with-zoom-anim ripple-effect"
+								style="background-color: #28a745; border-color: #28a745;"
+							>
+								<i class="icon-material-outline-message"></i> Message Employer
+							</button>
+
+						</div>
+						{% comment %} <div class="bidding-signup">Don't have an account? <a href="#sign-in-dialog" class="register-tab sign-in popup-with-zoom-anim">Sign Up</a></div> {% endcomment %}
+					</div>
+				</div>
+
+				<!-- Sidebar Widget -->
+				<div class="sidebar-widget">
+					<h3>Bookmark or Share</h3>
+
+					<!-- Bookmark Button -->
+					<button class="bookmark-button margin-bottom-25">
+						<span class="bookmark-icon"></span>
+						<span class="bookmark-text">Bookmark</span>
+						<span class="bookmarked-text">Bookmarked</span>
+					</button>
+
+					<!-- Copy URL -->
+					<div class="copy-url">
+						<input id="copy-url" type="text" value="" class="with-border">
+						<button class="copy-url-button ripple-effect" data-clipboard-target="#copy-url" title="Copy to Clipboard" data-tippy-placement="top"><i class="icon-material-outline-file-copy"></i></button>
+					</div>
+
+					<!-- Share Buttons -->
+					<div class="share-buttons margin-top-25">
+						<div class="share-buttons-trigger"><i class="icon-feather-share-2"></i></div>
+						<div class="share-buttons-content">
+							<span>Interesting? <strong>Share It!</strong></span>
+							<ul class="share-buttons-icons">
+								<li><a href="#" data-button-color="#3b5998" title="Share on Facebook" data-tippy-placement="top"><i class="icon-brand-facebook-f"></i></a></li>
+								<li><a href="#" data-button-color="#1da1f2" title="Share on Twitter" data-tippy-placement="top"><i class="icon-brand-twitter"></i></a></li>
+								<li><a href="#" data-button-color="#dd4b39" title="Share on Google Plus" data-tippy-placement="top"><i class="icon-brand-google-plus-g"></i></a></li>
+								<li><a href="#" data-button-color="#0077b5" title="Share on LinkedIn" data-tippy-placement="top"><i class="icon-brand-linkedin-in"></i></a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+</div>
+
+
+<!-- Spacer -->
+<div class="margin-top-15"></div>
+<!-- Spacer / End-->
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Sign In Popup
+================================================== -->
+<div id="sign-in-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#login">Log In</a></li>
+			<li><a href="#register">Register</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Login -->
+			<div class="popup-tab-content" id="login">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>We're glad to see you again!</h3>
+					<span>Don't have an account? <a href="#" class="register-tab">Sign Up!</a></span>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="login-form">
+					<div class="input-with-icon-left">
+						<i class="icon-material-baseline-mail-outline"></i>
+						<input type="text" class="input-text with-border" name="emailaddress" id="emailaddress" placeholder="Email Address" required/>
+					</div>
+
+					<div class="input-with-icon-left">
+						<i class="icon-material-outline-lock"></i>
+						<input type="password" class="input-text with-border" name="password" id="password" placeholder="Password" required/>
+					</div>
+					<a href="#" class="forgot-password">Forgot Password?</a>
+				</form>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect" type="submit" form="login-form">Log In <i class="icon-material-outline-arrow-right-alt"></i></button>
+				
+				<!-- Social Login -->
+				<div class="social-login-separator"><span>or</span></div>
+				<div class="social-login-buttons">
+					<button class="facebook-login ripple-effect"><i class="icon-brand-facebook-f"></i> Log In via Facebook</button>
+					<button class="google-login ripple-effect"><i class="icon-brand-google-plus-g"></i> Log In via Google+</button>
+				</div>
+
+			</div>
+
+			<!-- Register -->
+			<div class="popup-tab-content" id="register">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Let's create your account!</h3>
+				</div>
+
+				<!-- Account Type -->
+				<div class="account-type">
+					<div>
+						<input type="radio" name="account-type-radio" id="freelancer-radio" class="account-type-radio" checked/>
+						<label for="freelancer-radio" class="ripple-effect-dark"><i class="icon-material-outline-account-circle"></i> Freelancer</label>
+					</div>
+
+					<div>
+						<input type="radio" name="account-type-radio" id="employer-radio" class="account-type-radio"/>
+						<label for="employer-radio" class="ripple-effect-dark"><i class="icon-material-outline-business-center"></i> Employer</label>
+					</div>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="register-account-form">
+					<div class="input-with-icon-left">
+						<i class="icon-material-baseline-mail-outline"></i>
+						<input type="text" class="input-text with-border" name="emailaddress-register" id="emailaddress-register" placeholder="Email Address" required/>
+					</div>
+
+					<div class="input-with-icon-left" title="Should be at least 8 characters long" data-tippy-placement="bottom">
+						<i class="icon-material-outline-lock"></i>
+						<input type="password" class="input-text with-border" name="password-register" id="password-register" placeholder="Password" required/>
+					</div>
+
+					<div class="input-with-icon-left">
+						<i class="icon-material-outline-lock"></i>
+						<input type="password" class="input-text with-border" name="password-repeat-register" id="password-repeat-register" placeholder="Repeat Password" required/>
+					</div>
+				</form>
+				
+				<!-- Button -->
+				<button class="margin-top-10 button full-width button-sliding-icon ripple-effect" type="submit" form="register-account-form">Register <i class="icon-material-outline-arrow-right-alt"></i></button>
+				
+				<!-- Social Login -->
+				<div class="social-login-separator"><span>or</span></div>
+				<div class="social-login-buttons">
+					<button class="facebook-login ripple-effect"><i class="icon-brand-facebook-f"></i> Register via Facebook</button>
+					<button class="google-login ripple-effect"><i class="icon-brand-google-plus-g"></i> Register via Google+</button>
+				</div>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Sign In Popup / End -->
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<script src="{% static 'js/for/single-task-page.js' %}"></script>
+
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+
+// Snackbar for "place a bid" button
+{% comment %} $('#snackbar-place-bid').click(function() { 
+	Snackbar.show({
+		text: 'Your bid has been placed!',
+	}); 
+});  {% endcomment %}
+
+
+// Snackbar for copy to clipboard button
+$('.copy-url-button').click(function() { 
+	Snackbar.show({
+		text: 'Copied to clipboard!',
+	}); 
+}); 
+</script>
+
+
+
+<script>
+	showForRole("freelancer", "bid-task-cont");
+</script>
+
+
+</body>
+</html>

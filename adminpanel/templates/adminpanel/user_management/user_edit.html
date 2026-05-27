@@ -1,0 +1,20 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="dashboard-content-container" data-simplebar>
+    <div class="dashboard-content-inner">
+
+        <h3>Edit User</h3>
+
+        <form method="post" class="card p-4 mt-3">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button type="submit" class="btn btn-success">Save Changes</button>
+            <a href="{% url 'user-detail' object.pk %}" class="btn btn-secondary">Cancel</a>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

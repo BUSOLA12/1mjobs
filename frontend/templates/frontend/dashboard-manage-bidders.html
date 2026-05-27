@@ -1,0 +1,766 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>Manage Bidders</h3>
+				<span class="margin-top-7">Bids for <a class="task-name" href="#"></a></span>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+						<li>Manage Bidders</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-material-outline-supervisor-account"></i> <span class="bidCount">0</span> Bidders</h3>
+							<div class="sort-by">
+								<select class="selectpicker hide-tick">
+									<option>Highest First</option>
+									<option>Lowest First</option>
+									<option>Fastest First</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="content">
+							<ul class="dashboard-box-list manage-bidders">
+								
+
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Bid Acceptance Popup
+================================================== -->
+<div id="small-dialog-1" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab1">Accept Offer</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3 class="freelancer-name acceptance"></h3>
+					<div class="bid-acceptance margin-top-15 freelancer-bid acceptance">
+					</div>
+
+				</div>
+
+				<form id="terms">
+					<div class="radio">
+						<input id="radio-1" name="radio" type="radio" required>
+						<label for="radio-1"><span class="radio-label"></span>  I have read and agree to the Terms and Conditions</label>
+					</div>
+				</form>
+
+				<!-- Button -->
+				<button class="margin-top-15 button full-width button-sliding-icon ripple-effect accept-bid-button" type="button" form="terms">Accept <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Bid Acceptance Popup / End -->
+
+
+<!-- Send Direct Message Popup
+================================================== -->
+<div id="small-dialog-2" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab2">Send Message</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab2">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Direct Message To David</h3>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="send-pm">
+					<textarea name="textarea" cols="10" placeholder="Message" class="with-border" required></textarea>
+				</form>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect send-message-now" type="button">Send <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Send Direct Message Popup / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<script>
+
+async function fetchcurrentuserDetails(userId) {
+    try {
+        const response = await fetchProtected(`/api/users/currentuser/${userId}/`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+        return null;
+    }
+}
+
+function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+
+
+
+async function createConversation(taskId, participants) {
+	try {
+		const response = await fetchProtected(`/api/messaging/taskconversationcreate/`, {
+			method: "POST",
+			body: JSON.stringify({
+				"task_id": taskId,
+				"participants": participants,
+			}),
+		});
+		
+		if (response.ok) {
+			const data = await response.json();
+			console.log("Conversation created successfully:", data);
+			return data;
+		} else {
+			const errorData = await response.json();
+			console.error("Error creating conversation:", errorData);
+			return null;
+		}
+		
+	} catch (error) {
+		console.error(`Error creating conversation: ${error}`);
+		return null;
+	}
+}
+
+async function sendMessage(conversation_id, sender, recipient, content) {
+	try {
+		const response = await fetchProtected(`/api/messaging/messagecreate/`, {
+			method: "POST",
+			body: JSON.stringify({
+				"conversation_id": conversation_id,
+				"sender": sender,
+				"recipient": recipient,
+				"content": content,
+			}),
+		});
+		
+		if (response.ok) {
+			const data = await response.json();
+			console.log("Message sent successfully:", data);
+			
+			// Show success notification instead of alert
+			Snackbar.show({
+				text: 'Message sent successfully!',
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#28a745'
+			});
+			
+			return data;
+		} else {
+			const errorData = await response.json();
+			console.error("Error sending message:", errorData);
+			Snackbar.show({
+          text: "Error sending message:",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0404ff",
+        });
+			return null;
+		}
+		
+	} catch (error) {
+		console.error(`Error sending message: ${error}`);
+		Snackbar.show({
+          text: "Error sending message:",
+          pos: "bottom-center",
+          showAction: true,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0404ff",
+        });
+		return null;
+	}
+}
+
+	document.addEventListener("DOMContentLoaded", async () => {
+		const taskId = window.location.pathname.split("/").filter(Boolean).pop();
+		showLoading("Loading Biddings");
+		if (taskId) {
+			//Get Task Name
+			const taskDetailsRes = await fetchProtected(`/api/tasks/detail/${taskId}/`);
+			const taskDetails = await taskDetailsRes.json();
+			console.log("Task details:", taskDetails);
+			const taskName = document.querySelector(".task-name");
+			taskName.textContent = taskDetails.project_name;
+
+
+			//Get Task biddings
+			const taskDiddingsRes = await fetchProtected(`/api/tasks/gettaskbidings/${taskId}/`, {
+				method: "GET"
+			});
+			const taskDiddings = await taskDiddingsRes.json();
+			console.log("Task detail bids:", taskDiddings);
+			const bidsContainer = document.querySelector(".dashboard-box-list.manage-bidders");
+			
+
+			for (const bids of taskDiddings) {
+				let project_type = "";
+				let statusClass = "";
+				if (taskDetails.project_type === "hourly") {
+					project_type = "Hourly Rate";
+				} else {
+					project_type = "Fixed Price";
+				}
+
+				if (["pending", "rejected"].includes(bids.status)) {
+					statusClass = "red";
+				} else {
+					statusClass = "green";
+				}
+				//const uD = await fetchcurrentuserDetails(bids.freelancer);
+				//console.log("User details in bibbing:", uD);
+				const bidsItem = `
+					<li>
+						<!-- Overview -->
+						<div class="freelancer-overview manage-candidates">
+							<div class="freelancer-overview-inner">
+
+								<!-- Avatar -->
+								<div class="freelancer-avatar">
+									<div class="verified-badge"></div>
+									<a href="#"><img src="${bids.freelancer_info !== null ? bids.freelancer_info.avatar : ""}" alt=""></a>
+								</div>
+
+								<!-- Name -->
+								<div class="freelancer-name">
+									<h4><a href="#">${bids.freelancer_info !== null ? bids.freelancer_info.full_name : ""} <img class="flag" src="images/flags/de.svg" alt="" title="Germany" data-tippy-placement="top"></a></h4>
+
+									<!-- Details -->
+									<span class="freelancer-detail-item"><a href="#"><i class="icon-feather-mail"></i>${bids.freelancer_info !== null ? bids.freelancer_info.email : ""}</a></span>
+
+									<!-- Rating -->
+									<div class="freelancer-rating">
+										<div class="star-rating" data-rating="5.0"></div>
+									</div>
+
+									<!-- Bid Details -->
+									<ul class="dashboard-task-info bid-info">
+										<li><strong>$${bids.bid_amount}</strong><span>${project_type}</span></li>
+										<li><strong>${bids.delivery_time}</strong><span>Delivery Time</span></li>
+										<li><span class="dashboard-status-button ${statusClass}">${bids.status}</span></li>
+
+									</ul>
+
+									<!-- Buttons -->
+									<div class="buttons-to-right always-visible margin-top-25 margin-bottom-0">
+										<a href="#small-dialog-1"  class="popup-with-zoom-anim button ripple-effect bid-apply-button" data-fname="${bids.freelancer_info !== null ? bids.freelancer_info.full_name.split(" ")[0] : ""}" data-fbid="${bids.bid_amount}" data-bidid="${bids.id}"><i class="icon-material-outline-check"></i> Accept Offer</a>
+										<a href="#small-dialog-2" class="popup-with-zoom-anim button dark ripple-effect message-freelancer" data-fid="${bids.freelancer}" data-empid="${taskDetails.user}" data-fname="${bids.freelancer_info !== null ? bids.freelancer_info.full_name.split(" ")[0] : ""}"><i class="icon-feather-mail"></i> Send Message</a>
+										<a href="#" class="button gray ripple-effect ico" title="Remove Bid" data-tippy-placement="top" data-bidid="${bids.id}"><i class="icon-feather-trash-2"></i></a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</li>
+				`;
+
+				bidsContainer.insertAdjacentHTML('beforeend', bidsItem);
+			}
+
+			hideLoading();
+
+			let bidId = null;
+			let fname = null;
+			bidsContainer.addEventListener("click", (e) => {
+				e.preventDefault();
+				if (e.target.closest(".bid-apply-button")) {
+					fname = e.target.closest(".bid-apply-button").dataset.fname;
+					const fbid = e.target.closest(".bid-apply-button").dataset.fbid;
+					bidId = e.target.closest(".bid-apply-button").dataset.bidid;
+
+					const fnameE = document.querySelector(".freelancer-name.acceptance");
+					fnameE.textContent = `Accept Offer From ${fname}`;
+					const fbidE = document.querySelector(".freelancer-bid.acceptance");
+					fbidE.textContent = `$${fbid}`;
+
+					console.log("Freelancer Name:", fname);
+					console.log("Freelancer Bid:", fbid);
+					
+				}
+				
+			});
+			
+			bidsContainer.addEventListener("click", async (e) => {
+				e.preventDefault();
+				if (e.target.closest(".button.gray.ripple-effect.ico")) {
+					bidId = e.target.closest(".button.gray.ripple-effect.ico").dataset.bidid;
+					const bidItemHere = e.target.closest(".button.gray.ripple-effect.ico").closest("li");
+					if (confirm("Are you sure you want to reject this bid?")) {
+						showLoading("Rejecting");
+						try {
+							const resHere = await fetchProtected(`/api/tasks/rejectbid/${bidId}/`, {
+							method: "PUT",
+							body: JSON.stringify({"status": "rejected"}),
+						});
+						
+						if (resHere.ok) {
+							hideLoading();
+							resDataHere = await resHere.json();
+							bidItemHere.remove();
+							console.log("Reject Response Data:", resDataHere)
+							Snackbar.show({
+							text: "Bid Succefully Rejected",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#04fa18ff",
+							});
+						}
+					} catch (error) {
+						console.error("Error rejecting bid:", error);
+						Snackbar.show({
+							text: 'Error rejecting bid. Please try again.',
+							pos: 'bottom-center',
+							showAction: false,
+							duration: 3000,
+							textColor: '#fff',
+							backgroundColor: '#e74c3c'
+						});
+					}
+				}
+				} 
+			});
+
+			document.querySelector(".accept-bid-button").addEventListener("click", async (e) => {
+				e.preventDefault();
+				const T_and_C = document.getElementById("radio-1").checked;
+				if (T_and_C) {
+					showLoading("Accepting");
+					console.log("T and C status:", T_and_C);
+					console.log("Bid id:", bidId);
+					const data = {
+						"status": "accepted",
+						"read_TC": T_and_C,
+					}
+					const acceptRes = await fetchProtected(`/api/tasks/acceptbid/${bidId}/`, {
+						method: "PUT",
+						body: JSON.stringify(data),
+					});
+					if (acceptRes.ok) {
+						hideLoading();
+						Snackbar.show({
+							text: `Successfully Accepted ${fname}'s bid`,
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#04fa18ff",
+							});
+					}
+					const acceptData = await acceptRes.json();
+					console.log("Accepted Data:", acceptData);
+
+					$.magnificPopup.close();
+					location.reload();
+				} else {
+					Snackbar.show({
+							text: "Please, confirm you have read and agreed to the terms and condition",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#fa0404ff",
+							});
+					return;
+				}
+				
+			});
+
+			
+			// Handle Messaging
+			let fId = null;
+			let empId = null;
+			let fnameh = null;
+
+			bidsContainer.addEventListener("click", (e) => {
+				e.preventDefault();
+				if (e.target.closest(".message-freelancer")) {
+					fnameh = e.target.closest(".message-freelancer").dataset.fname;
+					fId = parseInt(e.target.closest(".message-freelancer").dataset.fid);
+					empId = parseInt(e.target.closest(".message-freelancer").dataset.empid);
+					
+					console.log(`Participants IDs needed: ${fId} and ${empId}`);
+					document.querySelector(".welcome-text h3").textContent = `Direct Message To ${fnameh}`;
+				}
+			});
+
+			// Send Message Button Handler
+			document.querySelector(".send-message-now").addEventListener("click", async (e) => {
+				showLoading("Sending Message");
+				e.preventDefault();
+				
+				// Validate that we have the necessary data
+				if (!fId || !empId) {
+					hideLoading();
+					Snackbar.show({
+							text: "Error: Recipient information is missing. Please try again.",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#fa0404ff",
+							});
+					return;
+				}
+				
+				const content = document.querySelector("#send-pm textarea").value.trim();
+				
+				// Validate message content
+				if (!content) {
+					hideLoading();
+					Snackbar.show({
+							text: "Please enter a message before sending.",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#fa0404ff",
+							});
+					return;
+				}
+				
+				try {
+					// Prepare participants array with both IDs as integers
+					const participants = [empId, fId];
+					console.log("Participants:", participants);
+					
+					// Create or get conversation
+					const convData = await createConversation(taskId, participants);
+					
+					if (!convData) {
+						hideLoading();
+						Snackbar.show({
+							text: "Failed to create conversation. Please try again.",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#fa0404ff",
+							});
+						return;
+					}
+					
+					console.log("Conversation Data:", convData);
+					const conversation_id = convData.id;
+					
+					// Create message
+					const messageData = await sendMessage(conversation_id, empId, fId, content);
+					
+					if (messageData) {
+						hideLoading();
+						console.log("Message Data:", messageData);
+						
+						// Clear the textarea
+						document.querySelector("#send-pm textarea").value = "";
+						
+						if ($.magnificPopup) {
+							$.magnificPopup.close();
+						}
+					}
+					
+				} catch (error) {
+					console.error("Error in messaging:", error);
+					Snackbar.show({
+							text: "An error occurred while sending the message. Please try again.",
+							pos: "bottom-center",
+							showAction: true,
+							actionText: "Dismiss",
+							duration: 3000,
+							textColor: "#fff",
+							backgroundColor: "#fa0404ff",
+							});
+				}
+			});
+
+			const bidCount = taskDiddings.length;
+			let bidCountDisplay = document.querySelector(".bidCount");
+
+			if (bidCountDisplay) {
+			bidCountDisplay.textContent = bidCount;
+			}
+
+			if ($.magnificPopup) {
+    		// Accept Offer Popup
+			$('.bid-apply-button').magnificPopup({
+				type: 'inline',
+				fixedContentPos: false,
+				fixedBgPos: true,
+				overflowY: 'auto',
+				closeBtnInside: true,
+				preloader: false,
+				midClick: true,
+				removalDelay: 300,
+				mainClass: 'my-mfp-zoom-in',
+				callbacks: {
+					open: function() {
+						console.log('Accept offer popup opened');
+					}
+				}
+			});
+
+			// Send Message Popup
+			$('.message-freelancer').magnificPopup({
+				type: 'inline',
+				fixedContentPos: false,
+				fixedBgPos: true,
+				overflowY: 'auto',
+				closeBtnInside: true,
+				preloader: false,
+				midClick: true,
+				removalDelay: 300,
+				mainClass: 'my-mfp-zoom-in',
+				callbacks: {
+					open: function() {
+						console.log('Message popup opened');
+						// You could clear the textarea here
+						document.querySelector("#send-pm textarea").value = "";
+					}
+				}
+			});
+		}
+		} else {
+			alert("Task id not provided");
+		}
+
+
+
+	});
+</script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+
+</body>
+</html>

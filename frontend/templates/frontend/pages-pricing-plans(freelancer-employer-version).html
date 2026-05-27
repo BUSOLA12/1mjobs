@@ -1,0 +1,292 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+
+</head>
+
+<body id="mainBody">
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+		<!-- Header Container / End -->
+
+		<!-- Titlebar
+================================================== -->
+		<div id="titlebar" class="gradient">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+
+						<h2>Pricing Plans</h2>
+
+						<!-- Breadcrumbs -->
+						<nav id="breadcrumbs" class="dark">
+							<ul>
+								<li><a href="{% url 'index' %}">Home</a></li>
+								<li>Pricing Plans</li>
+							</ul>
+						</nav>
+
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- Page Content
+================================================== -->
+		<div class="container">
+			<div class="row">
+
+				<div class="col-xl-12">
+
+					<!-- Billing Cycle  -->
+					<div class="billing-cycle-radios margin-bottom-70">
+						<div class="radio billed-monthly-radio">
+							<input id="radio-5" name="radio-payment-type" type="radio" checked>
+							<label for="radio-5"><span class="radio-label"></span> Billed Monthly</label>
+						</div>
+
+						<div class="radio billed-yearly-radio">
+							<input id="radio-6" name="radio-payment-type" type="radio">
+							<label for="radio-6"><span class="radio-label"></span> Billed Yearly <span
+									class="small-label">Save 10%</span></label>
+						</div>
+					</div>
+
+
+					<!-- Tabs Container -->
+					<style>
+						.price-plan-tab {
+							list-style: none;
+							padding: 0;
+							margin: 0;
+						}
+
+						.price-plan-tab li a {
+							display: flex;
+							align-items: center;
+							justify-content: space-between;
+							/* pushes arrow to the end */
+							gap: 10px;
+							text-decoration: none;
+						}
+
+						/* Hide all arrows by default */
+						ul.price-plan-tab li .tab-arrow {
+							display: none;
+						}
+
+						/* Show arrow only on active tab */
+						ul.price-plan-tab li.active .tab-arrow {
+							display: inline-block;
+						}
+					</style>
+					<div class="tabs">
+						<div class="tabs-header">
+							<ul class="price-plan-tab">
+								<li class="active">
+									<a href="#tab-1" data-tab-id="1">
+										<span class="tab-text">Freelancers</span>
+										<span class="tab-arrow">
+											<i class="icon-feather-arrow-left"></i>
+										</span>
+									</a>
+								</li>
+
+								<li>
+									<a href="#tab-2" data-tab-id="2">
+										<span class="tab-text">Employers</span>
+										<span class="tab-arrow">
+											<i class="icon-feather-arrow-left"></i>
+										</span>
+									</a>
+								</li>
+							</ul>
+							<div class="tab-hover"></div>
+							<nav class="tabs-nav">
+								<span class="tab-prev"><i class="icon-material-outline-keyboard-arrow-left"></i></span>
+								<span class="tab-next"><i class="icon-material-outline-keyboard-arrow-right"></i></span>
+							</nav>
+						</div>
+
+						<script>
+							document.addEventListener("DOMContentLoaded", function () {
+								const tabItems = document.querySelectorAll(".price-plan-tab li");
+
+								tabItems.forEach(item => {
+									item.addEventListener("click", function () {
+										// Remove active class from all tabs
+										tabItems.forEach(tab => tab.classList.remove("active"));
+
+										// Add active class to the clicked tab
+										this.classList.add("active");
+									});
+								});
+							});
+
+						</script>
+
+						<!-- Tab Content -->
+						<div class="tabs-content">
+							<div class="tab active" data-tab-id="1">
+								<!-- Pricing Plans Container Freelancers -->
+								<div class="pricing-plans-container margin-top-50 margin-bottom-50" id="freelancer">
+									<!-- Plan -->
+									<div class="pricing-plan">
+										<h3></h3>
+										<p class="margin-top-10"></p>
+										<div class="pricing-plan-label billed-monthly-label"></div>
+										<div class="pricing-plan-label billed-yearly-label"></div>
+										<div class="pricing-plan-features">
+											<strong></strong>
+											<ul>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+
+									<!-- Plan -->
+									<div class="pricing-plan recommended">
+										<div class="recommended-badge">Recommended</div>
+										<h3></h3>
+										<p class="margin-top-10"></p>
+										<div class="pricing-plan-label billed-monthly-label"></div>
+										<div class="pricing-plan-label billed-yearly-label"></div>
+										<div class="pricing-plan-features">
+											<strong></strong>
+											<ul>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+
+									<!-- Plan -->
+									<div class="pricing-plan">
+										<h3></h3>
+										<p class="margin-top-10"></p>
+										<div class="pricing-plan-label billed-monthly-label"></div>
+										<div class="pricing-plan-label billed-yearly-label"></div>
+										<div class="pricing-plan-features">
+											<strong></strong>
+											<ul>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+								</div>
+							</div>
+							<div class="tab" data-tab-id="2">
+								<!-- Pricing Plans Container Employers -->
+								<div class="pricing-plans-container margin-top-50 margin-buttom-50" id="employer">
+									<!-- Plan -->
+									<div class="pricing-plan">
+										<h3></h3>
+										<p class="margin-top-10"></p>
+										<div class="pricing-plan-label billed-monthly-label"></div>
+										<div class="pricing-plan-label billed-yearly-label"></div>
+										<div class="pricing-plan-features">
+											<strong></strong>
+											<ul>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+
+									<!-- Plan -->
+									<div class="pricing-plan recommended">
+										<div class="recommended-badge">Recommended</div>
+										<h3>Standard Plan</h3>
+										<p class="margin-top-10">One time fee for one listing or task highlighted in
+											search results.</p>
+										<div class="pricing-plan-label billed-monthly-label"><strong>$49</strong>/
+											monthly</div>
+										<div class="pricing-plan-label billed-yearly-label"><strong>$529</strong>/
+											yearly</div>
+										<div class="pricing-plan-features">
+											<strong>Features of Standard Plan</strong>
+											<ul>
+												<li>5 Listings</li>
+												<li>60 Days Visibility</li>
+												<li>Highlighted in Search Results</li>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+
+									<!-- Plan -->
+									<div class="pricing-plan">
+										<h3></h3>
+										<p class="margin-top-10"></p>
+										<div class="pricing-plan-label billed-monthly-label"></div>
+										<div class="pricing-plan-label billed-yearly-label"></div>
+										<div class="pricing-plan-features">
+											<strong></strong>
+											<ul>
+											</ul>
+										</div>
+										<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Tabs Container / End -->
+				</div>
+
+			</div>
+		</div>
+
+
+		<div class="margin-top-80"></div>
+
+		<!-- Footer
+================================================== -->
+		{% include 'frontend/partials/footer.html' %}
+		<!-- Footer / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+	<script src="{% static 'js/for/pages-pricing-plans.js' %}"></script>
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+
+	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+	<script>
+		// Snackbar for user status switcher
+		$('#snackbar-user-status label').click(function () {
+			Snackbar.show({
+				text: 'Your status has been changed!',
+				pos: 'bottom-center',
+				showAction: false,
+				actionText: "Dismiss",
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#383838'
+			});
+		}); 
+	</script>
+
+</body>
+
+</html>

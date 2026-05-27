@@ -1,0 +1,76 @@
+<div id="overlay">
+  <div class="message-box" id="messageBox">
+    <p id="message"></p>
+    <button id="okBtn">OK</button>
+  </div>
+</div>
+
+<style>
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none; /* Initially hidden */
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .message-box {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  .message-box p {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  .message-box button {
+    padding: 10px 20px;
+    background-color: #0E46A3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .message-box button:hover {
+    background-color: #1E0342;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const overlay = document.getElementById('overlay');
+    const okBtn = document.getElementById('okBtn');
+    const messageBox = document.getElementById('messageBox');
+
+    const hideOverlay = () => {
+      overlay.style.display = 'none';
+    };
+
+    okBtn.addEventListener('click', hideOverlay);
+
+    overlay.addEventListener('click', (e) => {
+      if (!messageBox.contains(e.target)) {
+        hideOverlay();
+      }
+    });
+  });
+
+  function displayOverlay(msg) {
+    document.getElementById('message').textContent = msg;
+    document.getElementById('overlay').style.display = 'flex';
+  }
+</script>

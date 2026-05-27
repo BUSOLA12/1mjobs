@@ -1,0 +1,466 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>Manage Jobs</h3>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+						<li>Manage Jobs</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-material-outline-business-center"></i> My Job Listings</h3>
+						</div>
+
+						<div class="content">
+							<ul class="dashboard-box-list">
+								
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Pagination -->
+			<div class="clearfix"></div>
+			<div class="pagination-container margin-top-20 margin-bottom-20">
+				<nav class="pagination">
+					<ul id="pagination-list">
+						<!--<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+						<li><a href="#" class="ripple-effect">1</a></li>
+						<li><a href="#" class="ripple-effect current-page">2</a></li>
+						<li><a href="#" class="ripple-effect">3</a></li>
+						<li><a href="#" class="ripple-effect">4</a></li>
+						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>-->
+					</ul>
+				</nav>
+			</div>
+			<div class="clearfix"></div>
+			<!-- Pagination / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+
+<script>
+	let currentPage = 1;
+	let pageSize = 5;
+	let totalPages = 1;
+
+	async function getJobApplicationCount(jobId) {
+	try {
+		const response = await fetchProtected(`/api/jobs/getapplicantcount/${jobId}/`);
+		const data = await response.json();
+		console.log("APP Count:", data);
+		return data.count;
+	} catch (error) {
+		const errorMessage =
+			error.message ||
+			(error.response && error.response.data && error.response.data.message) ||
+			error.toString();
+
+		Snackbar.show({
+			text: `Get Job Application Count Failed: ${errorMessage}`,
+			pos: "bottom-center",
+			showAction: true,
+			actionText: "Dismiss",
+			duration: 3000,
+			textColor: "#fff",
+			backgroundColor: "#fa0404ff",
+		});
+
+		return 0;
+	}
+}
+
+	
+
+	function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+	}
+
+	// Hide loading overlay
+	function hideLoading() {
+		document.getElementById('loadingOverlay').classList.remove('active');
+	}
+
+
+
+	async function fetchjobs (page = 1) {
+
+		showLoading("Load Jobs");
+		params = new URLSearchParams();
+		params.set('page', page);
+		params.set('pageSize', pageSize);
+		const baseUrl = "/api/jobs/managelist/";
+		const finalUrl = `${baseUrl}?${params.toString()}`;
+
+		await fetchProtected(finalUrl)
+			.then(res => res.json())
+			.then( async (jobsData) => {
+				console.log("Job Listings:",jobsData);
+				const jobList = document.querySelector(".dashboard-box-list");
+				jobList.innerHTML = ""; // clear existing static items
+				jobs = jobsData.results;
+				console.log("Job length:",jobsData.count);
+				currentPage = page;
+        		totalPages = Math.ceil((jobsData.count || 0) / pageSize);
+
+				if (jobs.length === 0) {
+					jobList.innerHTML = "<p>No jobs found</p>";
+					updatePaginationControls();
+					hideLoading();
+					return;
+				}
+
+				for (const job of jobs) {
+					console.log("Job:", job);
+					const jobItem = document.createElement("li");
+					jobItem.innerHTML = `
+						<div class="job-listing">
+							<div class="job-listing-details">
+								<div class="job-listing-description">
+									<h3 class="job-listing-title">
+										<a href="/job-page/${job.id}/">${job.title}</a>
+										<span class="dashboard-status-button green">${job.appoved ? 'Active' : 'Pending Approval'}</span>
+										<span class="dashboard-status-button red">${job.is_expired ? 'Expired' : ''}</span>
+									</h3>
+									<div class="job-listing-footer">
+										<ul>
+											<li><i class="icon-material-outline-date-range"></i> Posted on ${new Date(job.created_at).toDateString()}</li>
+											<li><i class="icon-material-outline-date-range"></i> Expiring on ${job.expiration_date ? new Date(job.expiration_date).toDateString() : 'N/A'}</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="buttons-to-right always-visible">
+							<a href="/dashboard/manage-candidates/${job.id}/" class="button ripple-effect">
+								<i class="icon-material-outline-supervisor-account"></i> Manage Candidates <span class="button-info">0</span>
+							</a>
+							<a href="/dashboard/edit-job/${job.id}/" class="button gray ripple-effect ico" title="Edit" data-tippy-placement="top">
+								<i class="icon-feather-edit"></i>
+							</a>
+							<a href="#" onclick="deleteJob(${job.id})" class="button gray ripple-effect ico" title="Remove" data-tippy-placement="top">
+								<i class="icon-feather-trash-2"></i>
+							</a>
+						</div>
+					`;
+					jobList.appendChild(jobItem);
+					const AppCount = await getJobApplicationCount(job.id);
+					const appCount = jobItem.querySelector(".button-info");
+					if (appCount) {
+						appCount.textContent = AppCount;
+					} else {
+						Snackbar.show({
+						text: "Failed to count element in job list item",
+						pos: "bottom-center",
+						showAction: true,
+						actionText: "Dismiss",
+						duration: 3000,
+						textColor: "#fff",
+						backgroundColor: "#fa0404ff",
+					});
+					}
+					
+				}
+				
+				updatePaginationControls();
+				hideLoading();
+			})
+			.catch(err => {
+				console.error("Error fetching jobs:", err);
+				Snackbar.show({
+					text: "Failed to load job listings.",
+					pos: "bottom-center",
+					showAction: true,
+					actionText: "Dismiss",
+					duration: 3000,
+					textColor: "#fff",
+					backgroundColor: "#fa0404ff",
+				});
+			});
+		}
+
+	
+	function updatePaginationControls() {
+    const paginationContainer = document.querySelector(".pagination ul");
+    if (!paginationContainer) return;
+    paginationContainer.innerHTML = "";
+
+    if (totalPages <= 1) {
+        const pc = document.querySelector(".pagination-container");
+        if (pc) pc.style.display = "none";
+        return;
+    } else {
+        const pc = document.querySelector(".pagination-container");
+        if (pc) pc.style.display = "block";
+    }
+
+    // Previous button
+    const prevLi = document.createElement("li");
+    prevLi.classList.add("pagination-arrow");
+    prevLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a>`;
+    if (currentPage === 1) {
+        prevLi.classList.add("disabled");
+    } else {
+        prevLi.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(currentPage - 1);
+        });
+    }
+    paginationContainer.appendChild(prevLi);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const pageLi = document.createElement("li");
+        const pageLink = document.createElement("a");
+        pageLink.href = "#";
+        pageLink.textContent = i;
+        pageLink.classList.add("ripple-effect");
+        if (i === currentPage) pageLink.classList.add("current-page");
+
+        pageLink.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(i);
+        });
+
+        pageLi.appendChild(pageLink);
+        paginationContainer.appendChild(pageLi);
+    }
+
+    // Next button
+    const nextLi = document.createElement("li");
+    nextLi.classList.add("pagination-arrow");
+    nextLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a>`;
+    if (currentPage === totalPages) {
+        nextLi.classList.add("disabled");
+    } else {
+        nextLi.addEventListener("click", e => {
+            e.preventDefault();
+            fetchjobs(currentPage + 1);
+        });
+    }
+    paginationContainer.appendChild(nextLi);
+}
+	
+
+	function deleteJob(jobId) {
+		if (!confirm("Are you sure you want to delete this job?")) return;
+
+		fetchProtected(`/api/jobs/${jobId}/delete/`, {
+			method: "DELETE"
+		})
+			.then(res => {
+				if (res.ok) {
+					Snackbar.show({
+						text: "Job deleted successfully.",
+						pos: "bottom-center",
+						showAction: true,
+						actionText: "Dismiss",
+						duration: 3000,
+						textColor: "#fff",
+						backgroundColor: "#04fa4eff",
+					});
+					location.reload();
+				} else {
+					alert("Failed to delete job.");
+				}
+			})
+			.catch(err => {
+				console.error("Delete error:", err);
+				Snackbar.show({
+						text: "An error occurred.",
+						pos: "bottom-center",
+						showAction: true,
+						actionText: "Dismiss",
+						duration: 3000,
+						textColor: "#fff",
+						backgroundColor: "#fa0410ff",
+					});
+			});
+	}
+
+	document.addEventListener("DOMContentLoaded", fetchjobs(1)); 
+</script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+
+</body>
+</html>

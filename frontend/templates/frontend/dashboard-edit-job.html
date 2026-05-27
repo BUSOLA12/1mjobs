@@ -1,0 +1,456 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+<header id="header-container" class="fullwidth dashboard-header not-sticky">
+
+	<!-- Header -->
+{% include 'frontend/partials/headers.html' %}
+	<!-- Header / End -->
+
+</header>
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar="">
+		<div class="dashboard-content-inner">
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>Edit Job</h3>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+						<li>Edit Job</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Row -->
+		<form id="taskForm" enctype="multipart/form-data">
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-feather-folder-plus"></i> Job Edit Form</h3>
+						</div>
+
+						<div class="content with-padding padding-bottom-10">
+							<div class="row">
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Job Title</h5>
+										<input type="text" class="with-border" placeholder="Job Title">
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Job Type</h5>
+										<select class="selectpicker with-border" data-size="7" title="Select Job Type">
+											<option value="full-time">Full Time</option>
+											<option value="freelance">Freelance</option>
+											<option value="part-time">Part Time</option>
+											<option value="internship">Internship</option>
+											<option value="temporary">Temporary</option>
+										</select>
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Job Category</h5>
+										<select class="selectpicker with-border" data-size="7" title="Select Category">
+											<option value="accounting_and_finance">Accounting and Finance</option>
+											<option value="clerical_and_data_entry">Clerical and Data Entry</option>
+											<option value="customer_service">Customer Service</option>
+											<option value="engineering_and_technical">Engineering and Technical</option>
+											<option value="healthcare">Healthcare</option>
+											<option value="hospitality_and_tourism">Hospitality and Tourism</option>
+											<option value="information_technology">Information Technology</option>
+											<option value="legal">Legal</option>
+											<option value="marketing_and_advertising">Marketing and Advertising</option>
+											<option value="sales_and_business_development">Sales and Business Development</option>
+											<option value="skilled_trades_and_services">Skilled Trades and Services</option>
+											<option value="education_and_training">Education and Training</option>
+											<option value="creative_and_design">Creative and Design</option>
+											<option value="real_estate_and_property_management">Real Estate and Property Management</option>
+											<option value="transportation_and_logistics">Transportation and Logistics</option>
+											<option value="construction_and_maintenance">Construction and Maintenance</option>
+											<option value="research_and_development">Research and Development</option>
+											<option value="non_profit_and_volunteering">Non-Profit and Volunteering</option>
+											<option value="government_and_public_service">Government and Public Service</option>
+											<option value="media_and_entertainment">Media and Entertainment</option>
+											<option value="telecommunications">Telecommunications</option>
+											<option value="energy_and_utilities">Energy and Utilities</option>
+											<option value="agriculture_and_environment">Agriculture and Environment</option>
+											<option value="science_and_technology">Science and Technology</option>
+											<option value="other">Other</option>
+										</select>
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Location</h5>
+										<div class="input-with-icon">
+											<div id="autocomplete-container">
+												<input id="autocomplete-input" class="with-border" type="text" placeholder="Type Address">
+											</div>
+											<i class="icon-material-outline-location-on"></i>
+										</div>
+									</div>
+								</div>
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>City</h5>
+										<div class="input-with-icon">
+											<div id="autocomplete-container">
+												<input id="autocomplete-input" class="with-border city" type="text" placeholder="Type City">
+											</div>
+											<i class="icon-material-outline-location-on"></i>
+										</div>
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Salary</h5>
+										<div class="row">
+											<div class="col-xl-6">
+												<div class="input-with-icon">
+													<input class="with-border" type="text" placeholder="Min">
+													<i class="currency">USD</i>
+												</div>
+											</div>
+											<div class="col-xl-6">
+												<div class="input-with-icon">
+													<input class="with-border" type="text" placeholder="Max">
+													<i class="currency">USD</i>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Tags <span>(optional)</span>  <i class="help-icon" data-tippy-placement="right" title="Maximum of 10 tags"></i></h5>
+										<div class="keywords-container">
+											<div class="keyword-input-container">
+												<input type="text" class="keyword-input with-border" placeholder="e.g. job title, responsibilites">
+												<button class="keyword-input-button ripple-effect" type="button"><i class="icon-material-outline-add" ></i></button>
+											</div>
+											<div class="keywords-list"><!-- keywords go here --></div>
+											<div class="clearfix"></div>
+										</div>
+
+									</div>
+								</div>
+
+
+
+								<div class="col-xl-12">
+								<!-- Expiring Date Field -->
+								<div class="submit-field">
+									<h5>Expiring Date</h5>
+									<input 
+									type="date" 
+									class="with-border" 
+									placeholder="Select Expiring Date"
+									/>
+								</div>
+								</div>
+
+
+								<div class="col-xl-12">
+									<div class="submit-field">
+										<h5>Job Description</h5>
+										<textarea cols="30" rows="5" class="with-border"></textarea>
+										<div class="uploadButton margin-top-30">
+											<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload" multiple/="">
+											<label class="uploadButton-button ripple-effect" for="upload">Upload Files</label>
+											<span class="uploadButton-file-name">Images or documents that might be helpful in describing your job</span>
+										</div>
+									</div>
+								</div>
+
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-xl-12">
+					<a href="#" id="update-job-btn" class="button ripple-effect big margin-top-30"><i class="icon-feather-plus"></i> Update Job</a>
+				</div>
+
+			</div>
+		</form>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait while we fetch the latest opportunities...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<!-- Chart.js // documentation: http://www.chartjs.org/docs/latest/ -->
+<script src="js/chart.min.js"></script>
+<script>
+	Chart.defaults.global.defaultFontFamily = "Nunito";
+	Chart.defaults.global.defaultFontColor = '#888';
+	Chart.defaults.global.defaultFontSize = '14';
+
+	// var ctx = document.getElementById('chart').getContext('2d');
+
+	var chart = new Chart(ctx, {
+		type: 'line',
+
+		// The data for our dataset
+		data: {
+			labels: ["January", "February", "March", "April", "May", "June"],
+			// Information about the dataset
+	   		datasets: [{
+				label: "Views",
+				backgroundColor: 'rgba(42,65,232,0.08)',
+				borderColor: '#2a41e8',
+				borderWidth: "3",
+				data: [196,132,215,362,210,252],
+				pointRadius: 5,
+				pointHoverRadius:5,
+				pointHitRadius: 10,
+				pointBackgroundColor: "#fff",
+				pointHoverBackgroundColor: "#fff",
+				pointBorderWidth: "2",
+			}]
+		},
+
+		// Configuration options
+		options: {
+
+		    layout: {
+		      padding: 10,
+		  	},
+
+			legend: { display: false },
+			title:  { display: false },
+
+			scales: {
+				yAxes: [{
+					scaleLabel: {
+						display: false
+					},
+					gridLines: {
+						 borderDash: [6, 10],
+						 color: "#d8d8d8",
+						 lineWidth: 1,
+	            	},
+				}],
+				xAxes: [{
+					scaleLabel: { display: false },  
+					gridLines:  { display: false },
+				}],
+			},
+
+		    tooltips: {
+		      backgroundColor: '#333',
+		      titleFontSize: 13,
+		      titleFontColor: '#fff',
+		      bodyFontColor: '#fff',
+		      bodyFontSize: 13,
+		      displayColors: false,
+		      xPadding: 10,
+		      yPadding: 10,
+		      intersect: false
+		    }
+		},
+
+
+});
+
+</script>
+
+
+<!-- Google Autocomplete -->
+<script>
+	function initAutocomplete() {
+		 var options = {
+		  types: ['(cities)'],
+		  // componentRestrictions: {country: "us"}
+		 };
+
+		 var input = document.getElementById('autocomplete-input');
+		 var autocomplete = new google.maps.places.Autocomplete(input, options);
+
+		if ($('.submit-field')[0]) {
+		    setTimeout(function(){ 
+		        $(".pac-container").prependTo("#autocomplete-container");
+		    }, 300);
+		}
+	}
+</script>
+
+<!-- Google API & Maps -->
+<!-- Geting an API Key: https://developers.google.com/maps/documentation/javascript/get-api-key -->
+<script src="../../maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places"></script>
+
+
+<script src="{% static 'js/for/job-edit.js' %}"></script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+
+</body>
+</html>

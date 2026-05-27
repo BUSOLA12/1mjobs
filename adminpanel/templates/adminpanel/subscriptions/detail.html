@@ -1,0 +1,86 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-header">Subscription Info</div>
+    <div class="card-body">
+        <p><strong>User:</strong> {{ subscription.user.email }}</p>
+        <p><strong>Plan:</strong> {{ subscription.plan.name }}</p>
+        <p><strong>Billing Cycle:</strong> {{ subscription.billing_cycle }}</p>
+        <p><strong>Start:</strong> {{ subscription.start_date }}</p>
+        <p><strong>End:</strong> {{ subscription.end_date }}</p>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Remaining Features</div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Remaining</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in subscription.remaining_features.items %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>
+                        {% if value == None %}
+                            Unlimited
+                        {% else %}
+                            {{ value }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Order</div>
+    <div class="card-body">
+        {% if subscription.order %}
+            <p>Order ID: #{{ subscription.order.id }}</p>
+            <p>Status: {{ subscription.order.status }}</p>
+
+            <a href="{% url 'admin_order_detail' subscription.order.id %}"
+               class="btn btn-outline-primary btn-sm">
+                View Order
+            </a>
+        {% else %}
+            <span class="text-muted">No linked order</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Admin Actions</div>
+    <div class="card-body">
+
+        {% if subscription.is_active %}
+            <form method="post" action="{% url 'admin_subscription_deactivate' subscription.id %}">
+                {% csrf_token %}
+                <button class="btn btn-danger"
+                        onclick="return confirm('Deactivate this subscription?')">
+                    Deactivate
+                </button>
+            </form>
+        {% else %}
+            <form method="post" action="{% url 'admin_subscription_activate' subscription.id %}">
+                {% csrf_token %}
+                <button class="btn btn-success">
+                    Activate
+                </button>
+            </form>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

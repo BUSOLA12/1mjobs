@@ -1,0 +1,915 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Basic Page Needs -->
+<title>1mjobs - Messages</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+<style>
+.typing-indicator {
+    display: none;
+}
+.typing-indicator.show {
+    display: block;
+}
+.status-online {
+    background-color: #4CAF50;
+}
+.status-offline {
+    background-color: #ccc;
+}
+.error-message {
+    color: #f44336;
+    font-size: 12px;
+    margin-top: 5px;
+}
+</style>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container -->
+{% include 'frontend/partials/headers.html' %}
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+    <!-- Dashboard Sidebar -->
+    {% include 'frontend/partials/Dashboard_sidebar.html' %}
+
+    <!-- Dashboard Content -->
+    <div class="dashboard-content-container" data-simplebar>
+        <div class="dashboard-content-inner">
+            
+            <!-- Dashboard Headline -->
+            <div class="dashboard-headline">
+                <h3>Messages</h3>
+                <nav id="breadcrumbs" class="dark">
+                    <ul>
+                        <li><a href="{% url 'index' %}">Home</a></li>
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li>Messages</li>
+                    </ul>
+                </nav>
+            </div>
+
+            <div class="messages-container margin-top-0">
+                <div class="messages-container-inner">
+
+                    <!-- Messages Inbox -->
+                    <div class="messages-inbox">
+                        <div class="messages-headline">
+                            <div class="input-with-icon">
+                                <input id="autocomplete-input" type="text" placeholder="Search">
+                                <i class="icon-material-outline-search" ></i>
+                            </div>
+                        </div>
+
+                        <ul id="conversations-list">
+                            <!-- Conversations will be loaded here -->
+                        </ul>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="message-content">
+                        <div class="messages-headline">
+                            <h4 id="current-user-name"></h4>
+                            <a href="#" class="message-action delete"><i class="icon-feather-trash-2"></i> Delete Conversation</a>
+                        </div>
+                        
+                        <!-- Message Content Inner -->
+                        <div class="message-content-inner" id="message-list">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                        
+                        <!-- Typing Indicator -->
+                        <div id="typing-indicator" class="message-bubble typing-indicator">
+                            <div class="message-bubble-inner">
+                                <div class="message-avatar"><img src="images/user-avatar-small-02.jpg" alt="" /></div>
+                                <div class="message-text">
+                                    <div class="typing-indicator">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        
+                        <!-- Reply Area -->
+                        <div class="message-reply">
+                            <textarea id="message-input" cols="1" rows="1" placeholder="Your Message" data-autoresize></textarea>
+                            <button id="send-button" class="button ripple-effect">Send</button>
+                            <div id="error-message" class="error-message"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</div>
+{% include 'frontend/partials/small_footer.html' %}
+
+
+<!-- Scripts -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const convId = params.get('conv_id');
+console.log("Conversation ID:", convId);
+
+let UserId = params.get('UserId');
+console.log("User ID from URL:", UserId);
+
+const EmpId = params.get('EmpId');
+console.log("Employer ID:", EmpId);
+
+
+async function fetchcurrentuserId(senderId) {
+    try {
+        const response = await fetchProtected(`/api/users/currentuser/${senderId}/`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+        return null;
+    }
+}
+
+async function fetchConversation() {
+    try {
+        const response = await fetchProtected(`/api/messaging/conversationget/`);
+        if (!response.ok) {
+            throw new Error("Failed to fetch conversations");
+        }
+        const data = await response.json();
+        return data.conversations;
+    } catch (error) {
+        console.error("Error fetching conversations:", error);
+        return [];        
+    }
+}
+
+async function renderConversations(conversations = null) {
+    if (!conversations) {
+        conversations = await fetchConversation();
+    }
+    console.log("Fetched conversations:", conversations);
+    const ascendingSorted = [...conversations].sort((a, b) => {
+        const bdate = b.last_message ? new Date(b.last_message.timestamp) : Infinity;
+        const adate = a.last_message ? new Date(a.last_message.timestamp) : Infinity;
+        return bdate - adate
+    });
+    
+    console.log("Fetched conversations:", ascendingSorted);
+    const conversationsList = document.getElementById('conversations-list');
+    conversationsList.innerHTML = '';
+
+    for (const conv of ascendingSorted) {
+        const user_data = await fetchcurrentuserId(conv.other_user.id);
+        console.log("user data now:", user_data)
+        const li = document.createElement('li');
+        li.dataset.conversationId = conv.conversation_id;
+        li.classList.add('conversation-item');
+
+        li.innerHTML = `
+    <a href="#" style="
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background-color: #fff;
+        border-radius: 12px;
+        
+        margin-bottom: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    " onmouseover="this.style.backgroundColor='#f9f9f9';" onmouseout="this.style.backgroundColor='#fff';">
+        
+        <!-- Avatar -->
+        <div class="message-avatar" style="position: relative; min-width: 55px;">
+            <i class="status-icon status-online" style="
+                position: absolute;
+                bottom: 3px;
+                right: 3px;
+                width: 12px;
+                height: 12px;
+                background-color: #4CAF50;
+                border: 2px solid #fff;
+                border-radius: 50%;
+                
+            "></i>
+            <img src=${user_data.avatar} alt="avatar" style="
+                width: 55px;
+                height: 55px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid #f1f1f1;
+                
+            " />
+        </div>
+
+        <!-- Message content -->
+        <div class="message-by" style="flex-grow: 1; min-width: 0;">
+            
+            <!-- User name -->
+            <h5 id="current-user-name" style="
+                margin: 0;
+                font-size: 16px;
+                font-weight: 600;
+                color: #333;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            ">
+                ${conv.other_user.name}
+            </h5>
+
+            <p style="
+                margin: 4px 0;
+                font-size: 12px;
+                color: #520afcff;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                max-width: 220px;
+            ">
+                ${conv.subject}
+            </p>
+
+            <!-- Last message -->
+            <p style="
+                margin: 4px 0;
+                font-size: 14px;
+                color: #777;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                max-width: 220px;
+            ">
+                ${conv.last_message ? conv.last_message.content : "No messages yet"}
+            </p>
+
+            
+
+            <!-- Timestamp + unread badge -->
+            <div class="message-by-headline" style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 5px;
+            ">
+                ${conv.last_message && conv.last_message.timestamp 
+                    ? `<small style="
+                            font-size: 12px;
+                            color: #aaa;
+                            font-weight: 500;
+                        ">
+                            ${new Date(conv.last_message.timestamp).toLocaleString()}
+                        </small>` 
+                    : ""
+                }
+
+                ${conv.unread_count > 0 
+                    ? `<span class="unread-badge" style="
+                            background-color: #ff3b30;
+                            color: #fff;
+                            font-size: 12px;
+                            font-weight: bold;
+                            padding: 3px 8px;
+                            border-radius: 12px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                        ">
+                            ${conv.unread_count}
+                        </span>` 
+                    : ""
+                }
+            </div>
+        </div>
+    </a>
+`;
+
+        conversationsList.appendChild(li);
+    }
+}
+
+
+
+// Function to fetch user ID from API
+async function fetchUserId() {
+    try {
+        const response = await fetchProtected(`/api/users/currentuser/`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+        return null;
+    }
+}
+
+// Function to initialize the app with proper user ID
+async function initializeApp() {
+    // If no UserId from URL params or it's null/empty, fetch it from API
+    if (!UserId || UserId === 'null' || UserId === 'undefined') {
+        console.log("No valid User ID in URL, fetching from API...");
+        data = await fetchUserId();
+        UserId = data.id;
+        UserName = data.first_name;
+        console.log("Fetched User ID from API:", UserId);
+        console.log("Fetched User name from API:", UserName);
+        if (!UserId) {
+            console.error("Failed to fetch User ID from API");
+            alert("Unable to get user information. Please refresh the page.");
+            return;
+        }
+        console.log("Fetched User ID:", UserId);
+    }
+
+    // Convert to integer and validate
+    const userIdInt = parseInt(UserId, 10);
+    if (isNaN(userIdInt) || userIdInt <= 0) {
+        console.error("Invalid User ID:", UserId);
+        alert("Invalid user ID. Please refresh the page.");
+        return;
+    }
+    
+    // Update UserId to be the validated integer
+    UserId = userIdInt;
+    console.log("Validated User ID:", UserId);
+
+
+
+    // Now initialize the messaging app with confirmed user ID
+    const messagingApp = new MessagingApp();
+}
+
+class MessagingApp {
+    constructor() {
+
+        
+        this.socket = null;
+        this.currentUserId = UserId; // This will now be guaranteed to exist
+        this.ocurrentConversationId = convId;
+        this.currentConversationId = 0;
+        this.isTyping = false;
+        this.typingTimeout = null;
+        this.idForConversationDelete = null;
+        
+        
+        console.log("Initializing MessagingApp with User ID:", this.currentUserId);
+        
+        this.initializeElements();
+        
+        this.connectWebSocket();
+        
+   
+        
+        this.bindEvents();
+    }
+
+    initializeElements() {
+        this.messageList = document.getElementById('message-list');
+        this.sendButton = document.getElementById('send-button');
+        this.messageInput = document.getElementById('message-input');
+        this.typingIndicator = document.getElementById('typing-indicator');
+        this.errorMessage = document.getElementById('error-message');
+        this.conversationsList = document.getElementById('conversations-list');
+        this.currentUserName = document.getElementById('current-user-name');
+        this.deleteConvButton = document.querySelector('.message-action.delete');
+
+        // Validate that all required elements exist
+        if (!this.messageList || !this.sendButton || !this.messageInput) {
+            console.error("Required DOM elements not found");
+            this.showError("Page elements not loaded properly. Please refresh.");
+        }
+    }
+
+    connectWebSocket() {
+        // Ensure we have a valid user ID before connecting
+        if (!this.currentUserId || this.currentUserId === 'null' || this.currentUserId === 'undefined') {
+            console.error("Cannot connect WebSocket: No valid user ID available");
+            this.showError("User authentication failed. Please refresh the page.");
+            return;
+        }
+
+        // Ensure user ID is a number
+        const userIdInt = parseInt(this.currentUserId, 10);
+        if (isNaN(userIdInt) || userIdInt <= 0) {
+            console.error("Cannot connect WebSocket: Invalid user ID:", this.currentUserId);
+            this.showError("Invalid user authentication. Please refresh the page.");
+            return;
+        }
+
+        const wsUrl = `ws://127.0.0.1:8000/ws/messaging/?user_id=${userIdInt}`;
+        console.log("Connecting to WebSocket:", wsUrl);
+        
+        this.socket = new WebSocket(wsUrl);
+
+        this.socket.onopen = (event) => {
+            console.log("✅ Connected to WebSocket");
+            this.clearError();
+            
+            // Join the current conversation
+            //this.joinConversation(this.ocurrentConversationId);
+
+            if (this.ocurrentConversationId) {
+                console.log("Loading initial conversation:", this.ocurrentConversationId);
+                this.loadInitialConversation(this.ocurrentConversationId);
+            }
+        };
+
+        this.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleWebSocketMessage(data);
+        };
+
+        this.socket.onclose = (event) => {
+            console.log("❌ WebSocket connection closed", event);
+            this.showError("Connection lost. Attempting to reconnect...");
+            
+            // Attempt to reconnect after 3 seconds
+            setTimeout(() => {
+                this.connectWebSocket();
+            }, 3000);
+        };
+
+        this.socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+            this.showError("Connection error occurred");
+        };
+    }
+
+
+
+    loadInitialConversation(convId, retries = 15) {
+        const convItem = this.conversationsList.querySelector(`[data-conversation-id="${convId}"]`)
+        if (convItem) {
+            this.switchConversation(convId, 0);
+        } else if (retries > 0) {
+            setTimeout(() => {
+                this.loadInitialConversation(convId, retries-1)
+            }, 300);
+        } else {
+            console.error("❌ Failed to load conversation:", convId);
+            this.showError("Could not load the conversation. Please try clicking it manually.");
+        }
+    }
+    // Rest of your methods remain the same...
+    handleWebSocketMessage(data) {
+        console.log("Received message:", data);
+
+        switch (data.type) {
+            case 'message_sent':
+                this.clearError();
+                renderConversations();
+                break;
+
+            case 'new_message':
+                
+                console.log("If new message:", data.message);
+                //renderConversations();
+                if (data.conversation_id == this.currentConversationId) {
+                    console.log("If new message:", data.sender_id);
+                    if (data.sender_id == this.currentUserId) {
+                        console.log("Message from self, ignoring");
+                        return;
+                    }
+
+                    const messageWithAvatar = {
+                        ...data.message,
+                        sender_avatar: data.sender_avatar,
+                        recipient_avatar: data.recipient_avatar
+                    };
+                    this.addMessageToUI(messageWithAvatar, false);
+                    this.markMessagesAsRead();
+                    
+                }
+                break;
+
+            case 'messages_read':
+                console.log(`${data.reader} read messages in conversation ${data.conversation_id}`);
+                break;
+
+            case 'typing_status':
+                if (data.conversation_id == this.currentConversationId) {
+                    this.showTypingIndicator(data.is_typing);
+                }
+                break;
+
+            case 'user_status_change':
+                this.updateUserStatus(data.username, data.is_online, data.last_seen);
+                break;
+
+            case 'error':
+                this.showError(data.message);
+                break;
+
+            case 'got_messages':
+                this.listMessages(data.message);
+                console.log(data.message);
+                break;
+            case 'refresh_conv':
+                renderConversations();
+                break;
+                
+
+            default:
+                console.log("Unknown message type:", data.type);
+        }
+    }
+
+    bindEvents() {
+        this.sendButton.addEventListener('click', () => {
+            this.sendMessage();
+        });
+
+        this.messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+
+        this.messageInput.addEventListener('input', () => {
+            this.handleTyping();
+        });
+
+
+
+        this.conversationsList.addEventListener('click', (e) => {
+            console.log("At least i got here");
+            const conversationItem = e.target.closest('li');
+            console.log("At least i got here also");
+            if (conversationItem) {
+
+                const conversationId = conversationItem.dataset.conversationId;
+                this.idForConversationDelete = conversationItem.dataset.conversationId;
+                console.log("At least i got here also. Your conversation id from element to delete:", this.idForConversationDelete);
+
+                if (conversationId && conversationId != this.currentConversationId) {
+                    this.switchConversation(conversationId, this.currentConversationId);
+                    console.log("Got here");
+                }
+            }
+        });
+
+        this.deleteConvButton.addEventListener('click', async (e) => {
+            const res = await fetchProtected(`/api/messaging/deleteconversation/${this.idForConversationDelete}/`, {
+                method: "DELETE"
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const liToDelete = this.conversationsList.querySelector(`li[data-conversation-id="${this.idForConversationDelete}"]`);
+                if (liToDelete) {
+                    liToDelete.remove();
+                } else {
+                    alert("conversation to delete not found");
+                }
+                alert("Conversation deleted successfully.");
+            } else {
+                alert("The operation was unsuccessfull");
+            }
+        });
+
+        const searchButton = document.querySelector('.icon-material-outline-search');
+        if (searchButton) {
+            searchButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const searchQuery = document.getElementById('autocomplete-input').value;
+                if (searchQuery) {
+                    const res = await fetchProtected(`/api/messaging/searchconversation/?q=${searchQuery}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        renderConversations(data);
+                        alert("Please view search results");
+                    } else {
+                        alert("An error occured");
+                    }
+                }
+            });
+        } else {
+            console.warn("Search button not found");
+        }
+}
+
+    
+
+    async sendMessage() {
+        const content = this.messageInput.value.trim();
+        if (!content) return;
+
+        this.stopTyping();
+        console.log("From send Message:", this.currentConversationId);
+        const messageData = {
+            type: 'send_message',
+            conversation_id: this.currentConversationId,
+            sender_id: this.currentUserId,
+            content: content
+        };
+
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+
+            this.socket.send(JSON.stringify(messageData));
+            const user_data = await fetchcurrentuserId(this.currentUserId);
+
+            this.addMessageToUI({
+                content: content,
+                sender: this.currentUserId,
+                sender_avatar: user_data.avatar,
+                timestamp: new Date().toISOString()
+            }, true);
+
+            this.messageInput.value = '';
+            this.clearError();
+            
+        } else {
+            this.showError("Connection not available. Please try again.");
+        }
+    }
+    
+
+    addMessageToUIRealTime(message, isSentByCurrentUser) {
+        console.log("message data Real:", message);
+        console.log("sender_avatar Real :", message.sender_avatar);
+        console.log("recipient_avatar Real:", message.recipient_avatar);
+
+        
+        const avatarSrcR = isSentByCurrentUser ? message.sender_avatar : message.sender_avatar;
+        const messageClassR = isSentByCurrentUser ? 'message-bubble me' : 'message-bubble';
+        
+        const messageHtmlR = `
+            <div class="${messageClassR}">
+                <div class="message-bubble-inner">
+                    <div class="message-avatar"><img src="${avatarSrcR}" alt="avatar" /></div>
+                    <div class="message-text"><p>${this.escapeHtml(message.content)}</p></div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        `;
+
+        this.messageList.insertAdjacentHTML('beforeend', messageHtmlR);
+        this.scrollToBottom();
+    }
+
+     addMessageToUI(message, isSentByCurrentUser) {
+        console.log("message data:", message);
+        console.log("sender_avatar:", message.sender_avatar);
+        console.log("recipient_avatar:", message.recipient_avatar);
+
+        
+        const avatarSrc = isSentByCurrentUser ? message.sender_avatar : message.sender_avatar;
+        const messageClass = isSentByCurrentUser ? 'message-bubble me' : 'message-bubble';
+        
+        const messageHtml = `
+            <div class="${messageClass}">
+                <div class="message-bubble-inner">
+                    <div class="message-avatar"><img src="${avatarSrc}" alt="avatar" /></div>
+                    <div class="message-text"><p>${this.escapeHtml(message.content)}</p></div>
+                </div>
+                <div class="clearfix"></div>
+            </div>
+        `;
+
+        this.messageList.insertAdjacentHTML('beforeend', messageHtml);
+        this.scrollToBottom();
+    }
+
+    checkIsSentByCurrentUser(senderId, currentUserId) {
+        if (senderId === currentUserId) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+   listMessages(messages)  {
+        try {
+        messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        console.log("Sorted messages:", messages);
+        messages.forEach(m => {
+            const isSentByCurrentUser = this.checkIsSentByCurrentUser(m.sender_id, this.currentUserId);
+           this.addMessageToUI(m, isSentByCurrentUser);
+            //this.currentUserName.textContent = UserName;
+            
+        }
+        
+        )} catch (error) {
+            console.error("listMessages Error:", error);
+        }
+
+    }
+
+    getAllMessages(currentConversationId) {
+
+        //const url = `http://127.0.0.1:8000/api/messaging/messageget/${currentConversationId}/`;
+        //try {
+            //const response = await fetchProtected(url);
+
+           // const data = await response.json();
+
+            //return data;
+            //console.log(data.messages);
+        //} catch (error) {
+           // console.error("Error in getAllMessages:", error);
+        //    throw error;
+       // }
+
+
+       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const data = {
+                type: 'get_all_messages',
+                conversation_id: this.currentConversationId
+            };
+            this.socket.send(JSON.stringify(data));
+    }
+    }
+
+    handleTyping() {
+        if (!this.isTyping) {
+            this.isTyping = true;
+            this.sendTypingStatus(true);
+        }
+
+        clearTimeout(this.typingTimeout);
+
+        this.typingTimeout = setTimeout(() => {
+            this.stopTyping();
+        }, 3000);
+    }
+
+    stopTyping() {
+        if (this.isTyping) {
+            this.isTyping = false;
+            this.sendTypingStatus(false);
+        }
+        clearTimeout(this.typingTimeout);
+    }
+
+    sendTypingStatus(isTyping) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const data = {
+                type: isTyping ? 'typing_start' : 'typing_stop',
+                conversation_id: this.currentConversationId
+            };
+            this.socket.send(JSON.stringify(data));
+        }
+    }
+
+    showTypingIndicator(isTyping) {
+        if (isTyping) {
+            this.typingIndicator.classList.add('show');
+        } else {
+            this.typingIndicator.classList.remove('show');
+        }
+        this.scrollToBottom();
+    }
+
+    markMessagesAsRead() {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const data = {
+                type: 'mark_as_read',
+                conversation_id: this.currentConversationId
+            };
+            this.socket.send(JSON.stringify(data));
+        }
+    }
+
+    joinConversation(conversationId) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const data = {
+                type: 'join_conversation',
+                conversation_id: conversationId
+            };
+            this.socket.send(JSON.stringify(data));
+        }
+    }
+
+    leaveConversation() {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const data = {
+                type: 'leave_conversation'
+            };
+            this.socket.send(JSON.stringify(data));
+        }
+    }
+
+    switchConversation(newConversationId, currentConversationId) {
+        if (currentConversationId) {
+            console.log("Got here 2");
+            this.leaveConversation();
+            console.log("Got here 3");
+
+        }
+        console.log("Got here 4");
+        this.currentConversationId = newConversationId;
+        console.log(newConversationId);
+        this.joinConversation(newConversationId);
+        this.updateActiveConversation(newConversationId);
+        this.messageList.innerHTML = '';
+        console.log("Got here 55555");
+        const messages = this.getAllMessages(this.currentConversationId);
+        this.markMessagesAsRead();
+    }
+
+    updateActiveConversation(conversationId) {
+        this.conversationsList.querySelectorAll('li').forEach(li => {
+            li.classList.remove('active-message');
+        });
+        
+        const activeConversation = this.conversationsList.querySelector(`[data-conversation-id="${conversationId}"]`);
+        if (activeConversation) {
+            activeConversation.classList.add('active-message');
+            const userName = activeConversation.querySelector('h5').textContent;
+            this.currentUserName.textContent = userName;
+        }
+    }
+
+    updateUserStatus(username, isOnline, lastSeen) {
+        this.conversationsList.querySelectorAll('li').forEach(li => {
+            const nameElement = li.querySelector('h5');
+            if (nameElement && nameElement.textContent === username) {
+                const statusIcon = li.querySelector('.status-icon');
+                if (statusIcon) {
+                    statusIcon.className = isOnline ? 'status-icon status-online' : 'status-icon status-offline';
+                }
+            }
+        });
+    }
+
+    showError(message) {
+        this.errorMessage.textContent = message;
+        this.errorMessage.style.display = 'block';
+    }
+
+    clearError() {
+        this.errorMessage.textContent = '';
+        this.errorMessage.style.display = 'none';
+    }
+
+    scrollToBottom() {
+        this.messageList.scrollTop = this.messageList.scrollHeight;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize the app when DOM is loaded, ensuring proper async handling
+document.addEventListener("DOMContentLoaded", async function() {
+    try {
+        await initializeApp();
+        await renderConversations(); // Load conversations first
+    } catch (error) {
+        console.error("Initialization failed:", error);
+        alert("Failed to load conversations. Please refresh.");
+    }
+});
+
+// Reload conversation when messages are sent or received
+ setInterval(() => {
+    renderConversations();
+}, 10000); // Refresh every 10 seconds 
+</script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+</body>
+</html>

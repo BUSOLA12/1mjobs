@@ -1,0 +1,237 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+	<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+
+<body class="gray" style="display:none" id="mainBody">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+		<!-- Header Container / End -->
+
+
+		<!-- Dashboard Container -->
+		<div class="dashboard-container">
+
+			<!-- Dashboard Sidebar
+	================================================== -->
+			{% include 'frontend/partials/Dashboard_sidebar.html' %}
+			<!-- Dashboard Sidebar / End -->
+
+
+			<!-- Dashboard Content
+	================================================== -->
+			<div class="dashboard-content-container" data-simplebar>
+				<div class="dashboard-content-inner">
+
+					<!-- Dashboard Headline -->
+					<div class="dashboard-headline">
+						<h3>Payment Overview</h3>
+
+						<!-- Breadcrumbs -->
+						<nav id="breadcrumbs" class="dark">
+							<ul>
+								<li><a href="{% url 'index' %}">Home</a></li>
+								<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+								<li>Payments</li>
+							</ul>
+						</nav>
+					</div>
+					<!-- Employer Payment Dashboard -->
+					<div class="row">
+
+						<!-- Summary Cards -->
+						<div class="col-xl-4 col-md-4">
+							<div class="dashboard-box">
+								<div class="headline">
+									<h3>Total Pending Payments</h3>
+								</div>
+								<div class="content with-padding">
+									<h2 id="total-pending-amount">₦0</h2>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-xl-4 col-md-4">
+							<div class="dashboard-box">
+								<div class="headline">
+									<h3>In Escrow</h3>
+								</div>
+								<div class="content with-padding">
+									<h2 id="total-escrow-amount">₦0</h2>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-xl-4 col-md-4">
+							<div class="dashboard-box">
+								<div class="headline">
+									<h3>Completed Payments</h3>
+								</div>
+								<div class="content with-padding">
+									<h2 id="total-completed-amount">₦0</h2>
+								</div>
+							</div>
+						</div>
+
+						<!-- Employer Payment Cards -->
+						<div class="container">
+							<div class="row">
+
+								<!-- Section Title -->
+								<div class="col-xl-12">
+									<div class="section-headline margin-top-30">
+										<h3>Job Payments</h3>
+									</div>
+								</div>
+
+								<!-- Cards Container -->
+								<div id="payments-card-container" class="row">
+									<!-- Cards will be injected here -->
+								</div>
+
+								<!-- Empty State -->
+								<div id="empty-state" style="display:none; text-align:center; padding:50px;">
+									<h4>No payments available</h4>
+									<p>You currently have no payment activity.</p>
+								</div>
+
+								<!-- Notification Area -->
+								<div class="col-xl-12">
+									<div id="payment-notification-area"></div>
+								</div>
+
+							</div>
+						</div>
+
+					</div>
+
+					<!-- Footer -->
+					<div class="dashboard-footer-spacer"></div>
+					{% include 'frontend/partials/small_footer.html' %}
+					<!-- Footer / End -->
+
+				</div>
+			</div>
+			<!-- Dashboard Content / End -->
+
+		</div>
+		<!-- Dashboard Container / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+	<!-- <div class="loading-overlay active" id="loadingOverlay">
+		<div class="loading-popup">
+			<div class="loading-spinner"></div>
+			<h3>Loading Payments</h3>
+			<p>Please wait...</p>
+		</div>
+	</div> -->
+
+
+
+
+	<!-- Apply for a job popup
+================================================== -->
+	<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+		<!--Tabs -->
+		<div class="sign-in-form">
+
+			<ul class="popup-tabs-nav">
+				<li><a href="#tab">Add Note</a></li>
+			</ul>
+
+			<div class="popup-tabs-container">
+
+				<!-- Tab -->
+				<div class="popup-tab-content" id="tab">
+
+					<!-- Welcome Text -->
+					<div class="welcome-text">
+						<h3>Do Not Forget 😎</h3>
+					</div>
+
+					<!-- Form -->
+					<form method="post" id="add-note">
+
+						<select class="selectpicker with-border default margin-bottom-20" data-size="7"
+							title="Priority">
+							<option>Low Priority</option>
+							<option>Medium Priority</option>
+							<option>High Priority</option>
+						</select>
+
+						<textarea name="textarea" cols="10" placeholder="Note" class="with-border"></textarea>
+
+					</form>
+
+					<!-- Button -->
+					<button class="button full-width button-sliding-icon ripple-effect" type="submit"
+						form="add-note">Add Note <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- Apply for a job popup / End -->
+
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+	<script src="{% static 'js/for/employer-payments.js' %}"></script>
+
+	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+	<script>
+		// Snackbar for user status switcher
+		$('#snackbar-user-status label').click(function () {
+			Snackbar.show({
+				text: 'Your status has been changed!',
+				pos: 'bottom-center',
+				showAction: false,
+				actionText: "Dismiss",
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#383838'
+			});
+		}); 
+	</script>
+	<script>
+		//in other pages 
+		showForRole("freelancer", "my-active-bid-element");
+
+		//in other pages 
+		empList = ["jobs-id", "tasks-id"];
+		for (const id of empList) {
+			showForRole("employer", id);
+		}
+
+	</script>
+
+</body>
+
+</html>

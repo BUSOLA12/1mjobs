@@ -1,0 +1,81 @@
+<div class="two-factor">
+    <div id="overlayToken">
+        <div class="message-token-box" id="messageTokenBox">
+          <!-- Error Container -->
+			    <!-- <div class="page-error-container" id="login-error"></div> -->
+
+          <p>Enter the 6-digit token sent to your email</p>
+          <input type="text" id="tokenInput" maxlength="6" placeholder="123456" />
+          <button id="submitTokenBtn">Submit</button>
+        </div>
+    </div>
+</div>
+
+<style>
+  .two-factor #overlayToken {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .two-factor .message-token-box {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+  }
+
+  .two-factor .message-token-box p {
+    font-size: 16px;
+    margin-bottom: 15px;
+    color: #333;
+  }
+
+  .two-factor .message-token-box input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    letter-spacing: 4px;
+  }
+
+  .two-factor .message-token-box button {
+    padding: 10px 20px;
+    background-color: #0E46A3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .two-factor .message-token-box button:hover {
+    background-color: #1E0342;
+  }
+</style>
+
+<script>
+
+  function hideTokenOverlay() {
+    document.getElementById('overlayToken').style.display = 'none';
+    document.getElementById('tokenInput').value = '';
+  };
+
+
+  function showTokenOverlay() {
+    document.getElementById('overlayToken').style.display = 'flex';
+  }
+</script>

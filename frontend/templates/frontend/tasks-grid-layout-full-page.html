@@ -1,0 +1,455 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+</head>
+<body class="gray" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+<!-- Page Content
+================================================== -->
+<div class="full-page-container">
+
+	<div class="full-page-sidebar">
+		<div class="full-page-sidebar-inner" data-simplebar="">
+			<div class="sidebar-container">
+				
+				<!-- Location -->
+				<div class="sidebar-widget">
+					<h3>Location</h3>
+					<div class="input-with-icon">
+						<div id="autocomplete-container">
+							<input id="autocomplete-input" type="text" placeholder="Location">
+						</div>
+						<i class="icon-material-outline-location-on"></i>
+					</div>
+				</div>
+
+				<!-- Category -->
+				<div class="sidebar-widget">
+					<h3>Category</h3>
+					<select class="selectpicker default" multiple="" data-selected-text-format="count" data-size="7" title="All Categories">
+						<option>Admin Support</option>
+						<option>Customer Service</option>
+						<option>Data Analytics</option>
+						<option>Design & Creative</option>
+						<option>Legal</option>
+						<option>Software Developing</option>
+						<option>IT & Networking</option>
+						<option>Writing</option>
+						<option>Translation</option>
+						<option>Sales & Marketing</option>
+					</select>
+				</div>
+
+				<!-- Keywords -->
+				<div class="sidebar-widget">
+					<h3>Keywords</h3>
+					<div class="keywords-container">
+						<div class="keyword-input-container">
+							<input type="text" class="keyword-input" placeholder="e.g. task title">
+							<button class="keyword-input-button ripple-effect"><i class="icon-material-outline-add"></i></button>
+						</div>
+						<div class="keywords-list"><!-- keywords go here --></div>
+						<div class="clearfix"></div>
+					</div>
+				</div>
+
+				<!-- Budget -->
+				<div class="sidebar-widget">
+					<h3>Budget</h3>
+					<div class="margin-top-55"></div>
+
+					<!-- Range Slider -->
+					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="10" data-slider-max="5000" data-slider-step="25" data-slider-value="[50,2500]">
+				</div>
+
+				{% comment %} <!-- Hourly Rate -->
+				<div class="sidebar-widget">
+					<h3>Hourly Rate</h3>
+					<div class="margin-top-55"></div>
+
+					<!-- Range Slider -->
+					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="10" data-slider-max="150" data-slider-step="5" data-slider-value="[10,200]">
+				</div> {% endcomment %}
+
+				<!-- Tags -->
+				<div class="sidebar-widget">
+					<h3>Skills</h3>
+
+					<div class="tags-container">
+						<div class="tag">
+							<input type="checkbox" id="tag1">
+							<label for="tag1">front-end dev</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag2">
+							<label for="tag2">angular</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag3">
+							<label for="tag3">react</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag4">
+							<label for="tag4">vue js</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag5">
+							<label for="tag5">web apps</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag6">
+							<label for="tag6">design</label>
+						</div>
+						<div class="tag">
+							<input type="checkbox" id="tag7">
+							<label for="tag7">wordpress</label>
+						</div>
+					</div>
+					<div class="clearfix"></div>
+
+					{% comment %} <!-- More Skills -->
+					<div class="keywords-container margin-top-20">
+						<div class="keyword-input-container">
+							<input type="text" class="keyword-input" placeholder="add more skills">
+							<button class="keyword-input-button ripple-effect"><i class="icon-material-outline-add"></i></button>
+						</div>
+						<div class="keywords-list"><!-- keywords go here --></div>
+						<div class="clearfix"></div>
+					</div> {% endcomment %}
+				</div>
+				<div class="clearfix"></div>
+
+				<div class="margin-bottom-40"></div>
+
+			</div>
+			<!-- Sidebar Container / End -->
+
+			<!-- Search Button -->
+			<div class="sidebar-search-button-container">
+				<button class="button ripple-effect">Search</button>
+			</div>
+			<!-- Search Button / End-->
+
+		</div>
+	</div>
+	<!-- Full Page Sidebar / End -->
+	
+	<!-- Full Page Content -->
+	<div class="full-page-content-container" data-simplebar="">
+		<div class="full-page-content-inner">
+
+			<h3 class="page-title">Search Results</h3>
+
+			<div class="notify-box margin-top-15">
+				<div class="switch-container">
+					<label class="switch"><input type="checkbox"><span class="switch-button"></span><span class="switch-text">Turn on email alerts for this search</span></label>
+				</div>
+
+				<div class="sort-by">
+					<span>Sort by:</span>
+					<select class="selectpicker hide-tick">
+						<option>Relevance</option>
+						<option>Newest</option>
+						<option>Oldest</option>
+						<option>Random</option>
+					</select>
+				</div>
+			</div>
+
+			<!-- Tasks Container -->
+			<div class="tasks-list-container tasks-grid-layout margin-top-35">
+				
+				
+			</div>
+			<!-- Tasks Container / End -->
+
+			<!-- Pagination -->
+			{% comment %} <div class="clearfix"></div>
+			<div class="pagination-container margin-top-20 margin-bottom-20">
+				<nav class="pagination">
+					<ul>
+						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+						<li><a href="#" class="ripple-effect">1</a></li>
+						<li><a href="#" class="ripple-effect current-page">2</a></li>
+						<li><a href="#" class="ripple-effect">3</a></li>
+						<li><a href="#" class="ripple-effect">4</a></li>
+						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+					</ul>
+				</nav>
+			</div>
+			<div class="clearfix"></div> {% endcomment %}
+			<!-- Pagination / End -->
+
+			<!-- Footer -->
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Full Page Content / End -->
+
+</div>
+
+
+</div>
+<!-- Wrapper / End -->
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<!-- Google Autocomplete -->
+<script>
+	function initAutocomplete() {
+		 var options = {
+		  types: ['(cities)'],
+		  // componentRestrictions: {country: "us"}
+		 };
+
+		 var input = document.getElementById('autocomplete-input');
+		 var autocomplete = new google.maps.places.Autocomplete(input, options);
+	}
+</script>
+
+<!-- Google API & Maps -->
+<!-- Geting an API Key: https://developers.google.com/maps/documentation/javascript/get-api-key -->
+<script src="../../maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places"></script>
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3>Loading Tasks</h3>
+        <p>Please wait while we fetch the latest opportunities...</p>
+    </div>
+</div>
+<script>
+
+		function showLoading() {
+		document.getElementById('loadingOverlay').classList.add('active');
+	}
+
+	// Hide loading overlay
+	function hideLoading() {
+		document.getElementById('loadingOverlay').classList.remove('active');
+	}
+	async function fetchTasks(query = "") {
+		const container = document.querySelector(".tasks-list-container");
+		showLoading();
+
+		try {
+			const response = await fetch(`/api/tasks/list${query}`);
+			const tasks = await response.json();
+			console.log(tasks);
+
+			if (tasks.length === 0) {
+				container.innerHTML = "<p>No tasks found</p>";
+				hideLoading();
+				return;
+			}
+
+			container.innerHTML = "";
+
+			tasks.forEach(task => {
+				const taskHtml = `
+				<a href="/task-page/${task.id}/" class="task-listing">
+					<div class="task-listing-details">
+						<div class="task-listing-description">
+							<h3 class="task-listing-title">${task.project_name}</h3>
+							<ul class="task-icons">
+								<li><i class="icon-material-outline-location-on"></i> ${task.location}</li>
+								<li><i class="icon-material-outline-business-center"></i> ${task.project_type}</li>
+								<li><i class="icon-material-outline-account-balance-wallet"></i> $${task.budget_min} - $${task.budget_max}</li>
+							</ul>
+							<p class="task-listing-text">${task.description || ""}</p>
+						</div>
+					</div>
+					<div class="task-listing-bid">
+						<div class="task-listing-bid-inner">
+							<div class="task-offers">
+								<strong>$${task.budget_min} - $${task.budget_max}</strong>
+								<span>${task.project_type}</span>
+							</div>
+							<span class="button button-sliding-icon ripple-effect">Bid Now <i class="icon-material-outline-arrow-right-alt"></i></span>
+						</div>
+					</div>
+				</a>
+				`;
+				container.insertAdjacentHTML("beforeend", taskHtml);
+			});
+			hideLoading();
+
+		} catch (error) {
+			container.innerHTML = "<p>Failed to load tasks.</p>";
+			console.error(error);
+		}
+	}
+
+	fetchTasks();
+
+
+	function applyFilters() {
+const params = new URLSearchParams();
+
+// 1. Keywords
+const keywordInputs = Array.from(document.querySelectorAll(".keywords-list .keyword-text"))
+		.map(el => el.textContent.trim())
+		.filter(keywordInput => keywordInput.length > 0);
+		console.log("keywordInputs:", keywordInputs);
+		if (keywordInputs.length === 0) {
+			alert("Please add at least one skill before submitting!");
+			return; // stop form submission
+		}
+
+		
+		if (keywordInputs) {
+			params.append("search", keywordInputs.join(", "));
+		}
+
+// 2. Categories (Multi-select)
+const selectedCategories = [...document.querySelectorAll('.sidebar-widget select option:checked')]
+    .map(option => option.value);
+	console.log("selectedCategories:", selectedCategories);
+selectedCategories.forEach(cat => params.append("category", cat));
+
+const location = document.querySelector("#autocomplete-input").value;
+if (location) {
+	params.append("location", location);
+}
+
+// 3. Job Types (Checkboxes)
+//const selectedJobTypes = [...document.querySelectorAll('.sidebar-widget .switches-list input[type="checkbox"]:checked')]
+//    .map(cb => cb.parentElement.textContent.trim());
+//	console.log("selectedJobTypes:", selectedJobTypes);
+//selectedJobTypes.forEach(type => params.append("job_type", type));
+
+// 4. Budget Range (Extract from the range slider)
+const budgetSlider = document.querySelector('.range-slider');
+if (budgetSlider) {
+    const budgetValue = budgetSlider.getAttribute('data-slider-value'); // "[1500,15000]"
+    const [minBudget, maxBudget] = JSON.parse(budgetValue);
+    params.append("min_budget", minBudget);
+    params.append("max_budget", maxBudget);
+}
+
+// 5. Tags (Checkboxes)
+const selectedSkills = [...document.querySelectorAll('.tags-container input[type="checkbox"]:checked')]
+    .map(cb => cb.nextElementSibling.textContent.trim());
+selectedSkills.forEach(skill => params.append("skills", skill));
+
+// 6. Sorting (if applicable)
+const sortSelect = document.querySelector('.sort-by select');
+if (sortSelect && sortSelect.value) {
+    params.append("sort", sortSelect.value.toLowerCase());
+}
+
+// 7. Send query to fetch jobs
+fetchTasks("?" + params.toString());
+}
+
+document.querySelector(".sidebar-search-button-container button").addEventListener("click", applyFilters);
+</script>
+
+
+</body>
+</html>

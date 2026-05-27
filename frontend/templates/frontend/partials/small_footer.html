@@ -1,0 +1,43 @@
+{% load static %}
+<div class="small-footer margin-top-15">
+	<div class="small-footer-copyrights">
+		© 2025 <strong>1mjobs</strong>. All Rights Reserved.
+	</div>
+	<ul class="footer-social-links">
+		<li>
+			<a href="" title="Facebook" class="facebook-link" data-tippy-placement="top">
+				<i class="icon-brand-facebook-f"></i>
+			</a>
+		</li>
+		<li>
+			<a href="" title="Twitter" class="x-link" data-tippy-placement="top">
+				<i class="icon-brand-twitter"></i>
+			</a>
+		</li>
+		<li>
+			<a href="" title="Google" class="google-link" target="_blank" data-tippy-placement="top">
+				<i class="icon-brand-google"></i>
+			</a>
+		</li>
+		<li>
+			<a href="" title="LinkedIn" class="linkedin-link" data-tippy-placement="top">
+				<i class="icon-brand-linkedin-in"></i>
+			</a>
+		</li>
+	</ul>
+	<div class="clearfix"></div>
+</div>
+
+<script>
+	document.addEventListener("DOMContentLoaded", async () => {
+		const socials_res = await fetch("/api/admins/socials/");
+		const socials_data = await socials_res.json();
+		const socials = socials_data?.[0];
+		if (!socials) return;
+		document.querySelector(".facebook-link")?.setAttribute("href", socials.facebook ?? "#");
+		document.querySelector(".google-link")?.setAttribute("href",
+			socials.gmail ? `https://mail.google.com/mail/?view=cm&fs=1&to=${socials.gmail}` : "#");
+		document.querySelector(".linkedin-link")?.setAttribute("href", socials.linkedin ?? "#");
+		document.querySelector(".x-link")?.setAttribute("href", socials.x ?? "#");
+	});
+</script>

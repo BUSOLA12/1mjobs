@@ -1,0 +1,374 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+</head>
+<body>
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<!-- Header Container / End -->
+
+
+
+<!-- Titlebar
+================================================== -->
+<div class="single-page-header freelancer-header" data-background-image="{% static 'images/single-freelancer.jpg' %}">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="single-page-header-inner">
+					<div class="left-side">
+						<div class="header-image freelancer-avatar"><img src="images/user-avatar-big-02.jpg" alt=""></div>
+						<div class="header-details">
+							<h3></h3>
+							<ul>
+								<li><div class="star-rating"></div></li>
+								<li><img class="flag" src="images/flags/de.svg" alt=""></li>
+								<li id="verified-badge"></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Page Content
+================================================== -->
+<div class="container">
+	<div class="row">
+		
+		<!-- Content -->
+		<div class="col-xl-8 col-lg-8 content-right-offset">
+			
+			<!-- Page Content -->
+			<div class="single-page-section">
+			</div>
+
+			<!-- Boxed List -->
+			<div class="boxed-list margin-bottom-60">
+				<div class="boxed-list-headline">
+					<h3><i class="icon-material-outline-thumb-up"></i> Work History and Feedback</h3>
+				</div>
+				<ul class="boxed-list-ul" id="work-history-and-feedback-list">
+					<!-- Reviews go here -->
+				</ul>
+
+				<!-- Pagination -->
+				<div class="clearfix"></div>
+				<div class="pagination-container margin-top-40 margin-bottom-10">
+					<nav class="pagination">
+						<ul>
+							<li><a href="#" class="ripple-effect current-page">1</a></li>
+							<li><a href="#" class="ripple-effect">2</a></li>
+							<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+						</ul>
+					</nav>
+				</div>
+				<div class="clearfix"></div>
+				<!-- Pagination / End -->
+
+			</div>
+			<!-- Boxed List / End -->
+			
+			<!-- Boxed List -->
+			<div class="boxed-list margin-bottom-60">
+				<div class="boxed-list-headline">
+					<h3><i class="icon-material-outline-business"></i> Employment History</h3>
+				</div>
+				<ul class="boxed-list-ul" id="work-history-list">
+				</ul>
+			</div>
+			<!-- Boxed List / End -->
+
+		</div>
+		
+
+		<!-- Sidebar -->
+		<div class="col-xl-4 col-lg-4">
+			<div class="sidebar-container">
+				
+				<!-- Profile Overview -->
+				<div class="profile-overview">
+					<div class="overview-item"><strong>$<span id="hourly_rate">0</span></strong><span>Hourly Rate</span></div>
+					<div class="overview-item"><strong id="jobs_done">0</strong><span>Jobs Done</span></div>
+					<div class="overview-item"><strong id="rehired">0</strong><span>Rehired</span></div>
+				</div>
+
+				<!-- Button -->
+				<a href="#small-dialog" class="apply-now-button popup-with-zoom-anim margin-bottom-50">Make an Offer <i class="icon-material-outline-arrow-right-alt"></i></a>
+
+				<!-- Freelancer Indicators -->
+				<div class="sidebar-widget">
+					<div class="freelancer-indicators">
+
+						<!-- Indicator -->
+						<div class="indicator">
+							<strong id="job_success">0%</strong>
+							<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+							<span>Job Success</span>
+						</div>
+
+						<!-- Indicator -->
+						<div class="indicator">
+							<strong>0%</strong>
+							<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+							<span>Recommendation</span>
+						</div>
+						
+						<!-- Indicator -->
+						<div class="indicator">
+							<strong>0%</strong>
+							<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+							<span>On Time</span>
+						</div>	
+											
+						<!-- Indicator -->
+						<div class="indicator">
+							<strong>0%</strong>
+							<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+							<span>On Budget</span>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Widget -->
+				<div class="sidebar-widget">
+					<h3>Social Profiles</h3>
+					<div class="freelancer-socials margin-top-25">
+						<ul>
+							<li><a href="#" title="Dribbble" data-tippy-placement="top"><i class="icon-brand-dribbble"></i></a></li>
+							<li><a href="#" title="Twitter" data-tippy-placement="top"><i class="icon-brand-twitter"></i></a></li>
+							<li><a href="#" title="Behance" data-tippy-placement="top"><i class="icon-brand-behance"></i></a></li>
+							<li><a href="#" title="GitHub" data-tippy-placement="top"><i class="icon-brand-github"></i></a></li>
+						
+						</ul>
+					</div>
+				</div>
+
+				<!-- Widget -->
+				<div class="sidebar-widget">
+					<h3>Skills</h3>
+					<div class="task-tags">
+						<span>iOS</span>
+						<span>Android</span>
+						<span>mobile apps</span>
+						<span>design</span>
+						<span>Python</span>
+						<span>Flask</span>
+						<span>PHP</span>
+						<span>WordPress</span>
+					</div>
+				</div>
+
+				<!-- Widget -->
+				<div class="sidebar-widget">
+					<h3>Attachments</h3>
+					<div class="attachments-container">
+						<a href="#" class="attachment-box ripple-effect"><span>Cover Letter</span><i>PDF</i></a>
+						<a href="#" class="attachment-box ripple-effect"><span>Contract</span><i>DOCX</i></a>
+					</div>
+				</div>
+
+				<!-- Sidebar Widget -->
+				<div class="sidebar-widget">
+					<h3>Bookmark or Share</h3>
+
+					<!-- Bookmark Button -->
+					<button class="bookmark-button margin-bottom-25">
+						<span class="bookmark-icon"></span>
+						<span class="bookmark-text">Bookmark</span>
+						<span class="bookmarked-text">Bookmarked</span>
+					</button>
+
+					<!-- Copy URL -->
+					<div class="copy-url">
+						<input id="copy-url" type="text" value="" class="with-border">
+						<button class="copy-url-button ripple-effect" data-clipboard-target="#copy-url" title="Copy to Clipboard" data-tippy-placement="top"><i class="icon-material-outline-file-copy"></i></button>
+					</div>
+
+					<!-- Share Buttons -->
+					<div class="share-buttons margin-top-25">
+						<div class="share-buttons-trigger"><i class="icon-feather-share-2"></i></div>
+						<div class="share-buttons-content">
+							<span>Interesting? <strong>Share It!</strong></span>
+							<ul class="share-buttons-icons">
+								<li><a href="#" data-button-color="#3b5998" title="Share on Facebook" data-tippy-placement="top"><i class="icon-brand-facebook-f"></i></a></li>
+								<li><a href="#" data-button-color="#1da1f2" title="Share on Twitter" data-tippy-placement="top"><i class="icon-brand-twitter"></i></a></li>
+								<li><a href="#" data-button-color="#dd4b39" title="Share on Google Plus" data-tippy-placement="top"><i class="icon-brand-google-plus-g"></i></a></li>
+								<li><a href="#" data-button-color="#0077b5" title="Share on LinkedIn" data-tippy-placement="top"><i class="icon-brand-linkedin-in"></i></a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+</div>
+
+
+<!-- Spacer -->
+<div class="margin-top-15"></div>
+<!-- Spacer / End-->
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Make an Offer Popup
+================================================== -->
+<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab">Make an Offer</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab">
+				<div class="page-error-container" id="send-offer-error-container"></div>
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Discuss your project with David</h3>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="make-an-offer-form">
+
+					<textarea name="textarea" cols="10" placeholder="Message" class="with-border"></textarea>
+
+					<div class="uploadButton margin-top-25">
+						<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload" multiple/>
+						<label class="uploadButton-button ripple-effect" for="upload">Add Attachments</label>
+						<span class="uploadButton-file-name">Allowed file types: zip, pdf, png, jpg <br> Max. files size: 50 MB.</span>
+					</div>
+
+				</form>
+				
+				<!-- Button -->
+				<button id="make-an-offer-btn" class="button margin-top-35 full-width button-sliding-icon ripple-effect" type="submit">Make an Offer <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+			{% comment %}
+			<!-- Login -->
+			<div class="popup-tab-content" id="loginn">
+				
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Discuss Your Project With Tom</h3>
+				</div>
+					
+				<!-- Form -->
+				<form method="post" id="make-an-offer-form2">
+
+					<div class="input-with-icon-left">
+						<i class="icon-material-outline-account-circle"></i>
+						<input type="text" class="input-text with-border" name="name2" id="name2" placeholder="First and Last Name" required/>
+					</div>
+
+					<div class="input-with-icon-left">
+						<i class="icon-material-baseline-mail-outline"></i>
+						<input type="text" class="input-text with-border" name="emailaddress2" id="emailaddress2" placeholder="Email Address" required/>
+					</div>
+
+					<textarea name="textarea" cols="10" placeholder="Message" class="with-border"></textarea>
+
+					<div class="uploadButton margin-top-25">
+						<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload-cv" multiple/>
+						<label class="uploadButton-button" for="upload-cv">Add Attachments</label>
+						<span class="uploadButton-file-name">Allowed file types: zip, pdf, png, jpg <br> Max. files size: 50 MB.</span>
+					</div>
+
+				</form>
+				
+				<!-- Button -->
+				<button id="make-an-offer2-btn" class="button full-width button-sliding-icon ripple-effect" type="submit" form="make-an-offer-form">Make an Offer <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div> 
+			{% endcomment %}
+
+		</div>
+	</div>
+</div>
+<!-- Make an Offer Popup / End -->
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3>Loading User's Details</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<script src="{% static 'js/for/single-freelancer-profile.js' %}"></script>
+
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+
+// Snackbar for "place a bid" button
+$('#snackbar-place-bid').click(function() { 
+	Snackbar.show({
+		text: 'Your bid has been placed!',
+	}); 
+}); 
+
+
+// Snackbar for copy to clipboard button
+$('.copy-url-button').click(function() { 
+	Snackbar.show({
+		text: 'Copied to clipboard!',
+	}); 
+}); 
+</script>
+
+</body>
+</html>

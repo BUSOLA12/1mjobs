@@ -1,0 +1,65 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <h4 class="mb-4">Create Pricing Plan</h4>
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Plan Name</label>
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">User Type</label>
+                        {{ form.user_type }}
+                        {{ form.user_type.errors }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                        {{ form.description.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Monthly Price</label>
+                        {{ form.monthly_price }}
+                        {{ form.monthly_price.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Yearly Price</label>
+                        {{ form.yearly_price }}
+                        {{ form.yearly_price.errors }}
+                    </div>
+
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Create Plan
+                    </button>
+
+                    <a href="{% url 'admin-pricing-list' %}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

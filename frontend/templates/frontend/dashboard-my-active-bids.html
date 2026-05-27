@@ -1,0 +1,513 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+			
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>My Active Bids</h3>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="#">Home</a></li>
+						<li><a href="#">Dashboard</a></li>
+						<li>My Active Bids</li>
+					</ul>
+				</nav>
+			</div>
+	
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-material-outline-gavel"></i> Bids List</h3>
+						</div>
+
+						<div class="content">
+							<ul class="dashboard-box-list bidding">
+								
+								
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Edit Bid Popup
+================================================== -->
+<div id="small-dialog" class="dialog-with-tabs">
+
+	<!--Tabs -->
+	<div class="sign-in-form">
+
+		<ul class="popup-tabs-nav">
+			<li><a href="#tab">Edit Bid</a></li>
+		</ul>
+
+		<div class="popup-tabs-container">
+
+			<!-- Tab -->
+			<div class="popup-tab-content" id="tab">
+						
+					<!-- Bidding -->
+					<div class="bidding-widget">
+						<!-- Headline -->
+						<span class="bidding-detail">Set your <strong>minimal hourly rate</strong></span>
+
+						<!-- Price Slider -->
+						<div class="bidding-value">$<span id="biddingVal"></span></div>
+						<input class="bidding-slider update" type="text" value="" data-slider-handle="custom" data-slider-currency="$" data-slider-min="10" data-slider-max="5000" data-slider-value="40" data-slider-step="10" data-slider-tooltip="hide" />
+						
+						<!-- Headline -->
+						<span class="bidding-detail margin-top-30">Set your <strong>delivery time</strong></span>
+
+						<!-- Fields -->
+						<div class="bidding-fields">
+							<div class="bidding-field">
+								<!-- Quantity Buttons -->
+								<div class="qtyButtons with-border">
+									<div class="qtyDec"></div>
+									<input type="text" name="qtyInput" class="numberTime" id="day-number" value="2">
+									<div class="qtyInc"></div>
+								</div>
+							</div>
+							<div class="bidding-field">
+								<select class="selectpicker default with-border update">
+									<option selected>Days</option>
+									<option>Hours</option>
+								</select>
+							</div>
+						</div>
+				</div>
+				
+				<!-- Button -->
+				<button class="button full-width button-sliding-icon ripple-effect" type="submit">Save Changes <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Edit Bid Popup / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<style>
+.popup-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0,0,0,0.5);
+	display: none;
+	z-index: 1000;
+}
+.popup-overlay.show {
+	display: block;
+}
+
+#small-dialog {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%) scale(0.9);
+	background: #fff;
+	padding: 20px;
+	border-radius: 10px;
+	z-index: 1001;
+	display: none;
+	transition: all 0.2s ease-in-out;
+}
+#small-dialog.show {
+	display: block;
+	transform: translate(-50%, -50%) scale(1) !important;
+}
+</style>
+
+<script>
+
+function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+	showLoading("Loading Biddings");
+	const bids_res = await fetchProtected(`/api/tasks/getbidding/`, {
+		method: "GET",
+	});
+bids_data = await bids_res.json();
+
+console.log("Bidding data:", bids_data);
+let bids_list = document.querySelector(".dashboard-box-list.bidding");
+bids_list.innerHTML = "";
+
+for (const bids of bids_data) {
+	//const task_res = await fetchProtected(`/api/tasks/detail/${bids.task}/`);
+	//const taskData = await task_res.json();
+	//console.log("Task Data:", taskData);
+	let project_type = "";
+	let statusClass = "";
+	if (bids.task_info.project_type === "hourly") {
+		project_type = "Hourly Rate";
+	} else {
+		project_type = "Fixed Price";
+	}
+	if (["pending", "rejected"].includes(bids.status)) {
+		statusClass = "red";
+	} else {
+		statusClass = "green";
+	}
+	bid_item_html = `
+		<li>
+		<!-- Job Listing -->
+		<div class="job-listing width-adjustment">
+
+			<!-- Job Listing Details -->
+			<div class="job-listing-details">
+
+				<!-- Details -->
+				<div class="job-listing-description">
+					<h3 class="job-listing-title"><a href="#">${bids.task_info.project_name}</a></h3>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Task Details -->
+		<ul class="dashboard-task-info">
+			<li><strong>$${bids.bid_amount}</strong><span>${project_type}</span></li>
+			<li><strong>${bids.delivery_time}</strong><span>Delivery Time</span></li>
+			<li><span class="dashboard-status-button ${statusClass}">${bids.status}</span></li>
+
+		</ul>
+
+		<!-- Buttons -->
+		<div class="buttons-to-right always-visible">
+			<button class="edit-bid-btn button dark ripple-effect ico" data-bidsid="${bids.id}" title="Edit Bid">
+						<i class="icon-feather-edit"></i>
+			</button>
+			<button class="cancel-bid-btn button red ripple-effect ico" data-bidid="${bids.id}" title="Cancel Bid">
+				<i class="icon-feather-trash-2"></i>
+			</button>
+		</div>
+	</li> 
+	`;
+	bids_list.insertAdjacentHTML('beforeend', bid_item_html);
+	
+}
+hideLoading();
+
+// Handle delete button clicks
+bids_list.addEventListener("click", async (e) => {
+	const bidDeleteButton = e.target.closest(".cancel-bid-btn");
+	
+	if (!bidDeleteButton) {
+		
+		return;
+	}
+
+	
+	e.preventDefault();
+	
+	if (confirm("Are you sure you want to delete?")) {
+		showLoading("Deleting Bidding");
+		try {
+			const bidItem = bidDeleteButton.closest("li");
+			const bidId = bidDeleteButton.dataset.bidid;
+			
+			const delRes = await fetchProtected(`/api/tasks/deletebidding/${bidId}/`, {
+				method: "DELETE"
+			});
+			const delData = await delRes.json();
+			console.log("Bid delete Response:", delData);
+			hideLoading();
+
+			bidItem.remove();
+
+			Snackbar.show({
+				text: 'Bidding deleted successfully!',
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#09f859ff'
+			});
+		} catch (error) {
+			console.error("Error deleting bid:", error);
+			Snackbar.show({
+				text: 'Error deleting bid. Please try again.',
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#e74c3c'
+			});
+		}
+	}
+});
+
+const popup = document.getElementById("small-dialog");
+	const overlay = document.createElement("div");
+	overlay.classList.add("popup-overlay");
+	document.body.appendChild(overlay);
+
+	// When edit bid is clicked
+	bids_list.addEventListener("click", (e) => {
+		const editBtn = e.target.closest(".edit-bid-btn");
+		if (!editBtn) return;
+
+		const bids_id = editBtn.dataset.bidsid;
+		console.log("Editing bid:", bids_id);
+
+		for (const bidss of bids_data) {
+			if (bidss.id === parseInt(bids_id)) {
+				$('.bidding-slider.update').slider('setValue', parseFloat(bidss.bid_amount));
+				$('#biddingVal').text(bidss.bid_amount);
+				
+				// Update number input
+				const deliveryParts = bidss.delivery_time.split(" ");
+				document.querySelector("#day-number").value = parseInt(deliveryParts[0]);
+				
+				// Update select picker
+				$('.selectpicker.update').val(deliveryParts[1]);
+				$('.selectpicker.update').selectpicker('refresh');
+            
+            break;
+			}
+		}
+
+		popup.classList.add("show");
+		overlay.classList.add("show");
+
+		// When the user clicks "Save Changes"
+		const saveBtn = popup.querySelector("button[type='submit']");
+		saveBtn.onclick = async () => {
+			showLoading("Updating Bidding");
+			const minimal_rate = document.querySelector(".bidding-slider.update").value;
+			const day_number = document.querySelector("#day-number").value;
+			const time_type = document.querySelector(".selectpicker.update").value;
+			const delivery_time = `${day_number} ${time_type}`;
+
+			const BidData = {
+				"bid_amount": minimal_rate,
+				"delivery_time": delivery_time
+			};
+
+			console.log("Bid Update Data:", BidData);
+
+			const updateBidRes = await fetchProtected(`/api/tasks/updatebidding/${bids_id}/`, {
+				method: "PUT",
+				body: JSON.stringify(BidData),
+			});
+			if (!updateBidRes.ok) {
+				const updateBidData = await updateBidRes.json();
+				hideLoading();
+				Snackbar.show({
+				text: `${updateBidData.message}`,
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#f80909ff'
+			});
+				
+			}
+			
+			const updateBidData = await updateBidRes.json();
+			hideLoading();
+			console.log("Update Bid Data:", updateBidData);
+
+			// close popup
+			popup.classList.remove("show");
+			overlay.classList.remove("show");
+			location.reload();
+		};
+	});
+
+	// Close popup when overlay is clicked
+	overlay.addEventListener("click", () => {
+		popup.classList.remove("show");
+		overlay.classList.remove("show");
+	});
+
+});
+</script>
+
+<script>
+//in other pages 
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages 
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+		
+</script>
+</body>
+</html>

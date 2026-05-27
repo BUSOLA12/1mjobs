@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hireo Notification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Inline-safe minimal styling */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f5f7fa;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+    }
+    .email-wrapper {
+      width: 100%;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
+    .email-content {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    .email-header {
+      background: #07c407ff;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .email-header img {
+      max-height: 40px;
+      margin-bottom: 10px;
+    }
+    .email-body {
+      padding: 30px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .email-body h2 {
+      color: #007bff;
+    }
+    .email-footer {
+      background: #f0f0f0;
+      padding: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #777;
+    }
+    .button {
+      display: inline-block;
+      background: #007bff;
+      color: white !important;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      
+      <div class="email-header">
+        <img src="https://yourdomain.com/static/images/logo.png" alt="Hireo Logo">
+        <h1>Web79 Notification</h1>
+      </div>
+
+      <div class="email-body">
+        <h2>Message from {{ name }},</h2>
+
+        <p><strong>Subject:</strong> {{ subject }}</p>
+        <p><strong>Message:</strong> {{ body }}</p>
+
+        <p><strong>Contact Email:</strong> {{ email }}</p>
+
+        <p style="margin-top: 30px;">If you didn’t expect this message, you can safely ignore it.</p>
+      </div>
+
+      <div class="email-footer">
+        &copy; 2025 Web79. All rights reserved.  
+        <br>
+        <a href="https://yourdomain.com">Visit our website</a>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-header">Transaction Info</div>
+    <div class="card-body">
+        <p><strong>Reference:</strong> {{ transaction.reference }}</p>
+        <p><strong>Status:</strong> {{ transaction.status }}</p>
+        <p><strong>Amount:</strong> {{ transaction.amount }}</p>
+        <p><strong>Date:</strong> {{ transaction.created_at }}</p>
+
+        <a href="{{ transaction.authorization_url }}" target="_blank"
+           class="btn btn-outline-secondary btn-sm">
+            Open Authorization URL
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Linked Order</div>
+    <div class="card-body">
+        <p><strong>Order ID:</strong> {{ transaction.order.id }}</p>
+        <p><strong>Order Status:</strong>
+            <span class="badge bg-info">{{ transaction.order.status }}</span>
+        </p>
+
+        <a href="{% url 'admin_order_detail' transaction.order.id %}"
+           class="btn btn-outline-primary btn-sm">
+            View Order
+        </a>
+    </div>
+</div>
+{% endblock %}

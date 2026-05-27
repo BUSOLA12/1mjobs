@@ -1,0 +1,405 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+
+</head>
+<body>
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+<header id="header-container" class="fullwidth">
+
+	<!-- Header -->
+{% include 'frontend/partials/headers.html' %}
+	<!-- Header / End -->
+
+</header>
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+<!-- Titlebar
+================================================== -->
+<div id="titlebar" class="gradient">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+
+				<h2>Contact</h2>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="#">Home</a></li>
+						<li><a href="#">Pages</a></li>
+						<li>Contact</li>
+					</ul>
+				</nav>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Content
+================================================== -->
+
+
+<!-- Container -->
+<div class="container">
+	<div class="row">
+
+		<div class="col-xl-12">
+			<div class="contact-location-info margin-bottom-50">
+				<div class="contact-address">
+					<ul>
+						<li class="contact-address-headline">Our Office</li>
+						<li class="the-contact-address"></li>
+						<li class="the-contact-phone"></li>
+						<li><a href="#" class="the-contact-mail"></a></li>
+						<li>
+							<div class="freelancer-socials">
+								<ul>
+									<li>
+											<a href="#" title="Facebook" class="facebook-link" data-tippy-placement="bottom" data-tippy-theme="light">
+												<i class="icon-brand-facebook-f"></i>
+											</a>
+										</li>
+										<li>
+											<a href="#" title="Twitter" class="x-link" data-tippy-placement="bottom" data-tippy-theme="light">
+												<i class="icon-brand-twitter"></i>
+											</a>
+										</li>
+										<li>
+											<a href="#" title="Google" class="google-link" target="_blank" data-tippy-placement="bottom" data-tippy-theme="light">
+												<i class="icon-brand-google"></i>
+											</a>
+										</li>
+										<li>
+											<a href="#" title="LinkedIn" class="linkedin-link" data-tippy-placement="bottom" data-tippy-theme="light">
+												<i class="icon-brand-linkedin-in"></i>
+											</a>
+										</li>
+									<li><a href="#" title="GitHub" class="github-link" data-tippy-placement="top"><i class="icon-brand-github"></i></a></li>
+								
+								</ul>
+							</div>
+						</li>
+					</ul>
+
+				</div>
+				<div id="single-job-map-container">
+					<div id="singleListingMap" data-latitude="37.777842" data-longitude="-122.391805" data-map-icon="im im-icon-Hamburger"></div>
+					<a href="#" id="streetView">Street View</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-xl-8 col-lg-8 offset-xl-2 offset-lg-2">
+
+			<section id="contact" class="margin-bottom-60">
+	<h3 class="headline margin-top-15 margin-bottom-35">Any questions? Feel free to contact us!</h3>
+
+	<form name="contactform" id="contactform" autocomplete="on" method="post">
+		<div class="row">
+			<div class="col-md-6">
+				<div class="input-with-icon-left">
+					<input class="with-border" name="name" type="text" id="name" placeholder="Your Name" required>
+					<i class="icon-material-outline-account-circle"></i>
+				</div>
+			</div>
+
+			<div class="col-md-6">
+				<div class="input-with-icon-left">
+					<input class="with-border" name="email" type="email" id="email" placeholder="Email Address" required>
+					<i class="icon-material-outline-email"></i>
+				</div>
+			</div>
+		</div>
+
+		<div class="input-with-icon-left">
+			<input class="with-border" name="subject" type="text" id="subject" placeholder="Subject" required>
+			<i class="icon-material-outline-assignment"></i>
+		</div>
+
+		<div>
+			<textarea class="with-border" name="comments" cols="40" rows="5" id="comments" placeholder="Message" spellcheck="true" required></textarea>
+		</div>
+
+		<div class="col-xl-12">
+			<button type="submit" class="button ripple-effect big margin-top-30" id="submit">
+				<i class="icon-material-outline-email"></i> Submit Message
+			</button>
+		</div>
+	</form>
+</section>
+
+		</div>
+
+	</div>
+</div>
+<!-- Container / End -->
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<!-- Add this HTML right after your opening <body> tag -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Jobs</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+<!-- Google API & Maps -->
+<!-- Geting an API Key: https://developers.google.com/maps/documentation/javascript/get-api-key -->
+<script src="../../maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places"></script>
+<script src="js/infobox.min.js"></script>
+<script src="js/markerclusterer.js"></script>
+<script src="js/maps.js"></script>
+
+
+
+<script>
+
+function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+	showLoading("Loading");
+	// Fetch contact information
+	try {
+		const contact_res = await fetch("/api/admins/contact/");
+		const contact_data = await contact_res.json();
+		const contact = contact_data[0];
+		
+		console.log("Contact Info:", contact);
+		
+		// Update contact links
+		document.querySelector(".facebook-link").href = contact.facebook || "#";
+		document.querySelector(".google-link").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
+		document.querySelector(".linkedin-link").href = contact.linkedin || "#";
+		document.querySelector(".x-link").href = contact.x || "#";
+		document.querySelector(".the-contact-address").textContent = contact.address || "";
+		document.querySelector(".the-contact-phone").textContent = contact.phone || "";
+		document.querySelector(".the-contact-mail").textContent = contact.gmail || "";
+		document.querySelector(".the-contact-mail").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
+		document.querySelector(".github-link").href = contact.github || "#";
+		hideLoading();
+	} catch (error) {
+		console.error("Error fetching contact info:", error);
+	}
+
+	// Handle form submission
+	const contactForm = document.querySelector("#contactform");
+	const submitButton = document.querySelector("#submit");
+
+	contactForm.addEventListener("submit", async (e) => {
+		e.preventDefault(); // Prevent default form submission
+		showLoading("Submitting");
+		// Get form values
+		const name = document.querySelector("#name").value.trim();
+		const email = document.querySelector("#email").value.trim();
+		const subject = document.querySelector("#subject").value.trim();
+		const message = document.querySelector("#comments").value.trim();
+
+		console.log("Form values:", { name, email, subject, message });
+
+		// Validate fields (HTML5 validation should handle this, but double-check)
+		if (!name || !email || !subject || !message) {
+			Snackbar.show({
+				text: 'Please fill in all fields',
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#e74c3c'
+			});
+			return;
+		}
+
+		const data = {
+			name: name,
+			email: email,
+			subject: subject,
+			message: message,
+		};
+
+		console.log("Sending data:", JSON.stringify(data));
+
+		// Disable button and show loading state
+		submitButton.disabled = true;
+		submitButton.innerHTML = '<i class="icon-material-outline-hourglass-empty"></i> Sending...';
+
+		try {
+			const mcRes = await fetch("/api/admins/message-contact/", {
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(data),
+			});
+			
+			console.log("Response status:", mcRes.status);
+			const mcData = await mcRes.json();
+			console.log("Response data:", mcData);
+			
+			if (mcRes.ok) {
+				// Success
+				hideLoading();
+				Snackbar.show({
+					text: 'Message sent successfully! We\'ll get back to you soon.',
+					pos: 'bottom-center',
+					showAction: false,
+					duration: 5000,
+					textColor: '#fff',
+					backgroundColor: '#66bb6a'
+				});
+				
+				// Clear form
+				contactForm.reset();
+			} else {
+				// Error from server
+				console.error("Server error:", mcData);
+				const errorMsg = mcData.detail || mcData.error || 'Failed to send message. Please try again.';
+				Snackbar.show({
+					text: errorMsg,
+					pos: 'bottom-center',
+					showAction: false,
+					duration: 5000,
+					textColor: '#fff',
+					backgroundColor: '#e74c3c'
+				});
+			}
+		} catch (error) {
+			console.error("Network error:", error);
+			Snackbar.show({
+				text: 'Network error. Please check your connection and try again.',
+				pos: 'bottom-center',
+				showAction: false,
+				duration: 5000,
+				textColor: '#fff',
+				backgroundColor: '#e74c3c'
+			});
+		} finally {
+			// Re-enable button
+			submitButton.disabled = false;
+			submitButton.innerHTML = '<i class="icon-material-outline-email"></i> Submit Message';
+		}
+	});
+});
+</script>
+</body>
+</html>

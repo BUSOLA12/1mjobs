@@ -1,0 +1,128 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <h4 class="mb-4">Pricing Plans</h4>
+
+
+    <!-- Filter & Search -->
+    <form method="get" class="row g-2 mb-3">
+
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control" placeholder="Search email or name"
+                value="{{ search }}">
+        </div>
+
+        <div class="col-md-2">
+            <select name="role" class="form-select">
+                <option value="">All Roles</option>
+                <option value="freelancer" {% if role == "freelancer" %}selected{% endif %}>Freelancer</option>
+                <option value="employer" {% if role == "employer" %}selected{% endif %}>Employer</option>
+                <option value="admin" {% if role == "admin" %}selected{% endif %}>Admin</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="account_status" class="form-select">
+                <option value="">Account Status</option>
+                <option value="pending_verification" {% if account_status == "pending_verification" %}selected{% endif %}>
+                    Pending</option>
+                <option value="active" {% if account_status == "active" %}selected{% endif %}>Active</option>
+                <option value="suspended" {% if account_status == "suspended" %}selected{% endif %}>Suspended</option>
+                <option value="banned" {% if account_status == "banned" %}selected{% endif %}>Banned</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <select name="verified" class="form-select">
+                <option value="">Verified?</option>
+                <option value="true" {% if verified == "true" %}selected{% endif %}>Yes</option>
+                <option value="false" {% if verified == "false" %}selected{% endif %}>No</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Apply</button>
+        </div>
+
+    </form>
+
+
+    <!-- Table -->
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Verified</th>
+                <th>Active</th>
+                <th>Joined</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for user in page_obj %}
+            <tr>
+                <td>{{ user.email }}</td>
+
+                <td>
+                    <span class="badge bg-info text-dark">
+                        {{ user.role|title }}
+                    </span>
+                </td>
+
+                <td>
+                    {% if user.account_status == "active" %}
+                    <span class="badge bg-success">Active</span>
+                    {% elif user.account_status == "pending_verification" %}
+                    <span class="badge bg-warning">Pending</span>
+                    {% elif user.account_status == "suspended" %}
+                    <span class="badge bg-secondary">Suspended</span>
+                    {% else %}
+                    <span class="badge bg-danger">Banned</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if user.user_profile.verified %}
+                    <span class="badge bg-success">Yes</span>
+                    {% else %}
+                    <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    {% if user.is_active %}
+                    <span class="badge bg-success">Yes</span>
+                    {% else %}
+                    <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+
+                <td>
+                    <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center text-muted">
+                    No users found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    {% include "adminpanel/pagination.html" %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends "adminpanel/base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+
+  <!-- Row 1 -->
+  <div class="row g-3">
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Jobs Posted (24H)</h6>
+          <h3>{{ jobs_24h }}</h3>
+          <small>7D: {{ jobs_7d }} | 30D: {{ jobs_30d }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Tasks Posted (24H)</h6>
+          <h3>{{ tasks_24h }}</h3>
+          <small>7D: {{ tasks_7d }} | 30D: {{ tasks_30d }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>New Users (24H)</h6>
+          <h3>{{ users_24h }}</h3>
+          <small>7D: {{ users_7d }} | 30D: {{ users_30d }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Revenue Today</h6>
+          <h3>₦{{ revenue_today }}</h3>
+          <small>30D: ₦{{ revenue_30d }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="row g-3 mt-2">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <h6>Avg Applications / Job</h6>
+          <h3>{{ avg_applications_per_job }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <h6>Avg Bids / Task</h6>
+          <h3>{{ avg_bids_per_task }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <h6>Active Subscriptions</h6>
+          <h3>{{ active_subscriptions }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <h6>Payment Success Rate</h6>
+          <h3>{{ payment_success_rate }}%</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="row g-3 mt-2">
+    <div class="col-md-3">
+      <div class="card text-danger">
+        <div class="card-body">
+          <h6>Pending Jobs</h6>
+          <h3>{{ pending_jobs }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-warning">
+        <div class="card-body">
+          <h6>Pending Applications</h6>
+          <h3>{{ pending_applications }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-warning">
+        <div class="card-body">
+          <h6>Pending Bids</h6>
+          <h3>{{ pending_bids }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card text-danger">
+        <div class="card-body">
+          <h6>Suspended Users</h6>
+          <h3>{{ suspended_users }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-4">
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Jobs Posted (Last 7 Days)</h6>
+          <canvas id="jobsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Tasks Posted (Last 7 Days)</h6>
+          <canvas id="tasksChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>User Signups (Last 7 Days)</h6>
+          <canvas id="usersChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6>Revenue (Last 7 Days)</h6>
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+
+<script>
+  function renderLineChart(canvasId, labels, data) {
+    new Chart(document.getElementById(canvasId), {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  renderLineChart("jobsChart", jobsChartData.labels, jobsChartData.data);
+  renderLineChart("tasksChart", tasksChartData.labels, tasksChartData.data);
+  renderLineChart("usersChart", usersChartData.labels, usersChartData.data);
+  renderLineChart("revenueChart", revenueChartData.labels, revenueChartData.data);
+</script>
+
+{% endblock %}

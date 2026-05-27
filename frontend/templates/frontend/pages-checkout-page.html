@@ -1,0 +1,227 @@
+﻿{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+<body style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<!-- Header Container / End -->
+
+<!-- Titlebar
+================================================== -->
+<div id="titlebar" class="gradient">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+
+				<h2>Checkout</h2>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'pricing_plans' %}">Pricing Plans</a></li>
+						<li>Checkout</li>
+					</ul>
+				</nav>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- Content
+================================================== -->
+<!-- Container -->
+<div class="container">
+	<div class="row">
+		<div class="col-xl-8 col-lg-8 content-right-offset">
+			
+
+			<!-- Hedaline -->
+			<h3>Billing Cycle</h3>
+
+			<!-- Billing Cycle Radios  -->
+			<div class="billing-cycle margin-top-25">
+
+				<!-- Radio -->
+				<div class="radio">
+					<input id="radio-5" name="radio-payment-type" type="radio" checked="">
+					<label for="radio-5">
+						<span class="radio-label"></span>
+						Billed Monthly
+						<span class="billing-cycle-details">
+							<span class="regular-price-tag">$49.00 / month</span>
+						</span>
+					</label>
+				</div>
+			
+				<!-- Radio -->
+				<div class="radio">
+					<input id="radio-6" name="radio-payment-type" type="radio">
+					<label for="radio-6"><span class="radio-label"></span>
+						Billed Yearly
+						<span class="billing-cycle-details">
+							<span class="discounted-price-tag">$529.20 / year</span>
+							<span class="regular-price-tag line-through">588.00 / year</span>
+						</span>
+					</label>
+				</div>
+			</div>
+			
+
+			<!-- Hedline -->
+			<h3 class="margin-top-50">Payment Method</h3>
+
+			<!-- Payment Methods Accordion -->
+			<div class="payment margin-top-30">
+
+				<div class="payment-tab payment-tab-active">
+					<div class="payment-tab-trigger">
+						<input checked="" id="paypal" name="cardType" type="radio" value="paypal">
+						<label for="paypal">PayPal</label>
+						<img class="payment-logo paypal" src="../../ApBxkXU.png" alt="">
+					</div>
+
+					<div class="payment-tab-content">
+						<p>You will be redirected to PayPal to complete payment.</p>
+					</div>
+				</div>
+
+
+				<div class="payment-tab">
+					<div class="payment-tab-trigger">
+						<input type="radio" name="cardType" id="creditCart" value="creditCard">
+						<label for="creditCart">Credit / Debit Card</label>
+						<img class="payment-logo" src="../../IHEKLgm.png" alt="">
+					</div>
+
+					<div class="payment-tab-content">
+						<div class="row payment-form-row">
+
+							<div class="col-md-6">
+								<div class="card-label">
+									<input id="nameOnCard" name="nameOnCard" required="" type="text" placeholder="Cardholder Name">
+								</div>
+							</div>
+
+							<div class="col-md-6">
+								<div class="card-label">
+									<input id="cardNumber" name="cardNumber" placeholder="Credit Card Number" required="" type="text">
+								</div>
+							</div>
+
+							<div class="col-md-4">
+								<div class="card-label">
+									<input id="expiryDate" placeholder="Expiry Month" required="" type="text">
+								</div>
+							</div>
+
+							<div class="col-md-4">
+								<div class="card-label">
+									<label for="expiryDate">Expiry Year</label>
+									<input id="expirynDate" placeholder="Expiry Year" required="" type="text">
+								</div>
+							</div>
+
+							<div class="col-md-4">
+								<div class="card-label">
+									<input id="cvv" required="" type="text" placeholder="CVV">
+								</div>
+							</div>
+
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Payment Methods Accordion / End -->
+		
+			<a href="#" id="confirm-plan-btn" class="button big ripple-effect margin-top-40 margin-bottom-65">Proceed Payment</a>
+		</div>
+
+
+		<!-- Summary -->
+		<div class="col-xl-4 col-lg-4 margin-top-0 margin-bottom-60">
+			
+			<!-- Summary -->
+			<div class="boxed-widget summary margin-top-0">
+				<div class="boxed-widget-headline">
+					<h3>Summary</h3>
+				</div>
+				<div class="boxed-widget-inner">
+					<ul>
+						<li>Standard Plan <span>$49.00</span></li>
+						<li>VAT (20%) <span>$9.80</span></li>
+						<li class="total-costs">Final Price <span>$58.80</span></li>
+					</ul>
+				</div>
+			</div>
+			<!-- Summary / End -->
+
+			<!-- Checkbox -->
+			<div class="checkbox margin-top-30">
+				<input type="checkbox" id="two-step">
+				<label for="two-step"><span class="checkbox-icon"></span>  I agree to the <a href="#">Terms and Conditions</a> and the <a href="#">Automatic Renewal Terms</a></label>
+			</div>
+		</div>
+
+	</div>
+</div>
+<!-- Container / End -->
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="{% static 'js/for/pages-checkout-page.js' %}"></script>
+
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() { 
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	}); 
+}); 
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,243 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+	<script src="{% static 'js/protectpage.js' %}"></script>
+
+
+</head>
+
+<body class="gray" style="display:none" id="mainBody">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+		<!-- Header Container / End -->
+
+
+		<!-- Dashboard Container -->
+		<div class="dashboard-container">
+
+			<!-- Dashboard Sidebar
+	================================================== -->
+			{% include 'frontend/partials/Dashboard_sidebar.html' %}
+			<!-- Dashboard Sidebar / End -->
+
+
+			<!-- Dashboard Content
+	================================================== -->
+			<div class="dashboard-content-container" data-simplebar>
+				<div class="dashboard-content-inner">
+
+					<!-- Dashboard Headline -->
+					<div class="dashboard-headline">
+						<h3>Bookmarks</h3>
+
+						<!-- Breadcrumbs -->
+						<nav id="breadcrumbs" class="dark">
+							<ul>
+								<li><a href="{% url 'index' %}">Home</a></li>
+								<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+								<li>Payments</li>
+							</ul>
+						</nav>
+					</div>
+					<div class="container">
+						<div class="row">
+
+							<!-- LEFT: Payment Details -->
+							<div class="col-xl-8 col-lg-8">
+
+								<!-- Job Info -->
+								<div class="dashboard-box margin-bottom-30">
+									<div class="headline">
+										<h3 id="job-title">Loading...</h3>
+									</div>
+									<div class="content padding-20">
+										<p><strong>Freelancer:</strong> <span id="freelancer-name"></span></p>
+										<p><strong>Amount:</strong> ₦<span id="payment-amount"></span></p>
+
+										<div class="margin-top-10">
+											<span id="payment-status-badge" class="dashboard-status-button gray">
+												Loading...
+											</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Timeline -->
+								<div class="dashboard-box">
+									<div class="headline">
+										<h3>Payment Timeline</h3>
+									</div>
+									<div class="content padding-20">
+
+										<ul class="dashboard-box-list" id="payment-timeline">
+											<!-- Timeline injected -->
+										</ul>
+
+									</div>
+								</div>
+
+							</div>
+
+							<!-- RIGHT: Actions + Breakdown -->
+							<div class="col-xl-4 col-lg-4">
+
+								<!-- Payment Breakdown -->
+								<div class="dashboard-box margin-bottom-30">
+									<div class="headline">
+										<h3>Payment Breakdown</h3>
+									</div>
+									<div class="content padding-20">
+										<p>Job Amount: ₦<span id="breakdown-amount"></span></p>
+										<p>Platform Fee: ₦<span id="platform-fee">0</span></p>
+										<hr>
+										<h4>Total: ₦<span id="total-amount"></span></h4>
+									</div>
+								</div>
+
+								<!-- Actions -->
+								<div class="dashboard-box">
+									<div class="headline">
+										<h3>Actions</h3>
+									</div>
+									<div class="content padding-20" id="action-container">
+										<!-- Dynamic buttons -->
+									</div>
+								</div>
+
+							</div>
+
+							<!-- Notification -->
+							<div class="col-xl-12">
+								<div id="payment-notification-area"></div>
+							</div>
+
+						</div>
+					</div>
+
+					<!-- Footer -->
+					<div class="dashboard-footer-spacer"></div>
+					{% include 'frontend/partials/small_footer.html' %}
+					<!-- Footer / End -->
+
+				</div>
+			</div>
+			<!-- Dashboard Content / End -->
+
+		</div>
+		<!-- Dashboard Container / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+	<!-- <div class="loading-overlay active" id="loadingOverlay">
+		<div class="loading-popup">
+			<div class="loading-spinner"></div>
+			<h3>Loading Payments</h3>
+			<p>Please wait...</p>
+		</div>
+	</div> -->
+
+
+
+
+	<!-- Apply for a job popup
+================================================== -->
+	<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
+
+		<!--Tabs -->
+		<div class="sign-in-form">
+
+			<ul class="popup-tabs-nav">
+				<li><a href="#tab">Add Note</a></li>
+			</ul>
+
+			<div class="popup-tabs-container">
+
+				<!-- Tab -->
+				<div class="popup-tab-content" id="tab">
+
+					<!-- Welcome Text -->
+					<div class="welcome-text">
+						<h3>Do Not Forget 😎</h3>
+					</div>
+
+					<!-- Form -->
+					<form method="post" id="add-note">
+
+						<select class="selectpicker with-border default margin-bottom-20" data-size="7"
+							title="Priority">
+							<option>Low Priority</option>
+							<option>Medium Priority</option>
+							<option>High Priority</option>
+						</select>
+
+						<textarea name="textarea" cols="10" placeholder="Note" class="with-border"></textarea>
+
+					</form>
+
+					<!-- Button -->
+					<button class="button full-width button-sliding-icon ripple-effect" type="submit"
+						form="add-note">Add Note <i class="icon-material-outline-arrow-right-alt"></i></button>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+	<!-- Apply for a job popup / End -->
+
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+	<script src="{% static 'js/for/employer-payments-details.js' %}"></script>
+
+	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+	<script>
+		// Snackbar for user status switcher
+		$('#snackbar-user-status label').click(function () {
+			Snackbar.show({
+				text: 'Your status has been changed!',
+				pos: 'bottom-center',
+				showAction: false,
+				actionText: "Dismiss",
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#383838'
+			});
+		}); 
+	</script>
+	<script>
+		//in other pages 
+		showForRole("freelancer", "my-active-bid-element");
+
+		//in other pages 
+		empList = ["jobs-id", "tasks-id"];
+		for (const id of empList) {
+			showForRole("employer", id);
+		}
+
+	</script>
+
+</body>
+
+</html>

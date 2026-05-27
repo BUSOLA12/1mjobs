@@ -1,0 +1,157 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Task Detail</h4>
+        <div>
+            <a href="{% url 'admin_task_list' %}" class="btn btn-outline-secondary btn-sm">
+                ← Back to Tasks
+            </a>
+            <a href="{% url 'admin_task_bidding_list' task.id %}" class="btn btn-outline-primary btn-sm">
+                View Biddings
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Info -->
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-body">
+
+                    <h5>{{ task.project_name }}</h5>
+                    <p class="text-muted">
+                        Created {{ task.created_at|date:"M d, Y" }}
+                    </p>
+
+                    <p>{{ task.description }}</p>
+
+                    <hr>
+
+                    <strong>Skills Required</strong>
+                    <div class="mt-2">
+                        {% for skill in task.skills_list %}
+                        <span class="badge bg-info text-dark me-1">{{ skill }}</span>
+                        {% empty %}
+                        <span class="text-muted">No skills listed</span>
+                        {% endfor %}
+                    </div>
+
+                    <hr>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Category:</strong> {{ task.category }}</p>
+                            <p><strong>Location:</strong> {{ task.location|default:"Remote" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Budget:</strong> {{ task.budget_range }}</p>
+                            <p><strong>Project Type:</strong> {{ task.project_type }}</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h6>{{ task.views_count }}</h6>
+                            <small class="text-muted">Views</small>
+                        </div>
+                        <div class="col">
+                            <h6>{{ task.applications_count }}</h6>
+                            <small class="text-muted">Applications</small>
+                        </div>
+                        <div class="col">
+                            <h6>
+                                {% if task.is_featured %}
+                                Yes
+                                {% else %}
+                                No
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">Featured</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+
+            <!-- Owner -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6>Task Owner</h6>
+                    <p>
+                        {{ task.user.get_full_name }}<br>
+                        <small class="text-muted">{{ task.user.email }}</small>
+                    </p>
+                    <a href="{% url 'admin_user_detail' task.user.id %}" class="btn btn-sm btn-outline-primary">
+                        View User
+                    </a>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6>Status</h6>
+
+                    <form method="post" action="{% url 'admin_update_task_status' task.id %}">
+                        {% csrf_token %}
+                        <select name="status" class="form-select mb-2">
+                            {% for key, label in status_choices %}
+                            <option value="{{ key }}" {% if task.status==key %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-primary btn-sm w-100">
+                            Update Status
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card">
+                <div class="card-body">
+                    <h6>Admin Actions</h6>
+
+                    <form method="post" action="{% url 'admin_toggle_task_feature' task.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-warning btn-sm w-100 mb-2">
+                            {% if task.is_featured %}
+                            Remove Featured
+                            {% else %}
+                            Feature Task
+                            {% endif %}
+                        </button>
+                    </form>
+
+                    <form method="post" action="{% url 'admin_delete_task' task.id %}"
+                        onsubmit="return confirm('Are you sure you want to delete this task?');">
+                        {% csrf_token %}
+                        <button class="btn btn-danger btn-sm w-100">
+                            Delete Task
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

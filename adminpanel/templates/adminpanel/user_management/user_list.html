@@ -1,0 +1,107 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="dashboard-headline d-flex flex-column flex-md-row
+            justify-content-between align-items-start align-items-md-center gap-3">
+    <h3 class="col-md-6 mb-0 text-center text-md-start">
+        User Management
+    </h3>
+
+    <div class="col-md-6">
+        <form method="get" class="d-flex flex-column flex-md-row gap-2">
+            <input type="text" name="search" placeholder="Search users..." class="form-control" value="{{ search }}">
+
+            <select name="role" class="form-select">
+                <option value="">All Roles</option>
+                {% for role in roles %}
+                <option value="{{ role }}">
+                    {{ role|title }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <button class="button ripple-effect">Filter</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="basic-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Verified</th>
+                    <th>Date Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    <td>{{ user.role }}</td>
+                    <td>
+                        {% if user.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.user_profile.verified %}
+                        <span class="badge bg-info">Verified</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+                    <td>
+                        <a href="{% url 'user-detail' user.pk %}" class="btn btn-sm btn-primary">View</a>
+                        <a href="{% url 'user-edit' user.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">No users found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="pagination-container margin-top-40 margin-bottom-0">
+    <nav class="pagination" id="pagination1">
+        <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a href="?page={{ page_obj.previous_page_number }}" class="ripple-effect"><i
+                        class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            <li><a href="?page={{ num }}"
+                    class="ripple-effect {% if num == page_obj.number %}current-page{% endif %}">{{ num }}</a></li>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a href="?page={{ page_obj.next_page_number }}" class="ripple-effect"><i
+                        class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+<!-- Pagination / End -->
+
+
+{% endblock %}

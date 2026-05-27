@@ -1,0 +1,544 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+
+
+
+</head>
+
+<body>
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+
+
+
+		<!-- Intro Banner
+================================================== -->
+		<!-- add class "disable-gradient" to enable consistent background overlay -->
+		<div class="intro-banner" data-background-image="{% static 'images/herojob.png' %}">
+
+
+			<!-- Background Video -->
+
+			<div class="container">
+
+				<!-- Intro Headline -->
+				<div class="row">
+					<div class="col-md-12">
+						<div class="banner-headline">
+							<h3>
+								<strong>A million talents. A million opportunities. One platform.</strong>
+								<br>
+								<span>Thousands of small businesses use <strong class="color">1mjobs</strong> to turn
+									their ideas into reality.</span>
+							</h3>
+						</div>
+					</div>
+				</div>
+
+				<!-- Search Bar -->
+				<div class="row">
+					<div class="col-md-12">
+						<div class="intro-banner-search-form margin-top-95">
+
+							<!-- Search Field -->
+							<div class="intro-search-field with-autocomplete">
+								<label for="autocomplete-input" class="field-title ripple-effect">Location</label>
+								<div class="input-with-icon">
+									<input id="autocomplete-input" type="text" placeholder="City, country, or Remote"
+										autocomplete="off">
+									<i class="icon-material-outline-location-on"></i>
+								</div>
+							</div>
+
+							<!-- Search Field -->
+							<div class="intro-search-field">
+								<label for="intro-keywords" class="field-title ripple-effect">What job you want?</label>
+								<input id="intro-keywords" type="text" placeholder="Job Title or Keywords">
+							</div>
+
+							<!-- Button -->
+							<div class="intro-search-button">
+								<button class="button ripple-effect" id="search-box-btn">Search</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Stats -->
+				<div class="row">
+					<div class="col-md-12">
+						<ul class="intro-stats margin-top-45 hide-under-992px">
+							<li>
+								<strong class="counter">1,586</strong>
+								<span>Jobs Posted</span>
+							</li>
+							<li>
+								<strong class="counter">3,543</strong>
+								<span>Tasks Posted</span>
+							</li>
+							<li>
+								<strong class="counter">1,232</strong>
+								<span>Freelancers</span>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+
+		<!-- Content
+================================================== -->
+		<!-- Category Boxes -->
+		<div class="section margin-top-65">
+			<div class="container">
+				<div class="row">
+					<div class="col-xl-12">
+
+						<div class="section-headline centered margin-bottom-15">
+							<h3>Popular Job Categories</h3>
+						</div>
+
+						<!-- Category Boxes Container -->
+						<div class="categories-container" id="categories-container">
+							<!-- Empty State -->
+							<div class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
+								<i class="icon-line-awesome-folder-open-o" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
+								<h4 style="margin:0 0 8px; color:#666;">No Job Categories Yet</h4>
+								<p style="margin:0; color:#999;">Categories will appear here once available.</p>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Category Boxes / End -->
+
+
+		<!-- Features Jobs -->
+		<div class="section gray margin-top-45 padding-top-65 padding-bottom-75">
+			<div class="container">
+				<div class="row">
+					<div class="col-xl-12">
+
+						<!-- Section Headline -->
+						<div class="section-headline margin-top-0 margin-bottom-35">
+							<h3>Featured Jobs</h3>
+							<a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}"
+								class="headline-link">Browse All Jobs</a>
+						</div>
+
+						<!-- Jobs Container -->
+						<div class="listings-container compact-list-layout margin-top-35">
+
+							<!-- Job Listing -->
+
+							<!-- Empty State -->
+							<div class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
+								<i class="icon-line-awesome-briefcase" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
+								<h4 style="margin:0 0 8px; color:#666;">No Featured Jobs Yet</h4>
+								<p style="margin:0; color:#999;">Check back soon — featured jobs will be listed here.</p>
+							</div>
+
+						</div>
+						<!-- Jobs Container / End -->
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Featured Jobs / End -->
+
+
+		<!-- Features Cities -->
+		<div class="section margin-top-65 margin-bottom-65">
+			<div class="container">
+				<div class="row" id="featured-cities-container">
+
+					<!-- Section Headline -->
+					<div class="col-xl-12">
+						<div class="section-headline centered margin-top-0 margin-bottom-45">
+							<h3>Featured Cities</h3>
+						</div>
+					</div>
+
+					<!-- Empty State -->
+					<div class="col-xl-12 js-empty-state empty-state-message" style="text-align:center; padding:30px 20px;">
+						<i class="icon-line-awesome-map-marker" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
+						<h4 style="margin:0 0 8px; color:#666;">No Featured Cities Yet</h4>
+						<p style="margin:0; color:#999;">City highlights will appear here once jobs are posted.</p>
+					</div>
+
+				</div>
+			</div>
+		</div>
+		<!-- Features Cities / End -->
+
+
+		<!-- Highest Rated Freelancers -->
+		<div class="section gray padding-top-65 padding-bottom-70 full-width-carousel-fix">
+			<div class="container">
+				<div class="row">
+
+					<div class="col-xl-12">
+						<!-- Section Headline -->
+						<div class="section-headline margin-top-0 margin-bottom-25">
+							<h3>Highest Rated Freelancers</h3>
+							<a href="{% url 'freelancers' %}" class="headline-link">Browse All Freelancers</a>
+						</div>
+					</div>
+
+					<div class="col-xl-12">
+						<div class="default-slick-carousel freelancers-container freelancers-grid-layout">
+							<!-- Freelancers go here-->
+						</div>
+						<!-- Empty State -->
+						<div id="freelancers-empty-state" class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
+							<i class="icon-line-awesome-users" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
+							<h4 style="margin:0 0 8px; color:#666;">No Freelancers Yet</h4>
+							<p style="margin:0; color:#999;">Top-rated freelancers will appear here once they join.</p>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+		<!-- Highest Rated Freelancers / End-->
+
+
+		<!-- Membership Plans -->
+		<div class="section padding-top-60 padding-bottom-75">
+			<div class="container">
+				<div class="row">
+
+					<div class="col-xl-12">
+						<!-- Section Headline -->
+						<div class="section-headline centered margin-top-0 margin-bottom-35">
+							<h3>Membership Plans</h3>
+						</div>
+					</div>
+
+
+					<div class="col-xl-12">
+
+						<!-- Billing Cycle  -->
+						<div class="billing-cycle-radios margin-bottom-70">
+							<div class="radio billed-monthly-radio">
+								<input id="radio-5" name="radio-payment-type" type="radio" checked>
+								<label for="radio-5"><span class="radio-label"></span> Billed Monthly</label>
+							</div>
+
+							<div class="radio billed-yearly-radio">
+								<input id="radio-6" name="radio-payment-type" type="radio">
+								<label for="radio-6"><span class="radio-label"></span> Billed Yearly <span
+										class="small-label">Save 10%</span></label>
+							</div>
+						</div>
+
+						<!-- Pricing Plans Container -->
+
+						<!-- Empty State -->
+						<div id="membership-plans-empty-state" class="js-empty-state empty-state-message" style="display:none; width:100%; text-align:center; padding:50px 20px;">
+							<i class="icon-line-awesome-tags" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
+							<h4 style="margin:0 0 8px; color:#666;">No Membership Plans Yet</h4>
+							<p style="margin:0; color:#999;">Plans will be available here soon.</p>
+						</div>
+
+						<!-- Pricing Plans Container Freelancers -->
+						<div class="pricing-plans-container margin-top-50 margin-bottom-50" id="freelancer">
+							<!-- Plan -->
+							<div class="pricing-plan">
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+
+							<!-- Plan -->
+							<div class="pricing-plan recommended">
+								<div class="recommended-badge">Recommended</div>
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+
+							<!-- Plan -->
+							<div class="pricing-plan">
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+						</div>
+
+						{% comment %}
+						<!-- Tabs Container -->
+						<style>
+							.price-plan-tab {
+								list-style: none;
+								padding: 0;
+								margin: 0;
+							}
+
+							.price-plan-tab li a {
+								display: flex;
+								align-items: center;
+								justify-content: space-between;
+								/* pushes arrow to the end */
+								gap: 10px;
+								text-decoration: none;
+							}
+
+							/* Hide all arrows by default */
+							ul.price-plan-tab li .tab-arrow {
+								display: none;
+							}
+
+							/* Show arrow only on active tab */
+							ul.price-plan-tab li.active .tab-arrow {
+								display: inline-block;
+							}
+						</style>
+						<div class="tabs">
+							<div class="tabs-header">
+								<ul class="price-plan-tab">
+									<li class="active">
+										<a href="#tab-1" data-tab-id="1">
+											<span class="tab-text">Freelancers</span>
+											<span class="tab-arrow">
+												<i class="icon-feather-arrow-left"></i>
+											</span>
+										</a>
+									</li>
+
+									<li>
+										<a href="#tab-2" data-tab-id="2">
+											<span class="tab-text">Employers</span>
+											<span class="tab-arrow">
+												<i class="icon-feather-arrow-left"></i>
+											</span>
+										</a>
+									</li>
+								</ul>
+								<div class="tab-hover"></div>
+								<nav class="tabs-nav">
+									<span class="tab-prev"><i
+											class="icon-material-outline-keyboard-arrow-left"></i></span>
+									<span class="tab-next"><i
+											class="icon-material-outline-keyboard-arrow-right"></i></span>
+								</nav>
+							</div>
+
+							<script>
+								document.addEventListener("DOMContentLoaded", function () {
+									const tabItems = document.querySelectorAll(".price-plan-tab li");
+
+									tabItems.forEach(item => {
+										item.addEventListener("click", function () {
+											// Remove active class from all tabs
+											tabItems.forEach(tab => tab.classList.remove("active"));
+
+											// Add active class to the clicked tab
+											this.classList.add("active");
+										});
+									});
+								});
+
+							</script>
+							<!-- Tab Content -->
+							<div class="tabs-content">
+								<div class="tab active" data-tab-id="1">
+									<!-- Pricing Plans Container Freelancers -->
+									<div class="pricing-plans-container margin-top-50 margin-bottom-50" id="freelancer">
+										<!-- Plan -->
+										<div class="pricing-plan">
+											<h3></h3>
+											<p class="margin-top-10"></p>
+											<div class="pricing-plan-label billed-monthly-label"></div>
+											<div class="pricing-plan-label billed-yearly-label"></div>
+											<div class="pricing-plan-features">
+												<strong></strong>
+												<ul>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+
+										<!-- Plan -->
+										<div class="pricing-plan recommended">
+											<div class="recommended-badge">Recommended</div>
+											<h3></h3>
+											<p class="margin-top-10"></p>
+											<div class="pricing-plan-label billed-monthly-label"></div>
+											<div class="pricing-plan-label billed-yearly-label"></div>
+											<div class="pricing-plan-features">
+												<strong></strong>
+												<ul>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+
+										<!-- Plan -->
+										<div class="pricing-plan">
+											<h3></h3>
+											<p class="margin-top-10"></p>
+											<div class="pricing-plan-label billed-monthly-label"></div>
+											<div class="pricing-plan-label billed-yearly-label"></div>
+											<div class="pricing-plan-features">
+												<strong></strong>
+												<ul>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+									</div>
+								</div>
+								<div class="tab" data-tab-id="2">
+									<!-- Pricing Plans Container Employers -->
+									<div class="pricing-plans-container margin-top-50 margin-buttom-50" id="employer">
+										<!-- Plan -->
+										<div class="pricing-plan">
+											<h3></h3>
+											<p class="margin-top-10"></p>
+											<div class="pricing-plan-label billed-monthly-label"></div>
+											<div class="pricing-plan-label billed-yearly-label"></div>
+											<div class="pricing-plan-features">
+												<strong></strong>
+												<ul>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+
+										<!-- Plan -->
+										<div class="pricing-plan recommended">
+											<div class="recommended-badge">Recommended</div>
+											<h3>Standard Plan</h3>
+											<p class="margin-top-10">One time fee for one listing or task highlighted in
+												search results.</p>
+											<div class="pricing-plan-label billed-monthly-label"><strong>$49</strong>/
+												monthly</div>
+											<div class="pricing-plan-label billed-yearly-label"><strong>$529</strong>/
+												yearly</div>
+											<div class="pricing-plan-features">
+												<strong>Features of Standard Plan</strong>
+												<ul>
+													<li>5 Listings</li>
+													<li>60 Days Visibility</li>
+													<li>Highlighted in Search Results</li>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+
+										<!-- Plan -->
+										<div class="pricing-plan">
+											<h3></h3>
+											<p class="margin-top-10"></p>
+											<div class="pricing-plan-label billed-monthly-label"></div>
+											<div class="pricing-plan-label billed-yearly-label"></div>
+											<div class="pricing-plan-features">
+												<strong></strong>
+												<ul>
+												</ul>
+											</div>
+											<a href class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						{% endcomment %}
+						<!-- Tabs Container / End -->
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+		<!-- Membership Plans / End-->
+
+		<!-- Footer
+================================================== -->
+		{% include 'frontend/partials/footer.html' %}
+		<!-- Footer / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+
+
+	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+	<script>
+		// Snackbar for user status switcher
+		$('#snackbar-user-status label').click(function () {
+			Snackbar.show({
+				text: 'Your status has been changed!',
+				pos: 'bottom-center',
+				showAction: false,
+				actionText: "Dismiss",
+				duration: 3000,
+				textColor: '#fff',
+				backgroundColor: '#383838'
+			});
+		}); 
+	</script>
+
+
+	<script src="{% static 'js/for/index.js' %}"></script>
+	<script src="{% static 'js/for/pages-pricing-plans.js' %}"></script>
+
+	<script>
+		footerIds = ["for-emp"];
+		for (const id of footerIds) {
+			showForRole("employer", id);
+		}
+	</script>
+
+</body>
+
+</html>

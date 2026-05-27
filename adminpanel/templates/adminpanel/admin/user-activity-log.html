@@ -1,0 +1,47 @@
+{% extends "adminpanel/base.html" %}
+
+{% block title %}Admin Action Logs{% endblock %}
+
+{% block content %}
+<div class="dashboard-headline">
+    <h3>Admin Action Logs</h3>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="GET">
+            <input type="text" name="q" class="form-control"
+                   value="{{ search_query }}" placeholder="Search logs...">
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.user.email }}</td>
+            <td>{{ log.action }}</td>
+            <td>
+                {% for k, v in log.metadata.items %}<li class="text-muted">{{ k }}: {{ v|safe }}</li><br>{% endfor %}
+            </td>
+            <td>{{ log.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">No logs found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

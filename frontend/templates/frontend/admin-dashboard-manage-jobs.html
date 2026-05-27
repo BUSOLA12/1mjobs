@@ -1,0 +1,315 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<title>Hireo - Admin Job Approvals</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+<style>
+    /* 1. Status Switcher Styling */
+    .status-switcher {
+        display: flex;
+        background: #f2f2f2;
+        padding: 5px;
+        border-radius: 4px;
+        margin-left: auto; /* Pushes to right */
+    }
+
+    .switcher-btn {
+        background: transparent;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #888;
+        cursor: pointer;
+        transition: 0.3s;
+        outline: none;
+    }
+
+    .switcher-btn:hover { color: #333; }
+    
+    .switcher-btn.active {
+        background-color: #2a41e8;
+        color: #fff;
+        box-shadow: 0 2px 5px rgba(42, 65, 232, 0.25);
+    }
+
+    /* 2. Action Button Colors */
+    .btn-approve { background-color: #28b661 !important; color: white !important; }
+    .btn-reject { background-color: #e03b3b !important; color: white !important; }
+    .btn-email { background-color: #333 !important; color: white !important; }
+
+    /* 3. Loader */
+    .loader-container {
+        text-align: center;
+        padding: 50px;
+        display: none;
+    }
+</style>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<div id="wrapper">
+
+<header id="header-container" class="fullwidth dashboard-header not-sticky">
+    {% include 'frontend/partials/headers.html' %}
+</header>
+<div class="clearfix"></div>
+
+<div class="dashboard-container">
+
+    {% include 'frontend/partials/admin-dashboard-sidebar.html' %}
+
+    <div class="dashboard-content-container" data-simplebar>
+        <div class="dashboard-content-inner" >
+            
+            <div class="dashboard-headline">
+                <h3>Manage Jobs</h3>
+                
+                <nav id="breadcrumbs" class="dark">
+                    <ul>
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">Admin</a></li>
+                        <li>Manage Jobs</li>
+                    </ul>
+                </nav>
+            </div>
+    
+            <div class="row">
+
+                <div class="col-xl-12">
+                    <div class="dashboard-box margin-top-0">
+
+                        <div class="headline">
+                            <h3><i class="icon-material-outline-assignment"></i> Job Requests</h3>
+                            
+                            <div class="status-switcher">
+                                <button class="switcher-btn active" onclick="switchTab('pending')">Pending</button>
+                                <button class="switcher-btn" onclick="switchTab('approved')">Approved</button>
+                                <button class="switcher-btn" onclick="switchTab('rejected')">Rejected</button>
+                            </div>
+                        </div>
+
+                        <div class="content">
+                            <div id="loader" class="loader-container">
+                                <i class="icon-line-awesome-spinner fa-spin" style="font-size: 30px; color: #666;"></i>
+                                <p>Loading Jobs...</p>
+                            </div>
+
+                            <ul class="dashboard-box-list" id="job-listings-container">
+                                </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="dashboard-footer-spacer"></div>
+            <div class="small-footer margin-top-15">
+                <div class="small-footer-copyrights">
+                    © 2023 <strong>Hireo</strong>. All Rights Reserved.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/jquery-migrate-3.1.0.min.js"></script>
+<script src="js/mmenu.min.js"></script>
+<script src="js/tippy.all.min.js"></script>
+<script src="js/simplebar.min.js"></script>
+<script src="js/bootstrap-slider.min.js"></script>
+<script src="js/bootstrap-select.min.js"></script>
+<script src="js/snackbar.js"></script>
+<script src="js/clipboard.min.js"></script>
+<script src="js/counterup.min.js"></script>
+<script src="js/magnific-popup.min.js"></script>
+<script src="js/slick.min.js"></script>
+<script src="js/custom.js"></script>
+
+<script>
+    // 1. CONFIGURATION
+    // ----------------------------
+    const API_BASE_URL = '/api/jobs/'; // Replace with your actual Django API URL
+    const container = document.getElementById('job-listings-container');
+    const loader = document.getElementById('loader');
+    let currentStatus = 'pending';
+
+    // 2. INITIALIZATION
+    // ----------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load pending jobs by default on page load
+        fetchJobs('pending');
+    });
+
+    // 3. SWITCH TAB LOGIC
+    // ----------------------------
+    function switchTab(status) {
+        currentStatus = status;
+
+        // Visual: Update active class on buttons
+        document.querySelectorAll('.switcher-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.innerText.toLowerCase() === status) {
+                btn.classList.add('active');
+            }
+        });
+
+        // Data: Fetch new data
+        fetchJobs(status);
+    }
+
+    // 4. FETCH DATA FROM DJANGO API
+    // ----------------------------
+    function fetchJobs(status) {
+        // UI: Show loader, clear container
+        container.innerHTML = '';
+        loader.style.display = 'block';
+
+        // Request: Fetch JSON from your API
+        // Assuming your API handles: /api/jobs/?status=pending
+        fetch(`${API_BASE_URL}?status=${status}`)
+            .then(response => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.json(); 
+            })
+            .then(data => {
+                // UI: Hide loader
+                loader.style.display = 'none';
+                
+                // Logic: Generate HTML for each job
+                if (data.length === 0) {
+                    container.innerHTML = '<li style="text-align:center; padding:20px;">No jobs found.</li>';
+                } else {
+                    data.forEach(job => {
+                        const htmlItem = createJobHTML(job, status);
+                        container.insertAdjacentHTML('beforeend', htmlItem);
+                    });
+                    
+                    // Re-initialize tooltips (Tippy.js) for the new elements
+                    if(typeof tippy !== 'undefined') tippy('[data-tippy-placement]'); 
+                }
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                console.error('Error fetching jobs:', error);
+                container.innerHTML = '<li style="color:red; text-align:center; padding:20px;">Error loading jobs.</li>';
+            });
+    }
+
+    // 5. HTML GENERATOR (THE STRUCTURE)
+    // ----------------------------
+    function createJobHTML(job, status) {
+        // Define buttons based on status
+        let actionButtons = '';
+
+        if (status === 'pending') {
+            // PENDING: Approve, Reject, Email
+            actionButtons = `
+                <a href="#" onclick="handleAction(${job.id}, 'approve')" class="button ripple-effect btn-approve" title="Approve" data-tippy-placement="top"><i class="icon-material-outline-check"></i> Approve</a>
+                <a href="#" onclick="handleAction(${job.id}, 'reject')" class="button ripple-effect btn-reject" title="Reject" data-tippy-placement="top"><i class="icon-feather-x"></i> Reject</a>
+                <a href="mailto:${job.email}" class="button ripple-effect btn-email" title="Send Email" data-tippy-placement="top"><i class="icon-feather-mail"></i></a>
+            `;
+        } 
+        else if (status === 'approved') {
+            // APPROVED: Reject (Undo approval), Email
+            actionButtons = `
+                <a href="#" onclick="handleAction(${job.id}, 'reject')" class="button ripple-effect btn-reject" title="Reject / Revoke" data-tippy-placement="top"><i class="icon-feather-x"></i> Reject</a>
+                <a href="mailto:${job.email}" class="button ripple-effect btn-email" title="Send Email" data-tippy-placement="top"><i class="icon-feather-mail"></i></a>
+            `;
+        } 
+        else if (status === 'rejected') {
+            // REJECTED: Approve (Undo rejection), Email
+            actionButtons = `
+                <a href="#" onclick="handleAction(${job.id}, 'approve')" class="button ripple-effect btn-approve" title="Re-Approve" data-tippy-placement="top"><i class="icon-material-outline-check"></i> Approve</a>
+                <a href="mailto:${job.email}" class="button ripple-effect btn-email" title="Send Email" data-tippy-placement="top"><i class="icon-feather-mail"></i></a>
+            `;
+        }
+
+        // Return the full HTML string for one <li>
+        return `
+            <li>
+                <div class="freelancer-overview manage-candidates">
+                    <div class="freelancer-overview-inner">
+
+                        <div class="freelancer-avatar">
+                            <a href="#"><img src="${job.company_logo || '/static/images/default-company.png'}" alt=""></a>
+                        </div>
+
+                        <div class="freelancer-name">
+                            <h4><a href="#">${job.title}</a></h4>
+                            
+                            <span class="freelancer-detail-item"><a href="#"><i class="icon-feather-user"></i> ${job.posted_by_name}</a></span>
+                            <span class="freelancer-detail-item"><i class="icon-feather-clock"></i> ${job.created_at}</span>
+
+                            <ul class="dashboard-task-info bid-info">
+                                <li><strong>$${job.salary_min} - $${job.salary_max}</strong><span>Salary</span></li>
+                                <li><strong>${job.job_type}</strong><span>Type</span></li>
+                            </ul>
+
+                            <div class="buttons-to-right always-visible margin-top-25 margin-bottom-0">
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        `;
+    }
+
+    // 6. HANDLE ACTIONS (Approve/Reject)
+    // ----------------------------
+    function handleAction(jobId, action) {
+        // Prevent default link behavior
+        event.preventDefault();
+
+        if(!confirm(`Are you sure you want to ${action} this job?`)) return;
+
+        // Perform API request to update status
+        fetch(`${API_BASE_URL}${jobId}/update_status/`, {
+            method: 'POST', // or PATCH
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Ensure you have a helper for CSRF
+            },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => {
+            if(response.ok) {
+                // Success: Reload the current tab to remove the item or update it
+                fetchJobs(currentStatus);
+                Snackbar.show({text: `Job ${action}d successfully!`});
+            }
+        });
+    }
+
+    // Helper to get Django CSRF Token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+</script>
+
+</body>
+</html>

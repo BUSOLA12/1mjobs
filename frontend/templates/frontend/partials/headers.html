@@ -1,0 +1,225 @@
+{% load static %}
+<header id="header-container" class="fullwidth">
+
+	<!-- Header -->
+	<div id="header">
+		<div class="container">
+
+			<!-- Left Side Content -->
+			<div class="left-side">
+
+				<!-- Logo -->
+				<div id="logo">
+					<a href="{% url 'index' %}"><img src="{% static 'images/1mjobs_logo3.png' %}" alt="" style="max-width: 200px; width: 100%; height: auto"></a>
+				</div>
+
+				<!-- Main Navigation -->
+				<nav id="navigation">
+					<ul id="responsive">
+
+						<li>
+							<a href="{% url 'index' %}">Home</a>
+						</li>
+
+						<li id="for-freelancer"><a >Find Work</a>
+							<ul class="dropdown-nav">
+								<li><a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}">Browse Jobs</a>
+									
+								</li>
+								<li><a href="{% url 'tasks_grid_layout_full_page' %}">Browse Tasks</a>
+								</li>
+							</ul>
+						</li>
+
+						<li  id="for-employer"><a href="{% url 'freelancers' %}">Find a Freelancer</a>
+							
+						</li>
+
+						<li>
+							<a href="{% url 'contact' %}">Contact</a>
+						</li>
+
+						<li>
+							<a href="{% url 'pricing_plans' %}">Pricing Plans</a>
+						</li>
+						
+						{% comment %}
+						<li><a href="">Dashboard</a>
+							<ul class="dropdown-nav">
+								<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+								<li><a href="{% url 'dashboard_settings' %}">Settings</a></li>
+							</ul>
+						</li>
+
+						<li><a href="">Pages</a>
+							<ul class="dropdown-nav">
+								<li><a href="">Open Street Map</a>
+									<ul class="dropdown-nav">
+										<li><a href="{% url 'jobs_list_layout_full_page_map_openstreetmap' %}">Full Page List + Map</a></li>
+										<li><a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}">Full Page Grid + Map</a></li>
+										<li><a href="{% url 'single_job_page_openstreetmap' %}">Job Page</a></li>
+										<li><a href="{% url 'single_company_profile_openstreetmap' %}">Company Profile</a></li>
+										<li><a href="{% url 'pages_contact_openstreetmap' %}">Contact</a></li>
+										<li><a href="{% url 'jobs_list_layout_1_openstreetmap' %}">Location Autocomplete</a></li>
+									</ul>
+								</li>
+								<li><a href="{% url 'pages_blog' %}">Blog</a></li>
+								<li><a href="{% url 'pages_pricing_plans' %}">Pricing Plans</a></li>
+								<li><a href="{% url 'pages_user_interface_elements' %}">User Interface Elements</a></li>
+								<li><a href="{% url 'pages_icons_cheatsheet' %}">Icons Cheatsheet</a></li>
+								<li><a href="{% url 'pages_login' %}">Login & Register</a></li>
+								<li><a href="{% url 'pages_404' %}">404 Page</a></li>
+								<li><a href="{% url 'pages_contact' %}">Contact</a></li>
+							</ul>
+						</li>
+						{% endcomment %}
+
+					</ul>
+				</nav>
+				<div class="clearfix"></div>
+			</div>
+			<!-- Left Side End -->
+			
+			<!-- Right Side Content / End -->
+			<div class="right-side" id="right-side-nav" style="display: none;">
+
+				<!--  User Notifications -->
+				<div class="header-widget hide-on-mobile">
+					
+					<!-- Notifications -->
+					<div class="header-notifications">
+
+						<!-- Trigger -->
+						<div class="header-notifications-trigger">
+							<a href=""><i class="icon-feather-bell"></i><span id="upper-notification-count">0</span></a>
+						</div>
+
+						<!-- Dropdown -->
+						<div class="header-notifications-dropdown">
+
+							<div class="header-notifications-headline">
+								<h4>Notifications</h4>
+								<button class="mark-as-read ripple-effect-dark upper-not" title="Mark all as read" data-tippy-placement="left">
+									<i class="icon-feather-check-square"></i>
+								</button>
+							</div>
+
+							<div class="header-notifications-content">
+								<div class="header-notifications-scroll" data-simplebar>
+									<ul class="upper-notification">
+										<!-- Notification -->
+
+										
+									</ul>
+								</div>
+							</div>
+
+						</div>
+
+					</div>
+					
+					<!-- Messages -->
+					<div class="header-notifications">
+						<div class="header-notifications-trigger">
+							<a href=""><i class="icon-feather-mail"></i><span id="notification-count">0</span></a>
+						</div>
+
+						<!-- Dropdown -->
+						<div class="header-notifications-dropdown">
+
+							<div class="header-notifications-headline">
+								<h4>Messages</h4>
+								<button class="mark-as-read ripple-effect-dark" title="Mark all as read" data-tippy-placement="left">
+									<i class="icon-feather-check-square"></i>
+								</button>
+							</div>
+
+							<div class="header-notifications-content">
+								<div class="header-notifications-scroll" data-simplebar>
+									<ul class="message-box-list">
+										<!-- Notification -->
+										
+									</ul>
+								</div>
+							</div>
+
+							<a href="{% url 'dashboard_messages' %}" class="header-notifications-button ripple-effect button-sliding-icon">View All Messages<i class="icon-material-outline-arrow-right-alt"></i></a>
+						</div>
+					</div>
+
+				</div>
+				<!--  User Notifications / End -->
+
+				<!-- User Menu -->
+				<div class="header-widget">
+
+					<!-- Messages -->
+					<div class="header-notifications user-menu">
+						<div class="header-notifications-trigger">
+							<a href=""><div class="user-avatar status-online"><img src="{% static 'images/user-avatar-placeholder.png' %}" alt=""></div></a>
+						</div>
+
+						<!-- Dropdown -->
+						<div class="header-notifications-dropdown">
+
+							<!-- User Status -->
+							<div class="user-status">
+
+								<!-- User Name / Avatar -->
+								<div class="user-details">
+									<div class="user-avatar status-online"><img src="{% static 'images/user-avatar-placeholder.png' %}" alt=""></div>
+									<div class="user-name">
+										 <span></span>
+									</div>
+								</div>
+								
+								<!-- User Status Switcher -->
+								<div class="status-switch" id="snackbar-user-status">
+									<label class="user-online">Online</label>
+									<label class="user-invisible">Invisible</label>
+									<!-- Status Indicator -->
+									<span class="status-indicator" aria-hidden="true"></span>
+								</div>	
+						</div>
+						
+						<ul class="user-menu-small-nav">
+							<li><a href="{% url 'dashboard' %}"><i class="icon-material-outline-dashboard"></i> Dashboard</a></li>
+							<li><a href="{% url 'dashboard_settings' %}"><i class="icon-material-outline-settings"></i> Settings</a></li>
+							<li><a href="/login" onclick="logout()"><i class="icon-material-outline-power-settings-new"></i> Logout</a></li>
+						</ul>
+
+						</div>
+					</div>
+
+				</div>
+				<!-- User Menu / End -->
+
+				<!-- Mobile Navigation Button -->
+				<span class="mmenu-trigger">
+					<button class="hamburger hamburger--collapse" type="button">
+						<span class="hamburger-box">
+							<span class="hamburger-inner"></span>
+						</span>
+					</button>
+				</span>
+
+			</div>
+			<!-- Right Side Content / End -->
+
+		</div>
+	</div>
+
+</header>
+<div class="clearfix"></div>
+
+<div class="page-error-container" id="page-error-container"></div>
+
+{% include 'frontend/partials/profile_check.html' %}
+
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		updateUserNavInfo();
+	});
+	
+</script>
