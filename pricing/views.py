@@ -1,4 +1,3 @@
-import requests
 from decimal import Decimal
 from django.conf import settings
 from django.utils import timezone
@@ -15,11 +14,9 @@ from users.utils import log_user_action
 from .models import Plan, Order, Subscription, Transaction
 from .serializers import PlanSerializer, OrderSerializer, SubscriptionSerializer
 from .helper import create_subscription_from_order
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 
 from .subscription_engine import get_active_subscription, get_remaining_for_feature
-from payments.services.payment_service import PaymentService
+from payments.services.africanmoney_service import AfricanMoneyService, AfricanMoneyError
 
 
 # -------------------------
@@ -29,10 +26,11 @@ class PlanListView(generics.ListAPIView):
     serializer_class = PlanSerializer
 
     def get_queryset(self):
+        qs = Plan.objects.filter(is_active=True)
         user_type = self.request.query_params.get("user_type")
         if user_type:
-            return Plan.objects.filter(user_type=user_type)
-        return Plan.objects.all()
+            qs = qs.filter(user_type=user_type)
+        return qs
 
 
 class PlanPriceView(APIView):
@@ -91,7 +89,7 @@ class OrderRetrieveUpdateView(generics.RetrieveUpdateAPIView):
 
 
 # -------------------------
-# CHECKOUT: Create Paystack Transaction
+# CHECKOUT: Create African Money Transaction
 # -------------------------
 class CheckoutOrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
@@ -106,7 +104,9 @@ class CheckoutOrderDetailView(generics.RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         order = self.get_object()
 
-        existing_tx = Transaction.objects.filter(order=order).first()
+        existing_tx = Transaction.objects.filter(
+            order=order, reference__startswith="AFM_"
+        ).first()
         if existing_tx:
             return Response({
                 "order_id": order.id,
@@ -119,36 +119,37 @@ class CheckoutOrderDetailView(generics.RetrieveAPIView):
         if getattr(settings, "VAT_ENABLED", False):
             amount += (amount * settings.VAT_RATE) / 100
 
-        headers = {
-            "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
-            "Content-Type": "application/json",
-        }
+        return self.checkout_with_africanmoney(request, order, amount)
 
-        reference = f"ORD_{order.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}"
+    def checkout_with_africanmoney(self, request, order, amount):
+        reference = f"AFM_{order.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}"
 
-        payload = {
-            "email": request.user.email,
-            "amount": int(amount * 100),
-            "reference": reference,
-            "callback_url": f"{settings.FRONTEND_URL}/order-confirmation/",
-        }
+        plan_name = order.plan_name_snapshot or (order.plan.name if order.plan else "Subscription")
 
-        response = requests.post(
-            "https://api.paystack.co/transaction/initialize",
-            headers=headers,
-            json=payload
-        )
+        # The order-confirmation page JS reads ?reference=... and POSTs it to
+        # /api/pricing/payment/confirmation/ for server-side verification.
+        success_url = f"{settings.FRONTEND_URL}order-confirmation/?reference={reference}"
+        failed_url = f"{settings.FRONTEND_URL}checkout/{order.id}/"
 
-        if response.status_code != 200:
-            raise APIException("Paystack initialization failed.")
+        try:
+            result = AfricanMoneyService.create_collection(
+                item_name=f"{plan_name} ({order.billing_cycle})",
+                amount=amount,
+                email=request.user.email,
+                phone="",
+                client_name=request.user.get_full_name,
+                success_url=success_url,
+                failed_url=failed_url,
+            )
+        except AfricanMoneyError as e:
+            raise APIException(f"African Money initialization failed: {e}")
 
-        data = response.json()["data"]
+        payment_url = result["payment_url"]
 
-        # Create Transaction instance
         tx = Transaction.objects.create(
             order=order,
             reference=reference,
-            authorization_url=data["authorization_url"],
+            authorization_url=payment_url,
             amount=order.amount,
             status="pending",
         )
@@ -158,49 +159,6 @@ class CheckoutOrderDetailView(generics.RetrieveAPIView):
             "payment_url": tx.authorization_url,
             "reference": tx.reference,
         })
-
-
-# -------------------------
-# PAYSTACK WEBHOOK
-# -------------------------
-@csrf_exempt
-def paystack_webhook(request):
-    import json
-
-    try:
-        payload = json.loads(request.body)
-    except:
-        return JsonResponse({"error": "Invalid payload"}, status=400)
-
-    event = payload.get("event")
-
-    if event == "charge.success":
-        data = payload.get("data", {})
-        reference = data.get("reference")
-
-        # check if reference start with PAY
-        if reference.startswith(PaymentService.prefix):
-            PaymentService.handle_successful_payment(reference)
-            return Response({"status": "success"})
-
-        try:
-            with db_transaction.atomic():
-                tx = Transaction.objects.select_related("order").get(reference=reference)
-
-                if tx.status != "success":
-                    tx.status = "success"
-                    tx.save()
-
-                    order = tx.order
-                    order.status = "paid"
-                    order.payment_reference = reference
-                    order.save()
-
-                    create_subscription_from_order(order.id)
-        except Transaction.DoesNotExist:
-            return JsonResponse({"error": "Transaction not found"}, status=404)
-
-    return JsonResponse({"status": "ok"}, status=200)
 
 
 # -------------------------
@@ -214,19 +172,41 @@ class PaymentConfirmationView(APIView):
         if not reference:
             return Response({"error": "Reference required"}, status=400)
 
-        # Verify with Paystack
-        verify_url = f"https://api.paystack.co/transaction/verify/{reference}"
-        headers = {"Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"}
-
-        resp = requests.get(verify_url, headers=headers).json()
-        if resp.get("data", {}).get("status") != "success":
-            return Response({"error": "Verification failed"}, status=400)
-
-        # Update database
         tx = get_object_or_404(Transaction, reference=reference)
 
         if tx.order.user != request.user:
             return Response({"error": "Not your transaction"}, status=403)
+
+        if not reference.startswith("AFM_"):
+            return Response({"error": "Unknown payment reference"}, status=400)
+
+        # Verify server-side with African Money before crediting. The
+        # collection id is the last path segment of the payment URL.
+        collection_id = tx.authorization_url.rstrip("/").split("/")[-1]
+        try:
+            data = AfricanMoneyService.verify_collection(collection_id)
+        except AfricanMoneyError as e:
+            return Response({"error": f"Verification failed: {e}"}, status=400)
+
+        if data.get("status") != "completed":
+            return Response(
+                {"error": "Payment not completed", "status": data.get("status")},
+                status=400,
+            )
+
+        # Guard against tampering: the paid amount/currency must match the
+        # VAT-inclusive charge we created the collection with.
+        expected = tx.order.amount
+        if getattr(settings, "VAT_ENABLED", False):
+            expected += (expected * settings.VAT_RATE) / 100
+        if int(data.get("amount") or 0) != int(expected):
+            return Response(
+                {"error": "Amount mismatch", "paid": data.get("amount"),
+                 "expected": int(expected)},
+                status=400,
+            )
+        if (data.get("currency") or "NGN") != "NGN":
+            return Response({"error": "Currency mismatch"}, status=400)
 
         with db_transaction.atomic():
             tx.status = "success"

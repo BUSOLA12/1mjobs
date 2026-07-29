@@ -74,7 +74,7 @@
 								<div class="col-xl-4">
 									<div class="submit-field">
 										<h5>Job Title</h5>
-										<input type="text" class="with-border" placeholder="Job Title">
+										<input type="text" class="with-border" placeholder="Job Title" maxlength="255">
 									</div>
 								</div>
 
@@ -82,11 +82,11 @@
 									<div class="submit-field">
 										<h5>Job Type</h5>
 										<select class="selectpicker with-border" data-size="7" title="Select Job Type">
-											<option>Full Time</option>
-											<option>Freelance</option>
-											<option>Part Time</option>
-											<option>Internship</option>
-											<option>Temporary</option>
+											<option value="full-time">Full Time</option>
+											<option value="freelance">Freelance</option>
+											<option value="part-time">Part Time</option>
+											<option value="internship">Internship</option>
+											<option value="temporary">Temporary</option>
 										</select>
 									</div>
 								</div>
@@ -140,11 +140,27 @@
 									<div class="submit-field">
 										<h5>City</h5>
 										<div class="input-with-icon">
-											<div id="autocomplete-container">
-												<input id="autocomplete-input" class="with-border city" type="text" placeholder="Type City">
+											<div id="autocomplete-container-city">
+												<input id="autocomplete-input-city" class="with-border city" type="text" placeholder="Type City">
 											</div>
 											<i class="icon-material-outline-location-on"></i>
 										</div>
+									</div>
+								</div>
+
+								<div class="col-xl-4">
+									<div class="submit-field">
+										<h5>Country</h5>
+										<select class="selectpicker with-border country" data-size="7" title="Select Country">
+										<option value="Nigeria">Nigeria</option>
+										<option value="Ghana">Ghana</option>
+										<option value="Kenya">Kenya</option>
+										<option value="South Africa">South Africa</option>
+										<option value="United States">United States</option>
+										<option value="United Kingdom">United Kingdom</option>
+										<option value="Canada">Canada</option>
+										<option value="Other">Other</option>
+										</select>
 									</div>
 								</div>
 
@@ -154,14 +170,14 @@
 										<div class="row">
 											<div class="col-xl-6">
 												<div class="input-with-icon">
-													<input class="with-border" type="text" placeholder="Min">
-													<i class="currency">USD</i>
+													<input class="with-border" type="number" placeholder="Min" min="0" step="0.01" max="99999999.99">
+													<i class="currency">NGN</i>
 												</div>
 											</div>
 											<div class="col-xl-6">
 												<div class="input-with-icon">
-													<input class="with-border" type="text" placeholder="Max">
-													<i class="currency">USD</i>
+													<input class="with-border" type="number" placeholder="Max" min="0" step="0.01" max="99999999.99">
+													<i class="currency">NGN</i>
 												</div>
 											</div>
 										</div>
@@ -171,7 +187,7 @@
 								<div class="col-xl-4">
 									<div class="submit-field">
 										<h5>Tags <span>(optional)</span>  <i class="help-icon" data-tippy-placement="right" title="Maximum of 10 tags"></i></h5>
-										<div class="keywords-container">
+										<div class="keywords-container" data-max-keywords="10" data-unique-keywords="true">
 											<div class="keyword-input-container">
 												<input type="text" class="keyword-input with-border" placeholder="e.g. job title, responsibilites">
 												<button class="keyword-input-button ripple-effect" type="button"><i class="icon-material-outline-add"></i></button>
@@ -203,10 +219,26 @@
 										<h5>Job Description</h5>
 										<textarea cols="30" rows="5" class="with-border"></textarea>
 										<div class="uploadButton margin-top-30">
-											<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload" multiple/="">
+											<input class="uploadButton-input" type="file" accept="image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" id="upload" multiple/="">
 											<label class="uploadButton-button ripple-effect" for="upload">Upload Files</label>
 											<span class="uploadButton-file-name">Images or documents that might be helpful in describing your job</span>
 										</div>
+										<ul class="staged-files-list" id="staged-files"></ul>
+									</div>
+								</div>
+
+								<!-- Feature this job (Employer Pro perk). Hidden unless the
+								     logged-in employer is Pro; the server also enforces the quota. -->
+								<div class="col-xl-12" id="feature-job-wrap" style="display:none;">
+									<div class="submit-field">
+										<label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+											<input type="checkbox" id="feature-job-checkbox">
+											<span>
+												<strong>Feature this job</strong>
+												<span class="pro-badge">PRO</span>
+												<span style="display:block;color:#888;font-size:13px;">Appears in the Featured Jobs section and at the top of listings. Uses one of your monthly featured slots.</span>
+											</span>
+										</label>
 									</div>
 								</div>
 
@@ -296,6 +328,48 @@
     margin: 0;
     color: #666;
     font-size: 14px;
+}
+
+/* Staged file list (before posting) */
+.staged-files-list {
+    list-style: none;
+    margin: 15px 0 0;
+    padding: 0;
+}
+.staged-files-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f4f5f7;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+.staged-files-list .staged-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+.staged-files-list .staged-file-size {
+    color: #888;
+    margin-left: 6px;
+    font-size: 13px;
+}
+.staged-files-list .remove-staged-file {
+    border: none;
+    background: transparent;
+    color: #e4202f;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+.staged-files-list .remove-staged-file:hover {
+    color: #b3121f;
 }
 </style>
 
@@ -428,7 +502,7 @@ $('#snackbar-user-status label').click(function() {
 
 <!-- Google API & Maps -->
 <!-- Geting an API Key: https://developers.google.com/maps/documentation/javascript/get-api-key -->
-<script src="../../maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places"></script>
+<script src="../../maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
 
 
 <script src="{% static 'js/for/post-a-job.js' %}"></script>

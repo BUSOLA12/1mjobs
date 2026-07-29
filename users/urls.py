@@ -5,6 +5,7 @@ urlpatterns = [
     path('me/', views.UserProfileView.as_view()),
     path('avatar/', views.UploadAvatarView.as_view()),
     path('status/', views.UserStatusToggleView.as_view()),
+    path('role/', views.UserRoleUpdateView.as_view(), name='user-role'),
     path('profiles/', views.ProfileListView.as_view(), name='profile-list'),
     path('profiles/<int:pk>/', views.ProfileDetailView.as_view(), name='profile-detail'),
     path('categories/', views.CategoryListView.as_view(), name='category-list'),
@@ -16,5 +17,9 @@ urlpatterns = [
     path("work-history/<int:pk>/", views.WorkHistoryDetailView.as_view(), name="work-history-detail"),
     path('currentuser/<int:pk>/', views.ProfileDetailView.as_view(), name='current-user'),
     path('currentuser/', views.CurrentUserAPIView.as_view(), name='current-user'),
+    path('profile/stats/', views.ProfileStatsView.as_view(), name='profile-stats'),
+    path('profile/viewers/', views.ProfileViewersView.as_view(), name='profile-viewers'),
+    path('employer/stats/', views.EmployerStatsView.as_view(), name='employer-stats'),
+    path('employer/analytics/', views.EmployerHiringAnalyticsView.as_view(), name='employer-analytics'),
 
 ]

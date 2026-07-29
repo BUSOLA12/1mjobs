@@ -71,7 +71,7 @@
 						<span class="radio-label"></span>
 						Billed Monthly
 						<span class="billing-cycle-details">
-							<span class="regular-price-tag">$49.00 / month</span>
+							<span class="regular-price-tag">₦49.00 / month</span>
 						</span>
 					</label>
 				</div>
@@ -82,8 +82,8 @@
 					<label for="radio-6"><span class="radio-label"></span>
 						Billed Yearly
 						<span class="billing-cycle-details">
-							<span class="discounted-price-tag">$529.20 / year</span>
-							<span class="regular-price-tag line-through">588.00 / year</span>
+							<span class="discounted-price-tag">₦529.20 / year</span>
+							<span class="regular-price-tag line-through">₦588.00 / year</span>
 						</span>
 					</label>
 				</div>
@@ -93,70 +93,23 @@
 			<!-- Hedline -->
 			<h3 class="margin-top-50">Payment Method</h3>
 
-			<!-- Payment Methods Accordion -->
+			<!-- Payment Method: single hosted-redirect gateway -->
 			<div class="payment margin-top-30">
 
 				<div class="payment-tab payment-tab-active">
 					<div class="payment-tab-trigger">
-						<input checked="" id="paypal" name="cardType" type="radio" value="paypal">
-						<label for="paypal">PayPal</label>
-						<img class="payment-logo paypal" src="../../ApBxkXU.png" alt="">
+						<input checked="" id="africanmoney" name="cardType" type="radio" value="africanmoney">
+						<label for="africanmoney">African Money</label>
 					</div>
 
-					<div class="payment-tab-content">
-						<p>You will be redirected to PayPal to complete payment.</p>
-					</div>
-				</div>
-
-
-				<div class="payment-tab">
-					<div class="payment-tab-trigger">
-						<input type="radio" name="cardType" id="creditCart" value="creditCard">
-						<label for="creditCart">Credit / Debit Card</label>
-						<img class="payment-logo" src="../../IHEKLgm.png" alt="">
-					</div>
-
-					<div class="payment-tab-content">
-						<div class="row payment-form-row">
-
-							<div class="col-md-6">
-								<div class="card-label">
-									<input id="nameOnCard" name="nameOnCard" required="" type="text" placeholder="Cardholder Name">
-								</div>
-							</div>
-
-							<div class="col-md-6">
-								<div class="card-label">
-									<input id="cardNumber" name="cardNumber" placeholder="Credit Card Number" required="" type="text">
-								</div>
-							</div>
-
-							<div class="col-md-4">
-								<div class="card-label">
-									<input id="expiryDate" placeholder="Expiry Month" required="" type="text">
-								</div>
-							</div>
-
-							<div class="col-md-4">
-								<div class="card-label">
-									<label for="expiryDate">Expiry Year</label>
-									<input id="expirynDate" placeholder="Expiry Year" required="" type="text">
-								</div>
-							</div>
-
-							<div class="col-md-4">
-								<div class="card-label">
-									<input id="cvv" required="" type="text" placeholder="CVV">
-								</div>
-							</div>
-
-						</div>
+					<div class="payment-tab-content" style="display:block;">
+						<p>You will be securely redirected to African Money to complete your payment. Your card details are entered on their secure page, we never see or store them.</p>
 					</div>
 				</div>
 
 			</div>
-			<!-- Payment Methods Accordion / End -->
-		
+			<!-- Payment Method / End -->
+
 			<a href="#" id="confirm-plan-btn" class="button big ripple-effect margin-top-40 margin-bottom-65">Proceed Payment</a>
 		</div>
 
@@ -171,9 +124,9 @@
 				</div>
 				<div class="boxed-widget-inner">
 					<ul>
-						<li>Standard Plan <span>$49.00</span></li>
-						<li>VAT (20%) <span>$9.80</span></li>
-						<li class="total-costs">Final Price <span>$58.80</span></li>
+						<li>Standard Plan <span>₦49.00</span></li>
+						<li>VAT (20%) <span>₦9.80</span></li>
+						<li class="total-costs">Final Price <span>₦58.80</span></li>
 					</ul>
 				</div>
 			</div>
@@ -182,7 +135,7 @@
 			<!-- Checkbox -->
 			<div class="checkbox margin-top-30">
 				<input type="checkbox" id="two-step">
-				<label for="two-step"><span class="checkbox-icon"></span>  I agree to the <a href="#">Terms and Conditions</a> and the <a href="#">Automatic Renewal Terms</a></label>
+				<label for="two-step"><span class="checkbox-icon"></span>  I agree to the <a href="#">Terms and Conditions</a></label>
 			</div>
 		</div>
 
@@ -197,6 +150,15 @@
 
 </div>
 <!-- Wrapper / End -->
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+	<div class="loading-popup">
+		<div class="loading-spinner"></div>
+		<h3>Redirecting to payment</h3>
+		<p id="my-pop-up">Please wait...</p>
+	</div>
+</div>
 
 <!-- Scripts
 ================================================== -->

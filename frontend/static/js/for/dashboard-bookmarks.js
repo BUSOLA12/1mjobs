@@ -66,6 +66,7 @@ async function getAllBookmarks() {
 
     // Render Bookmarked Tasks
     if (data.tasks.length !== 0) {
+      tasksContainer.innerHTML = ""; // Clear previous content
       data.tasks.forEach((task) => {
         const li = document.createElement("li");
         li.innerHTML = `
@@ -107,7 +108,7 @@ async function getAllBookmarks() {
             <div class="freelancer-overview-inner">
               <div class="freelancer-avatar">
                 <div class="verified-badge"></div>
-                <a href="/freelancer-profile/${user.profile_id}/"><img src="${user.avatar || 'https://picsum.photos/200'}" alt=""></a>
+                <a href="/freelancer-profile/${user.profile_id}/"><img src="${user.avatar || '/static/images/user-avatar-placeholder.png'}" alt="" onerror="this.onerror=null;this.src='/static/images/user-avatar-placeholder.png';"></a>
               </div>
               <div class="freelancer-name">
                 <h4><a href="/freelancer-profile/${user.profile_id}/">${user.full_name} <img class="flag" src="${user.country_flag || ""}" alt=""></a></h4>

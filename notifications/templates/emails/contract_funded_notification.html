@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Escrow Funded</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; background-color: #f5f7fa; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; }
+    .email-wrapper { width: 100%; padding: 20px; background-color: #f5f7fa; }
+    .email-content { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.05); overflow: hidden; }
+    .email-header { background: #07c407ff; color: #fff; padding: 20px; text-align: center; }
+    .email-header h1 { margin: 0; font-size: 20px; }
+    .email-body { padding: 30px; font-size: 15px; line-height: 1.6; }
+    .email-body h2 { color: #007bff; margin-top: 0; }
+    .details { background: #f9fafb; border: 1px solid #eee; border-radius: 8px; padding: 16px 20px; margin: 20px 0; }
+    .details p { margin: 6px 0; }
+    .email-footer { background: #f0f0f0; padding: 20px; text-align: center; font-size: 13px; color: #777; }
+    .button { display: inline-block; background: #007bff; color: #ffffff !important; text-decoration: none; padding: 10px 22px; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <div class="email-header">
+        <h1>One Million Jobs</h1>
+      </div>
+      <div class="email-body">
+        <h2>Escrow funded, you can start</h2>
+        <p>The employer has funded escrow for <strong>&ldquo;{{ job_title }}&rdquo;</strong>.
+           The money is held safely by the platform while you work.</p>
+
+        <div class="details">
+          <p><strong>Amount in escrow:</strong> NGN {{ amount }}</p>
+          <p><strong>Delivery time:</strong> {{ delivery_days }} day(s)</p>
+        </div>
+
+        {% if link %}
+        <p style="text-align: center;">
+          <a href="{{ link }}" class="button">Open contract</a>
+        </p>
+        {% endif %}
+
+        <p style="margin-top: 30px;">Open your contract to download any documents the employer attached and begin the work.</p>
+      </div>
+      <div class="email-footer">
+        &copy; 2026 One Million Jobs. All rights reserved.
+        <br>
+        <a href="{{ site_url }}">Visit our website</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

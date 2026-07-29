@@ -106,22 +106,20 @@ async function loadWorkHistory(url) {
 }
 
 
-async function loadUserReviews(userId) {
+const REVIEWS_PER_PAGE = 5;
+let allUserReviews = [];
+
+function renderReviewsPage(page) {
     const reviewsList = document.querySelector('#work-history-and-feedback-list');
-    reviewsList.innerHTML = '<li><p>Loading reviews...</p></li>'; // Clear any existing content
+    reviewsList.innerHTML = '';
 
-    try {
-        const reviews = await getReviewsReceived(userId);
+    const start = (page - 1) * REVIEWS_PER_PAGE;
+    const pageReviews = allUserReviews.slice(start, start + REVIEWS_PER_PAGE);
 
-        if (!reviews.length) {
-            reviewsList.innerHTML = `<li><p>No reviews found.</p></li>`;
-            return;
-        }
-
-        reviews.forEach(review => {
-            // Create a new list item element
-            const li = document.createElement('li');
-            li.innerHTML = `
+    pageReviews.forEach(review => {
+        // Create a new list item element
+        const li = document.createElement('li');
+        li.innerHTML = `
         <div class="boxed-list-item">
           <div class="item-content">
             <h4>${review.object_title} <span>Rated as ${review.role}</span></h4>
@@ -138,12 +136,81 @@ async function loadUserReviews(userId) {
           </div>
         </div>
       `;
-            reviewsList.appendChild(li);
-        });
+        reviewsList.appendChild(li);
+    });
 
-        // Optionally initialize star ratings if your template uses JS for them
-        $('.star-rating').empty();
-        starRating('.star-rating');
+    // Optionally initialize star ratings if your template uses JS for them
+    $('.star-rating').empty();
+    starRating('.star-rating');
+
+    renderReviewsPagination(page);
+}
+
+function renderReviewsPagination(currentPage) {
+    const container = document.getElementById('reviews-pagination-container');
+    const ul = document.getElementById('reviews-pagination');
+    if (!container || !ul) return;
+
+    const totalPages = Math.ceil(allUserReviews.length / REVIEWS_PER_PAGE);
+
+    // Hide the pagination entirely when everything fits on a single page
+    // (this also covers the empty / "No reviews found." case).
+    if (totalPages <= 1) {
+        container.style.display = 'none';
+        ul.innerHTML = '';
+        return;
+    }
+
+    ul.innerHTML = '';
+    container.style.display = '';
+
+    // Prev arrow
+    if (currentPage > 1) {
+        const prev = document.createElement('li');
+        prev.className = 'pagination-arrow';
+        prev.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a>`;
+        prev.addEventListener('click', e => { e.preventDefault(); renderReviewsPage(currentPage - 1); });
+        ul.appendChild(prev);
+    }
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="#" class="ripple-effect ${i === currentPage ? 'current-page' : ''}">${i}</a>`;
+        if (i !== currentPage) {
+            li.addEventListener('click', e => { e.preventDefault(); renderReviewsPage(i); });
+        }
+        ul.appendChild(li);
+    }
+
+    // Next arrow
+    if (currentPage < totalPages) {
+        const next = document.createElement('li');
+        next.className = 'pagination-arrow';
+        next.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a>`;
+        next.addEventListener('click', e => { e.preventDefault(); renderReviewsPage(currentPage + 1); });
+        ul.appendChild(next);
+    }
+}
+
+async function loadUserReviews(userId) {
+    const reviewsList = document.querySelector('#work-history-and-feedback-list');
+    reviewsList.innerHTML = '<li><p>Loading reviews...</p></li>'; // Clear any existing content
+
+    // Keep pagination hidden until we know how many reviews there are
+    const paginationContainer = document.getElementById('reviews-pagination-container');
+    if (paginationContainer) paginationContainer.style.display = 'none';
+
+    try {
+        const reviews = await getReviewsReceived(userId);
+
+        if (!reviews.length) {
+            reviewsList.innerHTML = `<li><p>No reviews found.</p></li>`;
+            return;
+        }
+
+        allUserReviews = reviews;
+        renderReviewsPage(1);
 
     } catch (error) {
         console.error('Error loading reviews:', error);
@@ -165,25 +232,39 @@ async function loadProfile(profileId) {
         console.log("Profile data:", data);
 
         // ===== 1. Avatar & Name =====
-        document.querySelector(".header-image img").src = data.avatar;
+        const profileAvatarEl = document.querySelector(".header-image img");
+        profileAvatarEl.src = data.avatar || "/static/images/user-avatar-placeholder.png";
+        profileAvatarEl.onerror = function () {
+            this.onerror = null;
+            this.src = "/static/images/user-avatar-placeholder.png";
+        };
+        const displayName = (data.full_name && data.full_name.trim()) ? data.full_name : "Unnamed freelancer";
         document.querySelector(".header-details h3").innerHTML = `
-            ${data.full_name} <span>${data.tagline || ""}</span>
+            ${displayName} <span>${data.tagline || "No tagline yet"}</span>
         `;
 
         // ===== 2. Rating =====
+        const rating = parseFloat(data.rating) || 0;
         const ratingElement = document.querySelector(".star-rating");
         if (ratingElement) {
-            ratingElement.setAttribute("data-rating", data.rating || "0");
-            $('.star-rating').empty();
-            starRating('.star-rating');
-
+            if (rating > 0) {
+                ratingElement.setAttribute("data-rating", rating);
+                $('.star-rating').empty();
+                starRating('.star-rating');
+            } else {
+                // No reviews: show a clean label instead of "0.0" + empty stars.
+                ratingElement.removeAttribute("data-rating");
+                ratingElement.classList.remove("star-rating");
+                ratingElement.innerHTML = '<span style="color:#888;font-size:14px;">No ratings yet</span>';
+            }
         }
 
         // ===== 3. Nationality =====
         const nationalityLi = document.querySelector(".header-details ul li:nth-child(2)");
         if (nationalityLi) {
             // Assuming flag images are based on nationality name or ISO code
-            nationalityLi.innerHTML = `<img class="flag" src="images/flags/${data.nationality.toLowerCase().slice(0, 2)}.svg" alt=""> ${data.nationality}`;
+            const flagUrl = typeof getFlagUrl === "function" ? getFlagUrl(data.nationality) : null;
+            nationalityLi.innerHTML = `${flagUrl ? `<img class="flag" src="${flagUrl}" alt="${data.nationality}" onerror="this.style.display='none'"> ` : ''}${data.nationality}`;
         }
 
         // ===== 4. Verified Badge =====
@@ -202,12 +283,14 @@ async function loadProfile(profileId) {
                 <h3 class="margin-bottom-25">About Me</h3>
             `;
 
-            const paragraphs = data.bio.split("\n");
-            paragraphs.forEach(paragraph => {
-                aboutSection.innerHTML += `
-                    <p>${paragraph}</p>
-                `;
-            });
+            const bio = (data.bio || "").trim();
+            if (bio) {
+                bio.split("\n").forEach(paragraph => {
+                    aboutSection.innerHTML += `<p>${paragraph}</p>`;
+                });
+            } else {
+                aboutSection.innerHTML += `<p style="color:#888;">This freelancer hasn't added a bio yet.</p>`;
+            }
         }
 
         // ===== 6. Overview =====
@@ -218,14 +301,12 @@ async function loadProfile(profileId) {
         // ===== 7. Skills =====
         const skillsContainer = document.querySelector(".task-tags");
         if (skillsContainer) {
-            skillsContainer.innerHTML = "";
-            const skillsArray = data.skills ? data.skills.split(",").map(s => s.trim()) : [];
-            skillsArray.forEach(skill => {
-                // Join with a space ' ' to mimic the original HTML formatting
-                skillsContainer.innerHTML = skillsArray
-                .map(skill => `<span>${skill}</span>`)
-                .join(' '); 
-            });
+            const skillsArray = data.skills ? data.skills.split(",").map(s => s.trim()).filter(Boolean) : [];
+            if (skillsArray.length) {
+                skillsContainer.innerHTML = skillsArray.map(skill => `<span>${skill}</span>`).join(' ');
+            } else {
+                skillsContainer.innerHTML = `<span style="color:#888;">No skills listed yet.</span>`;
+            }
 
             if (window.refreshKeywordsUI) {
                 window.refreshKeywordsUI();
@@ -234,23 +315,26 @@ async function loadProfile(profileId) {
 
         // handle Bookmark button
         const bookmarkButton = document.querySelector(".bookmark-button");
-        bookmarkButton.setAttribute("data-userprofile-id", profileId);
-        if (bookmarkButton) {
-            bookmarkButton.addEventListener("click", () => {
-                if (bookmarkButton.classList.contains("bookmarked")) {
-                    bookmarkHandling("create", "userprofile", bookmarkButton);
+        initBookmarkButton(bookmarkButton, "userprofile", profileId);
 
-                } else {
-                    bookmarkHandling("delete", "userprofile", bookmarkButton);
-                }
-            });
-        }
-
-        // ===== 8. Files / Attachments =====
+        // ===== 8. Files / Attachments (CV files and/or a portfolio link) =====
         const attachmentsContainer = document.querySelector(".attachments-container");
         if (attachmentsContainer) {
             attachmentsContainer.innerHTML = "";
-            if (data.files && data.files.length > 0) {
+            const portfolioUrl = (data.portfolio_url || "").trim();
+            const hasFiles = data.files && data.files.length > 0;
+
+            if (portfolioUrl) {
+                const link = document.createElement("a");
+                link.href = portfolioUrl;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.className = "attachment-box ripple-effect";
+                link.innerHTML = `<span>Portfolio</span><i>LINK</i>`;
+                attachmentsContainer.appendChild(link);
+            }
+
+            if (hasFiles) {
                 data.files.forEach(file => {
                     const fileName = file.split("/").pop();
                     const fileExt = fileName.split(".").pop().toUpperCase();
@@ -260,7 +344,9 @@ async function loadProfile(profileId) {
                     a.innerHTML = `<span>${fileName}</span><i>${fileExt}</i>`;
                     attachmentsContainer.appendChild(a);
                 });
-            } else {
+            }
+
+            if (!portfolioUrl && !hasFiles) {
                 attachmentsContainer.innerHTML = "<p>No attachments</p>";
             }
         }
@@ -296,9 +382,27 @@ async function submitOffer(formId, fileInputId) {
         return;
     }
 
+    // Job/task link (optional). Warn if the employer sends without linking one.
+    const linkSelect = document.getElementById("offer-link-select");
+    const linkValue = linkSelect ? linkSelect.value : "";
+    if (!linkValue) {
+        const proceed = confirm(
+            "This offer isn't linked to any of your jobs or tasks. " +
+            "Linking it helps the freelancer know what it's about. Send it anyway?"
+        );
+        if (!proceed) return;
+    }
+
     const formData = new FormData();
     formData.append("message", message);
     formData.append("receiver", profileUserId);
+
+    // linkValue looks like "job:12" or "task:5".
+    if (linkValue) {
+        const [kind, id] = linkValue.split(":");
+        if (kind === "job") formData.append("job", id);
+        else if (kind === "task") formData.append("task", id);
+    }
 
     // Attach multiple files
     if (fileInput && fileInput.files.length > 0) {
@@ -317,7 +421,11 @@ async function submitOffer(formId, fileInputId) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error("Offer submission failed:", errorData);
-            appendError("Failed to send offer");
+            const firstKey = Object.keys(errorData)[0];
+            const msg = firstKey
+                ? (Array.isArray(errorData[firstKey]) ? errorData[firstKey][0] : errorData[firstKey])
+                : "Failed to send offer";
+            appendError(msg, "error", "send-offer-error-container");
             return;
         }
 
@@ -331,10 +439,53 @@ async function submitOffer(formId, fileInputId) {
     }
 }
 
+// Populate the offer's job/task selector with the current employer's own
+// jobs and tasks so they can tie the offer to one.
+async function loadOfferLinkOptions() {
+    const select = document.getElementById("offer-link-select");
+    if (!select) return;
+    try {
+        const [jobsRes, tasksRes] = await Promise.all([
+            fetchProtected("/api/jobs/managelist/"),
+            fetchProtected("/api/tasks/managelist/"),
+        ]);
+        const jobsData = jobsRes.ok ? await jobsRes.json() : {};
+        const tasks = tasksRes.ok ? await tasksRes.json() : [];
+        const jobs = Array.isArray(jobsData) ? jobsData : (jobsData.results || []);
+
+        if (jobs.length) {
+            const g = document.createElement("optgroup");
+            g.label = "Jobs";
+            jobs.forEach(j => {
+                const o = document.createElement("option");
+                o.value = `job:${j.id}`;
+                o.textContent = j.title || `Job #${j.id}`;
+                g.appendChild(o);
+            });
+            select.appendChild(g);
+        }
+        if (Array.isArray(tasks) && tasks.length) {
+            const g = document.createElement("optgroup");
+            g.label = "Tasks";
+            tasks.forEach(t => {
+                const o = document.createElement("option");
+                o.value = `task:${t.id}`;
+                o.textContent = t.project_name || `Task #${t.id}`;
+                g.appendChild(o);
+            });
+            select.appendChild(g);
+        }
+    } catch (err) {
+        console.error("Failed to load your jobs/tasks for the offer link:", err);
+    }
+}
+
 showLoading()
 loadProfile(profileId);
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    loadOfferLinkOptions();
 
     initiateFeatureCheck("make-an-offer-btn", "offers", () => {
         submitOffer("make-an-offer-form", "upload");

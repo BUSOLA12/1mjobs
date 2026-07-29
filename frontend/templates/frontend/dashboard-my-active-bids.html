@@ -121,8 +121,8 @@
 						<span class="bidding-detail">Set your <strong>minimal hourly rate</strong></span>
 
 						<!-- Price Slider -->
-						<div class="bidding-value">$<span id="biddingVal"></span></div>
-						<input class="bidding-slider update" type="text" value="" data-slider-handle="custom" data-slider-currency="$" data-slider-min="10" data-slider-max="5000" data-slider-value="40" data-slider-step="10" data-slider-tooltip="hide" />
+						<div class="bidding-value">₦<span id="biddingVal"></span></div>
+						<input class="bidding-slider update" type="text" value="" data-slider-handle="custom" data-slider-currency="₦" data-slider-min="1000" data-slider-max="1000000" data-slider-value="1000" data-slider-step="500" data-slider-tooltip="hide" />
 						
 						<!-- Headline -->
 						<span class="bidding-detail margin-top-30">Set your <strong>delivery time</strong></span>
@@ -304,6 +304,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 bids_data = await bids_res.json();
 
 console.log("Bidding data:", bids_data);
+
+// Map bidding_id -> received task offer (pending/accepted preferred).
+let offersByBid = {};
+try {
+	const offRes = await fetchProtected(`/api/contracts/task-offers/received/`);
+	if (offRes.ok) {
+		const received = await offRes.json();
+		for (const o of received) {
+			const ex = offersByBid[o.bidding];
+			if (!ex || o.status === "pending" || o.status === "accepted") offersByBid[o.bidding] = o;
+		}
+	}
+} catch (e) { console.warn("Could not load received task offers:", e); }
+
 let bids_list = document.querySelector(".dashboard-box-list.bidding");
 bids_list.innerHTML = "";
 
@@ -323,6 +337,28 @@ for (const bids of bids_data) {
 	} else {
 		statusClass = "green";
 	}
+
+	// If the employer sent an offer on this bid, surface it with Accept / Decline.
+	const offer = offersByBid[bids.id];
+	let offerPanel = "";
+	if (offer) {
+		const terms = `<strong>NGN ${offer.amount}</strong> &middot; ${offer.delivery_days} day(s)`;
+		const noteHtml = offer.note ? `<p class="job-listing-text" style="margin-top:6px;white-space:pre-wrap;">${offer.note}</p>` : "";
+		if (offer.status === "pending") {
+			offerPanel = `
+			<div class="offer-panel" style="flex:0 0 100%;width:100%;margin:14px 0 0;padding:14px 16px;border:1px solid #e3e8ef;border-radius:8px;background:#f9fbff;">
+				<div style="margin-bottom:10px;font-weight:600;"><i class="icon-material-outline-loyalty"></i> You received an offer: ${terms}</div>
+				${noteHtml}
+				<div style="margin-top:10px;display:flex;gap:10px;">
+					<a href="#" class="accept-offer-btn button ripple-effect" data-offerid="${offer.id}"><i class="icon-material-outline-check"></i> Accept Offer</a>
+					<a href="#" class="reject-offer-btn button red ripple-effect" data-offerid="${offer.id}">Decline</a>
+				</div>
+			</div>`;
+		} else if (offer.status === "accepted") {
+			offerPanel = `<div class="offer-panel" style="flex:0 0 100%;width:100%;margin:14px 0 0;padding:12px 16px;border:1px solid #cdebd6;border-radius:8px;background:#f0fbf4;"><i class="icon-material-outline-check-circle"></i> Offer accepted: ${terms}</div>`;
+		}
+	}
+
 	bid_item_html = `
 		<li>
 		<!-- Job Listing -->
@@ -340,11 +376,13 @@ for (const bids of bids_data) {
 		
 		<!-- Task Details -->
 		<ul class="dashboard-task-info">
-			<li><strong>$${bids.bid_amount}</strong><span>${project_type}</span></li>
+			<li><strong>₦${bids.bid_amount}</strong><span>${project_type}</span></li>
 			<li><strong>${bids.delivery_time}</strong><span>Delivery Time</span></li>
 			<li><span class="dashboard-status-button ${statusClass}">${bids.status}</span></li>
 
 		</ul>
+
+		${offerPanel}
 
 		<!-- Buttons -->
 		<div class="buttons-to-right always-visible">
@@ -361,6 +399,46 @@ for (const bids of bids_data) {
 	
 }
 hideLoading();
+
+// Respond to a task offer (accept / decline).
+bids_list.addEventListener("click", async (e) => {
+	const respondBtn = e.target.closest(".accept-offer-btn, .reject-offer-btn");
+	if (!respondBtn) return;
+	e.preventDefault();
+
+	const offerId = respondBtn.dataset.offerid;
+	const accept = respondBtn.classList.contains("accept-offer-btn");
+	const action = accept ? "accept" : "reject";
+
+	if (accept && !confirm("Accept this offer? This will confirm you for the task.")) return;
+	if (!accept && !confirm("Decline this offer?")) return;
+
+	showLoading(accept ? "Accepting Offer" : "Declining Offer");
+	try {
+		const res = await fetchProtected(`/api/contracts/task-offers/${offerId}/respond/`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ action }),
+		});
+		const data = await res.json().catch(() => ({}));
+		hideLoading();
+		if (!res.ok) throw new Error(data.message || "Could not respond to offer");
+		Snackbar.show({
+			text: accept ? "Offer accepted!" : "Offer declined.",
+			pos: "bottom-center", showAction: false, duration: 3000,
+			textColor: "#fff", backgroundColor: accept ? "#09f859ff" : "#e74c3c",
+		});
+		location.reload();
+	} catch (err) {
+		hideLoading();
+		console.error("Offer response error:", err);
+		Snackbar.show({
+			text: err.message || "Error responding to offer",
+			pos: "bottom-center", showAction: false, duration: 3500,
+			textColor: "#fff", backgroundColor: "#e74c3c",
+		});
+	}
+});
 
 // Handle delete button clicks
 bids_list.addEventListener("click", async (e) => {

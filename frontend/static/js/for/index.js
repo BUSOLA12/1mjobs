@@ -111,7 +111,7 @@ const categoryIcons = {
 								<!-- Job Listing Footer -->
 								<div class="job-listing-footer">
 									<ul>
-										<li><i class="icon-material-outline-business"></i> ${r.company_info ? r.company_info.company_name : ''} <div class="verified-badge" title="Verified Employer" data-tippy-placement="top"></div></li>
+										<li><i class="icon-material-outline-business"></i> ${r.company_info ? r.company_info.company_name : ''} <div class="verified-badge" title="Verified Employer" data-tippy-placement="top"></div>${(r.company_info && r.company_info.is_pro) ? ' <span class="pro-badge" title="Premium Employer">PRO</span>' : ''}</li>
 										<li><i class="icon-material-outline-location-on"></i> ${r.company_info ? r.company_info.company_country : ''}</li>
 										<li><i class="icon-material-outline-business-center"></i> ${r.job_type}</li>
 										<li><i class="icon-material-outline-access-time"></i> ${r.updated_at ? new Date(r.updated_at).toDateString() : ''}</li>
@@ -203,14 +203,16 @@ function renderProfiles(profiles = []) {
     // Map API fields to UI fields with safe fallbacks
     const name = profile.full_name || profile.name || (profile.user && (profile.user.first_name || profile.user.username)) || "Unknown";
     const title = profile.tagline || profile.skill || profile.role || "N/A";
-    const avatar = profile.avatar || profile.avatar_url || "images/user-avatar-placeholder.png";
+    const PLACEHOLDER_AVATAR = "/static/images/user-avatar-placeholder.png";
+    const avatar = profile.avatar || profile.avatar_url || PLACEHOLDER_AVATAR;
     const isVerified = profile.verified || profile.is_verified || false;
+    const isPro = profile.is_pro || false;
     const rating = (profile.rating !== undefined && profile.rating !== null) ? profile.rating : "N/A";
     const location = profile.nationality || (profile.user && profile.user.location) || "N/A";
     const rate = profile.hourly_rate !== undefined && profile.hourly_rate !== null ? profile.hourly_rate : null;
     const jobSuccess = profile.job_success !== undefined && profile.job_success !== null ? profile.job_success : null;
-    const countryCode = profile.country_code || (profile.country && profile.country.toLowerCase && profile.country.toLowerCase()) || null;
-    const flagImg = countryCode ? `images/flags/${countryCode.toLowerCase()}.svg` : "";
+    const countryName = profile.nationality || profile.country || (profile.user && profile.user.location) || null;
+    const flagImg = countryName && typeof getFlagUrl === "function" ? getFlagUrl(countryName) : null;
 
     card.innerHTML = `
     <div class="freelancer-overview">
@@ -218,19 +220,20 @@ function renderProfiles(profiles = []) {
     <span class="bookmark-icon"></span>
     <div class="freelancer-avatar">
         ${isVerified ? '<div class="verified-badge"></div>' : ''}
-        <a href="/freelancer-profile/${profile.id}"><img src="${avatar}" alt=""></a>
+        <a href="/freelancer-profile/${profile.id}"><img src="${avatar}" alt="" onerror="this.onerror=null;this.src='${PLACEHOLDER_AVATAR}';"></a>
     </div>
     <div class="freelancer-name">
         <h4>
         <a href="/freelancer-profile/${profile.id}">
             ${name}
-            ${flagImg ? `<img class="flag" src="${flagImg}" alt="${countryCode}" title="${countryCode.toUpperCase()}" data-tippy-placement="top">` : ''}
+            ${isPro ? '<span class="pro-badge" title="Pro member">PRO</span>' : ''}
+            ${flagImg ? `<img class="flag" src="${flagImg}" alt="${countryName}" title="${countryName}" data-tippy-placement="top" onerror="this.style.display='none'">` : ''}
         </a>
         </h4>
         <span>${title}</span>
     </div>
     <div class="freelancer-rating">
-        ${rating ? `<div class="star-rating" data-rating="${rating}"></div>` : `<span class="company-not-rated margin-bottom-5">Minimum of 3 votes required</span>`}
+        ${rating ? `<div class="star-rating" data-rating="${rating}"></div>` : `<span class="company-not-rated margin-bottom-5">No ratings yet</span>`}
     </div>
     </div>
     </div>

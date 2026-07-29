@@ -408,7 +408,22 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 			const taskDiddings = await taskDiddingsRes.json();
 			console.log("Task detail bids:", taskDiddings);
 			const bidsContainer = document.querySelector(".dashboard-box-list.manage-bidders");
-			
+
+			// Map bidding_id -> latest task-offer status so each bidder card shows
+			// Send Offer / Offer Sent / Hired.
+			const offersByBidding = {};
+			try {
+				const offersRes = await fetchProtected(`/api/contracts/task-offers/sent/`);
+				if (offersRes.ok) {
+					const sentOffers = await offersRes.json();
+					for (const o of sentOffers) {
+						const existing = offersByBidding[o.bidding];
+						if (!existing || o.status === "pending" || o.status === "accepted") {
+							offersByBidding[o.bidding] = o.status;
+						}
+					}
+				}
+			} catch (e) { console.warn("Could not load sent task offers:", e); }
 
 			for (const bids of taskDiddings) {
 				let project_type = "";
@@ -452,7 +467,7 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 
 									<!-- Bid Details -->
 									<ul class="dashboard-task-info bid-info">
-										<li><strong>$${bids.bid_amount}</strong><span>${project_type}</span></li>
+										<li><strong>₦${bids.bid_amount}</strong><span>${project_type}</span></li>
 										<li><strong>${bids.delivery_time}</strong><span>Delivery Time</span></li>
 										<li><span class="dashboard-status-button ${statusClass}">${bids.status}</span></li>
 
@@ -460,7 +475,20 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 
 									<!-- Buttons -->
 									<div class="buttons-to-right always-visible margin-top-25 margin-bottom-0">
-										<a href="#small-dialog-1"  class="popup-with-zoom-anim button ripple-effect bid-apply-button" data-fname="${bids.freelancer_info !== null ? bids.freelancer_info.full_name.split(" ")[0] : ""}" data-fbid="${bids.bid_amount}" data-bidid="${bids.id}"><i class="icon-material-outline-check"></i> Accept Offer</a>
+										${(() => {
+											const offerStatus = offersByBidding[bids.id];
+											if (bids.status === "accepted" || offerStatus === "accepted") {
+												return `<a href="#" class="button ripple-effect" style="pointer-events:none;background-color:#2a9d3d;"><i class="icon-material-outline-check-circle"></i> Hired</a>`;
+											}
+											if (offerStatus === "pending") {
+												return `<a href="#" class="button ripple-effect" style="pointer-events:none;background-color:#f0ad4e;"><i class="icon-material-outline-schedule"></i> Offer Sent</a>`;
+											}
+											if (bids.status === "rejected") {
+												return `<a href="#" class="button ripple-effect" style="pointer-events:none;background-color:#9aa0a6;">Not selected</a>`;
+											}
+											const fn = bids.freelancer_info !== null ? bids.freelancer_info.full_name : "bidder";
+											return `<a href="#" class="button ripple-effect sendOfferBtn" data-bidid="${bids.id}" data-fname="${fn}" data-fbid="${bids.bid_amount}" title="Send Offer" data-tippy-placement="top"><i class="icon-material-outline-check"></i> Send Offer</a>`;
+										})()}
 										<a href="#small-dialog-2" class="popup-with-zoom-anim button dark ripple-effect message-freelancer" data-fid="${bids.freelancer}" data-empid="${taskDetails.user}" data-fname="${bids.freelancer_info !== null ? bids.freelancer_info.full_name.split(" ")[0] : ""}"><i class="icon-feather-mail"></i> Send Message</a>
 										<a href="#" class="button gray ripple-effect ico" title="Remove Bid" data-tippy-placement="top" data-bidid="${bids.id}"><i class="icon-feather-trash-2"></i></a>
 									</div>
@@ -475,6 +503,18 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 
 			hideLoading();
 
+			// Send Offer: open the offer modal for the clicked bid.
+			bidsContainer.addEventListener("click", (e) => {
+				const btn = e.target.closest(".sendOfferBtn");
+				if (!btn) return;
+				e.preventDefault();
+				openTaskOfferModal({
+					id: btn.dataset.bidid,
+					name: btn.dataset.fname,
+					bid_amount: btn.dataset.fbid,
+				});
+			});
+
 			let bidId = null;
 			let fname = null;
 			bidsContainer.addEventListener("click", (e) => {
@@ -487,7 +527,7 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 					const fnameE = document.querySelector(".freelancer-name.acceptance");
 					fnameE.textContent = `Accept Offer From ${fname}`;
 					const fbidE = document.querySelector(".freelancer-bid.acceptance");
-					fbidE.textContent = `$${fbid}`;
+					fbidE.textContent = `₦${fbid}`;
 
 					console.log("Freelancer Name:", fname);
 					console.log("Freelancer Bid:", fbid);
@@ -496,6 +536,44 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 				
 			});
 			
+			// Pay Freelancer: create + initiate a Payment for this accepted bid,
+			// then redirect to the African Money (Flutterwave test) checkout page.
+			bidsContainer.addEventListener("click", async (e) => {
+				const payBtn = e.target.closest(".pay-freelancer-button");
+				if (!payBtn) return;
+				e.preventDefault();
+				const payBidId = payBtn.dataset.bidid;
+				payBtn.style.pointerEvents = "none";
+				showLoading("Starting payment");
+				try {
+					const res = await fetchProtected("/api/payments/create/", {
+						method: "POST",
+						body: JSON.stringify({ bid_id: payBidId }),
+					});
+					const data = await res.json();
+					if (res.ok && data.payment_url) {
+						window.location.href = data.payment_url;
+						return;
+					}
+					hideLoading();
+					payBtn.style.pointerEvents = "";
+					Snackbar.show({
+						text: data.error || "Could not start payment.",
+						pos: "bottom-center", showAction: true, actionText: "Dismiss",
+						duration: 4000, textColor: "#fff", backgroundColor: "#e74c3c",
+					});
+				} catch (err) {
+					hideLoading();
+					payBtn.style.pointerEvents = "";
+					console.error("Pay freelancer error:", err);
+					Snackbar.show({
+						text: "Something went wrong starting the payment.",
+						pos: "bottom-center", showAction: true, actionText: "Dismiss",
+						duration: 4000, textColor: "#fff", backgroundColor: "#e74c3c",
+					});
+				}
+			});
+
 			bidsContainer.addEventListener("click", async (e) => {
 				e.preventDefault();
 				if (e.target.closest(".button.gray.ripple-effect.ico")) {
@@ -760,6 +838,95 @@ async function sendMessage(conversation_id, sender, recipient, content) {
 		showForRole("employer", id);
 	}
 		
+</script>
+
+<!-- Send Offer Modal -->
+<div id="offer-overlay" class="offer-overlay">
+	<div class="offer-modal">
+		<div class="offer-modal-header">
+			<h3>Send an Offer to <span id="offer-recipient"></span></h3>
+			<a href="#" id="offer-close" class="offer-close">&times;</a>
+		</div>
+		<form id="send-offer-form" onsubmit="return false;">
+			<label class="offer-label">Amount (NGN)</label>
+			<input type="number" min="0" step="0.01" id="offer-amount" class="input-text with-border" placeholder="Agreed price" required />
+
+			<label class="offer-label">Delivery time (days)</label>
+			<input type="number" min="1" max="365" step="1" id="offer-delivery-days" class="input-text with-border" placeholder="e.g. 14 (max 365)" required />
+
+			<label class="offer-label">Note (optional)</label>
+			<textarea id="offer-note" class="with-border" rows="4" placeholder="Scope, expectations, or a message to the bidder"></textarea>
+
+			<button type="submit" id="offer-submit" class="button ripple-effect margin-top-20"
+				style="width:100%;display:block;text-align:center;white-space:nowrap;">Send Offer</button>
+		</form>
+	</div>
+</div>
+
+<style>
+.offer-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:flex-start; z-index:10000; overflow-y:auto; padding:60px 15px; }
+.offer-overlay.active { display:flex; }
+.offer-modal { background:#fff; border-radius:10px; max-width:520px; width:100%; padding:28px 30px; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
+.offer-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+.offer-modal-header h3 { margin:0; font-size:20px; }
+.offer-close { font-size:26px; line-height:1; color:#888; text-decoration:none; }
+.offer-label { display:block; font-weight:600; margin:14px 0 6px; }
+</style>
+
+<script>
+let currentOfferBid = null;
+
+function openTaskOfferModal(bid) {
+	currentOfferBid = bid;
+	document.getElementById("offer-recipient").textContent = bid.name || "bidder";
+	document.getElementById("offer-amount").value = bid.bid_amount != null ? bid.bid_amount : "";
+	document.getElementById("offer-delivery-days").value = "";
+	document.getElementById("offer-note").value = "";
+	document.getElementById("offer-overlay").classList.add("active");
+}
+function closeTaskOfferModal() {
+	document.getElementById("offer-overlay").classList.remove("active");
+	currentOfferBid = null;
+}
+async function submitTaskOffer() {
+	if (!currentOfferBid) return;
+	const amount = document.getElementById("offer-amount").value;
+	const deliveryDays = document.getElementById("offer-delivery-days").value;
+	const note = document.getElementById("offer-note").value.trim();
+
+	if (!amount || Number(amount) < 0 || !deliveryDays || Number(deliveryDays) < 1 || Number(deliveryDays) > 365) {
+		Snackbar.show({ text: "Enter a valid amount and delivery time (1 to 365 days).", pos: "bottom-center", showAction: false, duration: 3500, textColor: "#fff", backgroundColor: "#fa0404ff" });
+		return;
+	}
+
+	try {
+		showLoading("Sending Offer");
+		const response = await fetchProtected(`/api/contracts/task-offers/send/`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ bidding: currentOfferBid.id, amount: amount, delivery_days: parseInt(deliveryDays, 10), note: note }),
+		});
+		const data = await response.json().catch(() => ({}));
+		hideLoading();
+		if (response.ok) {
+			Snackbar.show({ text: `Offer sent to ${currentOfferBid.name}`, pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#04fa2dff" });
+			closeTaskOfferModal();
+			location.reload();
+			return;
+		}
+		Snackbar.show({ text: data.message || (data.detail || "Could not send offer"), pos: "bottom-center", showAction: false, duration: 4000, textColor: "#fff", backgroundColor: "#fa0404ff" });
+	} catch (error) {
+		hideLoading();
+		console.error("Error sending task offer:", error);
+		Snackbar.show({ text: "Error sending offer", pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#fa0404ff" });
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	document.getElementById("offer-close").addEventListener("click", (e) => { e.preventDefault(); closeTaskOfferModal(); });
+	document.getElementById("offer-overlay").addEventListener("click", (e) => { if (e.target.id === "offer-overlay") closeTaskOfferModal(); });
+	document.getElementById("offer-submit").addEventListener("click", (e) => { e.preventDefault(); submitTaskOffer(); });
+});
 </script>
 
 </body>

@@ -4,13 +4,17 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from users.utils import log_user_action
-from .serializers import JobSerializer, TaskSerializer, JobApplicationSerializer, TaskBidsSerializer
-from .models import Job, Task, JobApplication, TaskBidding
+from .serializers import JobSerializer, TaskSerializer, JobApplicationSerializer, TaskBidsSerializer, get_online_user_ids
+from .models import Job, Task, JobApplication, TaskBidding, JobFile
+from reviews.models import Review
+from .utils import validate_job_file, notify_employer_of_application, notify_employer_of_bid, apply_early_access_window
+from pricing.subscription_engine import check_and_consume_feature
+from pricing.features import FEATURED_JOB
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
 from django.core.cache import cache
@@ -29,17 +33,44 @@ class JobCreateAPIView(APIView):
 
     def get_permissions(self):
         """Assign permissions per HTTP method."""
-        if self.request.method == "POST":
-            return [IsAuthenticated()]  # Only logged-in users can create Jobs
-        return [AllowAny()] 
+        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            return [IsAuthenticated()]  # Write operations require a logged-in user
+        return [AllowAny()]
 
     def post(self, request):
+        # Only employers and admins may post jobs
+        if getattr(request.user, "role", None) not in ("employer", "admin"):
+            return Response({"error": "Only employers can post jobs."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Validate every uploaded file before touching the database.
+        uploaded_files = request.FILES.getlist("files")
+        for uploaded_file in uploaded_files:
+            error = validate_job_file(uploaded_file)
+            if error:
+                return Response({"files": [error]}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Employer Pro perk: feature this job (consumes one featured_job slot).
+        want_featured = str(request.data.get("featured", "")).lower() in ("1", "true", "yes")
+
         serializer = JobSerializer(data=request.data)
         if serializer.is_valid():
-            job = serializer.save(user=request.user)
+            with transaction.atomic():
+                job = serializer.save(user=request.user)
+                if want_featured:
+                    # Raises PermissionDenied (403) if the plan lacks or has
+                    # exhausted the featured_job quota; the atomic block rolls
+                    # the job creation back so nothing is half-saved.
+                    check_and_consume_feature(request.user, FEATURED_JOB)
+                    job.is_featured = True
+                    job.save(update_fields=["is_featured"])
+                for uploaded_file in uploaded_files:
+                    JobFile.objects.create(job=job, file=uploaded_file)
 
             log_user_action(request.user, "create_job", metadata={"job_id": job.id})
-            return Response({"message": "Job created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            return Response(
+                {"message": "Job created successfully", "data": JobSerializer(job, context={"request": request}).data},
+                status=status.HTTP_201_CREATED,
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
@@ -60,7 +91,8 @@ class JobCreateAPIView(APIView):
         location = request.GET.get('location', "")
         city = request.GET.get('city', "")
 
-        jobs = Job.objects.all()
+        jobs = Job.objects.filter(approved=True)
+        jobs = apply_early_access_window(jobs, request)
         query = Q()
 
         if search:
@@ -95,17 +127,19 @@ class JobCreateAPIView(APIView):
         if query:
             jobs = jobs.filter(query)
 
-        if sort == "Newest":
-            jobs = jobs.order_by("-created_at")
-        elif sort == "Oldest":
+        # Featured jobs (Employer Pro perk) float to the top of default/newest.
+        sort = sort.lower()
+        if sort == "oldest":
             jobs = jobs.order_by("created_at")
-        elif sort == "Random":
+        elif sort == "random":
             jobs = jobs.order_by("?")
+        else:
+            jobs = jobs.order_by("-is_featured", "-created_at")
 
         paginator = JobPagination()
         paginated_jobs = paginator.paginate_queryset(jobs, request)
 
-                
+
         serializer = JobSerializer(paginated_jobs, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
@@ -113,6 +147,9 @@ class JobCreateAPIView(APIView):
     def put(self, request, pk):
         try:
             job = Job.objects.get(pk=pk)
+
+            if job.user != request.user:
+                return Response({"error": "You are not authorized to edit this job"}, status=status.HTTP_403_FORBIDDEN)
 
             print(f"Received data: {request.data}")
             print(f"Job found: {job.id}")
@@ -138,6 +175,10 @@ class JobCreateAPIView(APIView):
     def patch(self, request, pk):
         try:
             job = Job.objects.get(pk=pk)
+
+            if job.user != request.user:
+                return Response({"error": "You are not authorized to edit this job"}, status=status.HTTP_403_FORBIDDEN)
+
             serializer = JobSerializer(job, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
@@ -170,6 +211,28 @@ class JobCreateAPIView(APIView):
 
 
 class JobGetAPIView(APIView):
+    TAGS_CACHE_KEY = "job_tags_list"
+    TAGS_CACHE_TTL = 60 * 60  # 1 hour
+
+    def _get_all_tags(self):
+        """Distinct tags across all approved jobs, cached. Attached to the
+        list response so the frontend needs no separate request."""
+        tags = cache.get(self.TAGS_CACHE_KEY)
+        if tags is None:
+            counter = {}
+            for raw in Job.objects.filter(approved=True).values_list("tags", flat=True):
+                for tag in (raw or "").split(","):
+                    tag = tag.strip()
+                    if not tag:
+                        continue
+                    key = tag.lower()  # dedupe case-insensitively
+                    if key not in counter:
+                        counter[key] = {"tag": tag, "count": 0}  # keep first-seen casing
+                    counter[key]["count"] += 1
+            tags = sorted(counter.values(), key=lambda t: (-t["count"], t["tag"].lower()))
+            cache.set(self.TAGS_CACHE_KEY, tags, self.TAGS_CACHE_TTL)
+        return tags
+
     def get(self, request):
 
         search = request.GET.get('search', "")
@@ -177,12 +240,13 @@ class JobGetAPIView(APIView):
         min_salary = request.GET.get('min_salary', "")
         max_salary = request.GET.get('max_salary', "")
         job_type = request.GET.get('job_type', "")
-        tags = request.GET.get('tags', "")
+        tags = request.GET.getlist('tags')
         category = request.GET.get('category', "")
         location = request.GET.get('location', "")
         city = request.GET.get('city', "")
 
-        jobs = Job.objects.all()
+        jobs = Job.objects.filter(approved=True)
+        jobs = apply_early_access_window(jobs, request)
         query = Q()
 
         if search:
@@ -204,8 +268,15 @@ class JobGetAPIView(APIView):
         if city:
             query |= Q(city__icontains=city)
 
+        if tags:
+            tag_q = Q()
+            for tag in tags:
+                tag = tag.strip()
+                if tag:
+                    tag_q |= Q(tags__icontains=tag)  # match a job with ANY selected tag
+            query |= tag_q
 
-        
+
         if min_salary and max_salary:
             try:
                 min_salary = int(min_salary)
@@ -216,20 +287,24 @@ class JobGetAPIView(APIView):
 
         if query:
             jobs = jobs.filter(query)
-        
-        if sort == "Newest":
-            jobs = jobs.order_by("-created_at")
-        elif sort == "Oldest":
+
+        # Featured jobs (Employer Pro perk) float to the top of default/newest.
+        sort = sort.lower()
+        if sort == "oldest":
             jobs = jobs.order_by("created_at")
-        elif sort == "Random":
+        elif sort == "random":
             jobs = jobs.order_by("?")
+        else:
+            jobs = jobs.order_by("-is_featured", "-created_at")
 
         paginator = JobPagination()
         paginated_jobs = paginator.paginate_queryset(jobs, request)
 
-                
+
         serializer = JobSerializer(paginated_jobs, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
+        response = paginator.get_paginated_response(serializer.data)
+        response.data["tags"] = self._get_all_tags()  # complete, cached tag list
+        return response
 
 
 class JobDetailAPIView(APIView):
@@ -374,9 +449,18 @@ class JobApplicationCreateAPIView(APIView):
 
     def post(self, request):
         try:
-            serializer = JobApplicationSerializer(data=request.data)
+            # The applicant's identity is taken from their account, never the
+            # client. The employer must not be able to set or see the email, so
+            # we bind user + email server-side and ignore anything posted for them.
+            data = request.data.copy()
+            data["user"] = request.user.id
+            data["email"] = request.user.email
+
+            serializer = JobApplicationSerializer(data=data)
             if serializer.is_valid():
-                application = serializer.save()
+                application = serializer.save(user=request.user, email=request.user.email)
+
+                notify_employer_of_application(application, request=request)
 
                 log_user_action(request.user, "create_job_application", metadata={"application_id": application.id})
                 return Response({"message": "Application submitted successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
@@ -389,18 +473,47 @@ class JobApplicationCreateAPIView(APIView):
         
     def get(self, request, jobId):
         try:
-            applications = JobApplication.objects.filter(job=jobId)
-            serializer = JobApplicationSerializer(applications, many=True, context={'request': request})
+            applications = JobApplication.objects.filter(job=jobId).select_related('user')
+            online_user_ids = get_online_user_ids([app.user_id for app in applications])
+            serializer = JobApplicationSerializer(
+                applications,
+                many=True,
+                context={'request': request, 'online_user_ids': online_user_ids},
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+class MyJobApplicationsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            applications = JobApplication.objects.filter(user=request.user).select_related('job').order_by('-created_at')
+            online_user_ids = get_online_user_ids([app.user_id for app in applications])
+            serializer = JobApplicationSerializer(
+                applications,
+                many=True,
+                context={'request': request, 'online_user_ids': online_user_ids},
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class JobApplicationDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def delete(self, request, pk):
         try:
             application = JobApplication.objects.get(pk=pk)
+
+            # Only the applicant (withdrawing) or the job owner may delete
+            if request.user != application.user and request.user != application.job.user:
+                return Response({"error": "You are not authorized to delete this application"}, status=status.HTTP_403_FORBIDDEN)
 
             log_user_action(request.user, "delete_job_application", metadata={"application_id": application.id})
             application.delete()
@@ -410,6 +523,53 @@ class JobApplicationDeleteAPIView(APIView):
         except Exception as e:
             return Response({"error": f"Deletion failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+class JobApplicationAcceptAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            with transaction.atomic():
+                application = (
+                    JobApplication.objects.select_related("job")
+                    .select_for_update()  # no-op on SQLite, real row lock on Postgres
+                    .get(pk=pk)
+                )
+                job = application.job
+
+                # Only the job owner may accept an application for their job
+                if job.user != request.user:
+                    return Response(
+                        {"message": "You are not allowed to accept applications for this job."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                # This specific application is already accepted
+                if application.status == "accepted":
+                    return Response({"message": "Application Already Accepted"}, status=status.HTTP_409_CONFLICT)
+
+                # A job may have only ONE accepted applicant
+                if JobApplication.objects.filter(
+                    job=job, status__in=["accepted", "completed"]
+                ).exclude(pk=pk).exists():
+                    return Response(
+                        {"message": "This job already has an accepted applicant."},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+                # Accept this application and reject the remaining pending ones on the same job
+                application.status = "accepted"
+                application.save(update_fields=["status"])
+                JobApplication.objects.filter(job=job, status="pending").exclude(pk=pk).update(status="rejected")
+
+            log_user_action(request.user, "accept_job_application", metadata={"application_id": application.id})
+            return Response({"message": "Application accepted", "id": application.id}, status=status.HTTP_200_OK)
+
+        except JobApplication.DoesNotExist:
+            return Response({"message": "Application not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"errors": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class JobApplicationCountAPIView(APIView):
     def get(self, request, pk):
         try:
@@ -463,7 +623,7 @@ class JobSimilarAPIView(APIView):
                 )
 
             # Get similar jobs within the same category, excluding the current job
-            similar_jobs = Job.objects.filter(category=job.category).exclude(pk=pk)[:5]
+            similar_jobs = Job.objects.filter(category=job.category, approved=True).exclude(pk=pk)[:5]
 
             # Handle case where no similar jobs are found
             if not similar_jobs:
@@ -497,7 +657,29 @@ class JobSimilarAPIView(APIView):
 class TaskCreateAPIView(APIView):
 
     # permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser] 
+    parser_classes = [MultiPartParser, FormParser]
+
+    SKILLS_CACHE_KEY = "task_skills_list"
+    SKILLS_CACHE_TTL = 60 * 60  # 1 hour
+
+    def _get_all_skills(self):
+        """Distinct skills across all tasks, cached. Attached to the list
+        response so the frontend needs no separate request."""
+        skills = cache.get(self.SKILLS_CACHE_KEY)
+        if skills is None:
+            counter = {}
+            for raw in Task.objects.filter(approved=True).values_list("skills", flat=True):
+                for skill in (raw or "").split(","):
+                    skill = skill.strip()
+                    if not skill:
+                        continue
+                    key = skill.lower()  # dedupe case-insensitively
+                    if key not in counter:
+                        counter[key] = {"tag": skill, "count": 0}  # keep first-seen casing
+                    counter[key]["count"] += 1
+            skills = sorted(counter.values(), key=lambda s: (-s["count"], s["tag"].lower()))
+            cache.set(self.SKILLS_CACHE_KEY, skills, self.SKILLS_CACHE_TTL)
+        return skills
 
     def get_permissions(self):
         """Assign permissions per HTTP method."""
@@ -509,7 +691,7 @@ class TaskCreateAPIView(APIView):
         try:
             serializer = TaskSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
-                task = serializer.save()
+                task = serializer.save(user=request.user)
 
                 log_user_action(request.user, "create_task", metadata={"task_id": task.id})
                 return Response({"message": "Task created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
@@ -530,11 +712,11 @@ class TaskCreateAPIView(APIView):
         sort = request.GET.get('sort', "")
         min_budget = request.GET.get('min_budget', "")
         max_budget = request.GET.get('max_budget', "")
-        skills = request.GET.get('skills', "")
+        skills = request.GET.getlist('skills')
         category = request.GET.get('category', "")
         location = request.GET.get('location', "")
 
-        tasks = Task.objects.all()
+        tasks = Task.objects.filter(approved=True)
         query = Q()
 
         if search:
@@ -546,7 +728,12 @@ class TaskCreateAPIView(APIView):
             )
 
         if skills:
-            query |= Q(skills__icontains=skills)
+            skill_q = Q()
+            for skill in skills:
+                skill = skill.strip()
+                if skill:
+                    skill_q |= Q(skills__icontains=skill)  # match a task with ANY selected skill
+            query |= skill_q
 
         if location:
             query |= Q(location__icontains=location)
@@ -568,15 +755,21 @@ class TaskCreateAPIView(APIView):
         if query:
             tasks = tasks.filter(query)
         
-        if sort == "Newest":
+        sort = sort.lower()
+        if sort == "newest":
             tasks = tasks.order_by("-created_at")
-        elif sort == "Oldest":
+        elif sort == "oldest":
             tasks = tasks.order_by("created_at")
-        elif sort == "Random":
+        elif sort == "random":
             tasks = tasks.order_by("?")
 
-        serializer = TaskSerializer(tasks, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = JobPagination()
+        paginated_tasks = paginator.paginate_queryset(tasks, request)
+
+        serializer = TaskSerializer(paginated_tasks, many=True, context={'request': request})
+        response = paginator.get_paginated_response(serializer.data)
+        response.data["skills"] = self._get_all_skills()  # complete, cached skill list
+        return response
 
 
     def put(self, request, pk):
@@ -659,11 +852,20 @@ class TaskBiddingCreateAPIView(APIView):
     def post(self, request):
         try:
 
+            task_id = request.data.get("task")
+            if TaskBidding.objects.filter(task_id=task_id, freelancer=request.user).exists():
+                return Response(
+                    {"error": "You have already placed a bid on this task."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             serializer = TaskBidsSerializer(data=request.data)
             if serializer.is_valid():
-                task = serializer.save()
+                bid = serializer.save()
 
-                log_user_action(request.user, "create_bid", metadata={"task_id": task.id})
+                notify_employer_of_bid(bid, request=request)
+
+                log_user_action(request.user, "create_bid", metadata={"task_id": bid.task_id})
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             else:
@@ -758,19 +960,44 @@ class TaskBiddingCountAPIView(APIView):
 
 class TaskBiddingAcceptAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def put(self, request, pk):
         try:
-            taskBidding = TaskBidding.objects.get(pk=pk)
-            if taskBidding.status == "accepted":
-                return Response({"message": "Bid Already Accepted"}, status=status.HTTP_409_CONFLICT)
-            serializer = TaskBidsSerializer(taskBidding, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
+            with transaction.atomic():
+                taskBidding = (
+                    TaskBidding.objects.select_related("task")
+                    .select_for_update()  # no-op on SQLite, real row lock on Postgres
+                    .get(pk=pk)
+                )
+                task = taskBidding.task
 
-            else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                # Only the task owner may accept a bid on their task
+                if task.user != request.user:
+                    return Response(
+                        {"message": "You are not allowed to accept bids on this task."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
 
+                # This specific bid is already accepted
+                if taskBidding.status == "accepted":
+                    return Response({"message": "Bid Already Accepted"}, status=status.HTTP_409_CONFLICT)
+
+                # A task may have only ONE accepted bid
+                if TaskBidding.objects.filter(task=task, status="accepted").exclude(pk=pk).exists():
+                    return Response(
+                        {"message": "This task already has an accepted bid."},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+                # Accept this bid and reject the remaining pending bids on the same task
+                taskBidding.status = "accepted"
+                taskBidding.save(update_fields=["status", "updated_at"])
+                TaskBidding.objects.filter(task=task, status="pending").exclude(pk=pk).update(status="rejected")
+
+            return Response(TaskBidsSerializer(taskBidding).data, status=status.HTTP_200_OK)
+
+        except TaskBidding.DoesNotExist:
+            return Response({"message": "Bid not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"errors": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -805,7 +1032,12 @@ class TaskBidWonAndJobAppliedView(APIView):
             app = JobApplication.objects.filter(user=request.user)
             JobAppCount = app.count()
 
-            return Response({"bid_won": taskBidWonCount, "job_app": JobAppCount}, status=status.HTTP_200_OK)
+            reviewCount = Review.objects.filter(reviewee=request.user).count()
+
+            return Response(
+                {"bid_won": taskBidWonCount, "job_app": JobAppCount, "reviews": reviewCount},
+                status=status.HTTP_200_OK,
+            )
 
         except Exception as e:
             return Response({"errors": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

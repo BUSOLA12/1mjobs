@@ -92,7 +92,19 @@ function updateBillingSummary(order) {
 // Function 1: Updates order with selected billing cycle and proceeds to payment
 function submitBillingCycleUpdate(order) {
   const confirmBtn = document.getElementById("confirm-plan-btn");
-  confirmBtn.addEventListener("click", function () {
+  confirmBtn.addEventListener("click", function (event) {
+    event.preventDefault();
+
+    // Require the Terms & Conditions checkbox before proceeding.
+    const agreed = document.getElementById("two-step");
+    if (!agreed || !agreed.checked) {
+      alert("Please agree to the Terms and Conditions before proceeding.");
+      return;
+    }
+
+    // Show the loading overlay while we create the payment and redirect.
+    showLoading("Redirecting to payment...");
+
     // Determine selected billing type
     const selectedCycle = document.querySelector('input[name="radio-payment-type"]:checked');
     let billingCycle = "monthly"; // default
@@ -103,7 +115,6 @@ function submitBillingCycleUpdate(order) {
       amount = order.plan_data.yearly_price;
     }
 
-    alert(`Selected Cycle: ${billingCycle}, Amount: $${amount}`);
     // Send POST request to update billing cycle
     fetchProtected(`/api/pricing/orders/${order.id}/`, {
       method: "PATCH",
@@ -120,11 +131,13 @@ function submitBillingCycleUpdate(order) {
     })
     .then(data => {
       console.log("Order updated:", data);
-      // Proceed to checkout
+      // Proceed to checkout (overlay stays up until the redirect)
       redirectToPayment(order.id);
     })
     .catch(error => {
       console.error("Error updating order:", error);
+      hideLoading();
+      alert("Something went wrong. Please try again.");
     });
   });
 }
@@ -140,13 +153,17 @@ function redirectToPayment(orderId) {
     })
     .then(data => {
       if (data.payment_url) {
-        window.location.href = data.payment_url;  // Redirect to Paystack
+        window.location.href = data.payment_url;  // keep overlay until navigation
       } else {
         console.error("Payment URL not found in response");
+        hideLoading();
+        alert("Could not start payment. Please try again.");
       }
     })
     .catch(error => {
       console.error("Error redirecting to payment:", error);
+      hideLoading();
+      alert("Could not start payment. Please try again.");
     });
 }
 

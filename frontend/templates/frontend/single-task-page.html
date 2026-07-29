@@ -12,6 +12,50 @@
 <!-- CSS
 ================================================== -->
 {% include 'frontend/partials/css_links.html' %}
+<style>
+  /* Keep the employer meta row (rating, flag, country, verified) on one
+     baseline so the verified pill doesn't sit high. */
+  .single-page-header .header-details ul li {
+    vertical-align: middle;
+  }
+
+  /* Placeholder shown when the employer has no logo. */
+  .header-image #company-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .header-image .task-logo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #9aa0a6;
+    background: #f5f6f8;
+    font-size: 42px;
+  }
+
+  /* Make the Project Budget label and amount larger, bolder and clearer. */
+  .single-page-header .salary-box .salary-type {
+    font-size: 16px;
+    font-weight: 600;
+    color: #4a4a4a;
+    margin-bottom: 4px;
+  }
+  .single-page-header .salary-box .budget-amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+  }
+
+  /* "No ratings yet" label for freelancers with no reviews in the bids list. */
+  .boxed-list-ul .bid-no-rating {
+    color: #888;
+    font-size: 14px;
+  }
+</style>
 </head>
 <body id="mainBody">
 
@@ -34,15 +78,23 @@
 			<div class="col-md-12">
 				<div class="single-page-header-inner">
 					<div class="left-side">
-						<div class="header-image"><a href="#"><img src="" alt=""></a></div>
+						<div class="header-image">
+							<a href="#">
+								<img id="company-logo" src="" alt="" style="display:none;">
+								<span id="company-logo-placeholder" class="task-logo-placeholder"><i class="icon-material-outline-business"></i></span>
+							</a>
+						</div>
 						<div class="header-details">
 							<h3 class="project-name"></h3>
 							<h5>About the Employer</h5>
 							<ul>
-								<li><a href="#" id="company-name"><i class="icon-material-outline-business"></i></a></li>
-								<li><div class="star-rating" data-rating="5.0"></div></li>
-								<li><img class="flag" src="" alt=""> <span id="country-name"></span></li>
-								<li><div class="verified-badge-with-title">Verified</div></li>
+								<li id="company-name-li"><i class="icon-material-outline-business"></i> <span id="company-name"></span></li>
+								<li id="employer-rating-wrap" style="display:none;">
+									<div id="employer-rating" class="star-rating"></div>
+									<span id="employer-rating-text" class="rating-counter"></span>
+								</li>
+								<li id="country-li" style="display:none;"><img class="flag" src="" alt=""> <span id="country-name"></span></li>
+								<li id="verified-li" style="display:none;"><div class="verified-badge-with-title">Verified</div></li>
 							</ul>
 						</div>
 					</div>
@@ -117,7 +169,7 @@
 							<!-- Bid -->
 							<div class="bids-bid">
 								<div class="bid-rate">
-									<div class="rate">$4,400</div>
+									<div class="rate">₦4,400</div>
 									<span>in 7 days</span>
 								</div>
 							</div>
@@ -145,7 +197,7 @@
 							<!-- Bid -->
 							<div class="bids-bid">
 								<div class="bid-rate">
-									<div class="rate">$2,200</div>
+									<div class="rate">₦2,200</div>
 									<span>in 14 days</span>
 								</div>
 							</div>
@@ -165,7 +217,7 @@
 								<!-- Name -->
 								<div class="freelancer-name">
 									<h4><a href="single-freelancer-profile.html">Marcin Kowalski <img class="flag" src="images/flags/pl.svg" alt="" title="Poland" data-tippy-placement="top"></a></h4>
-									<span class="not-rated">Minimum of 3 votes required</span>
+									<span class="not-rated">No ratings yet</span>
 
 								</div>
 							</div>
@@ -173,7 +225,7 @@
 							<!-- Bid -->
 							<div class="bids-bid">
 								<div class="bid-rate">
-									<div class="rate">$3,800</div>
+									<div class="rate">₦3,800</div>
 									<span>In 20 days</span>
 								</div>
 							</div>
@@ -200,7 +252,7 @@
 							<!-- Bid -->
 							<div class="bids-bid">
 								<div class="bid-rate">
-									<div class="rate">$3,400</div>
+									<div class="rate">₦3,400</div>
 									<span>In 10 days</span>
 								</div>
 							</div>
@@ -227,8 +279,8 @@
 							<span class="bidding-detail">Set your <strong>minimal rate</strong></span>
 
 							<!-- Price Slider -->
-							<div class="bidding-value">$<span id="biddingVal"></span></div>
-							<input class="bidding-slider" type="text" value="" data-slider-handle="custom" data-slider-currency="$" data-slider-min="2500" data-slider-max="4500" data-slider-value="auto" data-slider-step="50" data-slider-tooltip="hide" />
+							<div class="bidding-value">₦<span id="biddingVal"></span></div>
+							<input class="bidding-slider" type="text" value="" data-slider-handle="custom" data-slider-currency="₦" data-slider-min="1000" data-slider-max="1000000" data-slider-value="auto" data-slider-step="500" data-slider-tooltip="hide" />
 							
 							<!-- Headline -->
 							<span class="bidding-detail margin-top-30">Set your <strong>delivery time</strong></span>

@@ -140,6 +140,62 @@
 </div>
 <!-- Send Direct Message Popup / End -->
 
+
+<!-- Send Offer Modal
+================================================== -->
+<div id="offer-overlay" class="offer-overlay">
+	<div class="offer-modal">
+		<div class="offer-modal-header">
+			<h3>Send an Offer to <span id="offer-recipient"></span></h3>
+			<a href="#" id="offer-close" class="offer-close">&times;</a>
+		</div>
+		<form id="send-offer-form" onsubmit="return false;">
+			<p style="color:#777;margin-top:0;">This is a long-term engagement. Set the agreement terms below; the freelancer signs before accepting.</p>
+
+			<label class="offer-label">Monthly rate (NGN)</label>
+			<input type="number" min="0" step="0.01" id="offer-amount" class="input-text with-border" placeholder="Monthly rate" required />
+
+			<label class="offer-label">Payment day (day of month, 1-28)</label>
+			<input type="number" min="1" max="28" step="1" id="offer-payment-day" class="input-text with-border" placeholder="e.g. 26" required />
+
+			<label class="offer-label">Cadence</label>
+			<select id="offer-cadence" class="input-text with-border">
+				<option value="monthly" selected>Monthly</option>
+			</select>
+
+			<label class="offer-label">Meeting / availability terms (optional)</label>
+			<textarea id="offer-meeting-terms" class="with-border" rows="3" placeholder="e.g. weekly standups on Mondays, available 9-5 WAT"></textarea>
+
+			<label class="offer-label">Note (optional)</label>
+			<textarea id="offer-note" class="with-border" rows="3" placeholder="Anything else for the candidate"></textarea>
+
+			<button type="submit" id="offer-submit" class="button ripple-effect margin-top-20"
+				style="width:100%;display:block;text-align:center;white-space:nowrap;">
+				Send Offer
+			</button>
+		</form>
+	</div>
+</div>
+<!-- Send Offer Modal / End -->
+
+<style>
+.offer-overlay {
+	position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+	display: none; justify-content: center; align-items: flex-start;
+	z-index: 10000; overflow-y: auto; padding: 60px 15px;
+}
+.offer-overlay.active { display: flex; }
+.offer-modal {
+	background: #fff; border-radius: 10px; max-width: 520px; width: 100%;
+	padding: 28px 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+}
+.offer-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.offer-modal-header h3 { margin: 0; font-size: 20px; }
+.offer-close { font-size: 26px; line-height: 1; color: #888; text-decoration: none; }
+.offer-close:hover { color: #333; }
+.offer-label { display: block; font-weight: 600; margin: 14px 0 6px; }
+</style>
+
 <style>
 /* Loading Overlay */
 .loading-overlay {
@@ -427,6 +483,91 @@ async function deleteApplication(appId, appName) {
 		location.reload();
 }
 }	
+// ---- Send Offer modal ----
+let currentOfferApp = null;
+
+function openOfferModal(app) {
+	currentOfferApp = app;
+	document.getElementById("offer-recipient").textContent = app.name || "candidate";
+	document.getElementById("offer-amount").value = app.bid_amount != null ? app.bid_amount : "";
+	document.getElementById("offer-payment-day").value = "";
+	document.getElementById("offer-meeting-terms").value = "";
+	document.getElementById("offer-note").value = "";
+	document.getElementById("offer-overlay").classList.add("active");
+}
+
+function closeOfferModal() {
+	document.getElementById("offer-overlay").classList.remove("active");
+	currentOfferApp = null;
+}
+
+async function submitOffer() {
+	if (!currentOfferApp) return;
+	const amount = document.getElementById("offer-amount").value;
+	const paymentDay = document.getElementById("offer-payment-day").value;
+	const cadence = document.getElementById("offer-cadence").value;
+	const meetingTerms = document.getElementById("offer-meeting-terms").value.trim();
+	const note = document.getElementById("offer-note").value.trim();
+
+	if (!amount || Number(amount) < 0 || !paymentDay || Number(paymentDay) < 1 || Number(paymentDay) > 28) {
+		Snackbar.show({
+			text: "Enter a valid monthly rate and payment day (1 to 28).",
+			pos: "bottom-center", showAction: true, actionText: "Dismiss",
+			duration: 3500, textColor: "#fff", backgroundColor: "#fa0404ff",
+		});
+		return;
+	}
+
+	try {
+		showLoading("Sending Offer");
+		const response = await fetchProtected(`/api/contracts/offers/send/`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				application: currentOfferApp.id,
+				amount: amount,
+				payment_day: parseInt(paymentDay, 10),
+				cadence: cadence,
+				meeting_terms: meetingTerms,
+				note: note,
+			}),
+		});
+		const data = await response.json().catch(() => ({}));
+		hideLoading();
+		if (response.ok) {
+			Snackbar.show({
+				text: `Offer sent to ${currentOfferApp.name}`,
+				pos: "bottom-center", showAction: true, actionText: "Dismiss",
+				duration: 3000, textColor: "#fff", backgroundColor: "#04fa2dff",
+			});
+			closeOfferModal();
+			location.reload();
+			return;
+		}
+		Snackbar.show({
+			text: data.message || (data.detail || "Could not send offer"),
+			pos: "bottom-center", showAction: true, actionText: "Dismiss",
+			duration: 4000, textColor: "#fff", backgroundColor: "#fa0404ff",
+		});
+	} catch (error) {
+		hideLoading();
+		console.error("Error sending offer:", error);
+		Snackbar.show({
+			text: "Error sending offer",
+			pos: "bottom-center", showAction: true, actionText: "Dismiss",
+			duration: 3000, textColor: "#fff", backgroundColor: "#fa0404ff",
+		});
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	document.getElementById("offer-close").addEventListener("click", (e) => { e.preventDefault(); closeOfferModal(); });
+	document.getElementById("offer-overlay").addEventListener("click", (e) => {
+		if (e.target.id === "offer-overlay") closeOfferModal();
+	});
+	document.getElementById("offer-submit").addEventListener("click", (e) => { e.preventDefault(); submitOffer(); });
+});
+
 async function fetchJobApplication() {
 	showLoading("Loading Job Applications");
 	const jobId = window.location.pathname.split("/").filter(Boolean).pop();
@@ -436,6 +577,25 @@ async function fetchJobApplication() {
 	const response = await fetchProtected(`/api/jobs/getapplication/${jobId}/`);
 	const applicationsData = await response.json();
 	console.log("Applications response:", applicationsData);
+
+	// Map application_id -> latest offer status so each candidate card can show
+	// "Send Offer" / "Offer Sent" / "Hired" appropriately.
+	const offersByApp = {};
+	try {
+		const offersRes = await fetchProtected(`/api/contracts/offers/sent/`);
+		if (offersRes.ok) {
+			const sentOffers = await offersRes.json();
+			for (const o of sentOffers) {
+				// Prefer an active (pending/accepted) offer over older ones.
+				const existing = offersByApp[o.application];
+				if (!existing || o.status === "pending" || o.status === "accepted") {
+					offersByApp[o.application] = o.status;
+				}
+			}
+		}
+	} catch (e) {
+		console.warn("Could not load sent offers:", e);
+	}
 	const jobTitleElement = document.querySelector(".Job-title.Top");
 	if (jobDetails && jobDetails.title) {
 		jobTitleElement.textContent = jobDetails.title;
@@ -456,7 +616,7 @@ async function fetchJobApplication() {
 
 						<!-- Avatar -->
 						<div class="freelancer-avatar">
-							<div class="verified-badge"></div>
+							<div class="online-indicator ${app.is_online ? 'online' : 'offline'}" title="${app.is_online ? 'Online' : 'Offline'}"></div>
 							<a href="#"><img src="${app.applicant_info?.avatar || 'images/user-avatar-big-03.jpg'}" alt=""></a>
 						</div>
 
@@ -464,16 +624,32 @@ async function fetchJobApplication() {
 						<div class="freelancer-name">
 							<h4><a href="#">${app.name} <img class="flag" src="images/flags/au.svg" alt="" title="Australia" data-tippy-placement="top"></a></h4>
 
-							<!-- Details -->
-							<span class="freelancer-detail-item"><a href="#"><i class="icon-feather-mail"></i> ${app.email}</a></span>
+							<!-- Details: proposed price (email is intentionally hidden from the employer) -->
+							<span class="freelancer-detail-item"><a href="#"><i class="icon-feather-dollar-sign"></i> ${app.bid_amount != null ? `Proposed: NGN ${app.bid_amount}` : "No price given"}</a></span>
 							<!-- Rating -->
 							<div class="freelancer-rating">
-								<div class="star-rating" data-rating="5.0"></div>
+								<div class="star-rating" data-rating="${Number(app.applicant_info?.rating ?? 0).toFixed(1)}"></div>
 							</div>
+
+							<!-- Proposal -->
+							${app.proposal ? `<p class="candidate-proposal" style="margin-top:12px;white-space:pre-wrap;">${app.proposal}</p>` : ""}
 
 							<!-- Buttons -->
 							<div class="buttons-to-right always-visible margin-top-25 margin-bottom-5">
-								<a href="${app.files}" class="button ripple-effect" download="${app.name}_CV.pdf"><i class="icon-feather-file-text"></i> Download CV</a>
+								${(() => {
+									const offerStatus = offersByApp[app.id];
+									if (app.status === "accepted" || offerStatus === "accepted") {
+										return `<a href="#" class="button ripple-effect accepted-badge" style="pointer-events:none;background-color:#2a9d3d;"><i class="icon-material-outline-check-circle"></i> Hired</a>`;
+									}
+									if (offerStatus === "pending") {
+										return `<a href="#" class="button ripple-effect" style="pointer-events:none;background-color:#f0ad4e;"><i class="icon-material-outline-schedule"></i> Offer Sent</a>`;
+									}
+									if (app.status === "rejected") {
+										return `<a href="#" class="button ripple-effect" style="pointer-events:none;background-color:#9aa0a6;">Not selected</a>`;
+									}
+									return `<a href="#" class="button ripple-effect sendOfferBtn" title="Send Offer" data-tippy-placement="top"><i class="icon-material-outline-check"></i> Send Offer</a>`;
+								})()}
+								<a href="${app.files}" class="button dark ripple-effect" download="${app.name}_CV.pdf"><i class="icon-feather-file-text"></i> Download CV</a>
 								<a href="#small-dialog" class="popup-with-zoom-anim button dark ripple-effect" data-recipient="${app.name.trim().split(" ")[0]}" data-recId="${app.user}"><i class="icon-feather-mail"></i> Send Message</a>
 								<a href="#" class="button gray ripple-effect ico delApp" title="Remove Candidate" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>
 							</div>
@@ -490,14 +666,27 @@ async function fetchJobApplication() {
 		
 			delAppButton.addEventListener("click", async (e) => {
 				e.preventDefault();
-				
+
 			await deleteApplication(app.id, app.name);
 			lastListItem.remove();
 		});
+
+		let sendOfferButton = lastListItem.querySelector(".button.ripple-effect.sendOfferBtn");
+		if (sendOfferButton) {
+			sendOfferButton.addEventListener("click", (e) => {
+				e.preventDefault();
+				openOfferModal(app);
+			});
+		}
 		
 		
 
-	
+
+	}
+	// The candidate list is injected after custom.js already ran its one-time
+	// starRating() pass, so render the stars for these freshly added rows now.
+	if (typeof starRating === "function") {
+		starRating(".star-rating");
 	}
 	hideLoading();
 	let recipientId = null;

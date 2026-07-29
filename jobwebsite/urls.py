@@ -25,10 +25,14 @@ urlpatterns = [
     path('api/reviews/', include('reviews.urls')),
     path('api/offers/', include('offers.urls')),
     path('api/payments/', include('payments.urls')),
+    path('api/contracts/', include('contracts.urls')),
 
 
     
 ]
+
+# Custom error handler for unmatched URLs (active when DEBUG=False)
+handler404 = 'frontend.views.custom_404'
 
 if settings.DEBUG:
 

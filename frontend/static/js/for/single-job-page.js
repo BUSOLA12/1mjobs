@@ -1,3 +1,37 @@
+// Build the five star spans for a numeric rating using the theme's star classes.
+function buildStars(rating) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) html += '<span class="star"></span>';
+    else if (rating >= i - 0.5) html += '<span class="star half"></span>';
+    else html += '<span class="star empty"></span>';
+  }
+  return html;
+}
+
+// Render the employer's real aggregate rating (or "No ratings yet").
+function renderEmployerRating(rating) {
+  const wrap = document.getElementById('employer-rating-wrap');
+  const starsEl = document.getElementById('employer-rating');
+  const textEl = document.getElementById('employer-rating-text');
+  if (!wrap || !starsEl || !textEl) return;
+
+  const count = rating && rating.count ? rating.count : 0;
+  if (!count) {
+    // Hide the star container so the theme's star-renderer can't leave a stray
+    // glyph next to the "No ratings yet" label.
+    starsEl.innerHTML = '';
+    starsEl.style.display = 'none';
+    textEl.textContent = 'No ratings yet';
+  } else {
+    const avg = rating.avg || 0;
+    starsEl.style.display = '';
+    starsEl.innerHTML = buildStars(avg);
+    textEl.textContent = `${avg.toFixed(1)} (${count})`;
+  }
+  wrap.style.display = 'inline-block';
+}
+
 async function setCountryFromOnline() {
   try {
     // 1. Fetch location data from IP API
@@ -57,16 +91,312 @@ function hideLoading() {
 }
 
 async function getCountryFlag(countryName) {
+  const countryCode = getCountryCode(countryName);
+  return countryCode ? `https://flagcdn.com/w20/${countryCode}.png` : null;
+}
+
+const FLAG_COUNTRY_CODES = [
+  "ad", "ae", "af", "ag", "ai", "al", "am", "ao", "aq", "ar", "as", "at", "au", "aw", "ax", "az",
+  "ba", "bb", "bd", "be", "bf", "bg", "bh", "bi", "bj", "bl", "bm", "bn", "bo", "bq", "br", "bs",
+  "bt", "bv", "bw", "by", "bz", "ca", "cc", "cd", "cf", "cg", "ch", "ci", "ck", "cl", "cm", "cn",
+  "co", "cr", "cu", "cv", "cw", "cx", "cy", "cz", "de", "dj", "dk", "dm", "do", "dz", "ec", "ee",
+  "eg", "eh", "er", "es", "et", "fi", "fj", "fk", "fm", "fo", "fr", "ga", "gb", "gd", "ge", "gf",
+  "gg", "gh", "gi", "gl", "gm", "gn", "gp", "gq", "gr", "gs", "gt", "gu", "gw", "gy", "hk", "hm",
+  "hn", "hr", "ht", "hu", "id", "ie", "il", "im", "in", "io", "iq", "ir", "is", "it", "je", "jm",
+  "jo", "jp", "ke", "kg", "kh", "ki", "km", "kn", "kp", "kr", "kw", "ky", "kz", "la", "lb", "lc",
+  "li", "lk", "lr", "ls", "lt", "lu", "lv", "ly", "ma", "mc", "md", "me", "mf", "mg", "mh", "mk",
+  "ml", "mm", "mn", "mo", "mp", "mq", "mr", "ms", "mt", "mu", "mv", "mw", "mx", "my", "mz", "na",
+  "nc", "ne", "nf", "ng", "ni", "nl", "no", "np", "nr", "nu", "nz", "om", "pa", "pe", "pf", "pg",
+  "ph", "pk", "pl", "pm", "pn", "pr", "ps", "pt", "pw", "py", "qa", "re", "ro", "rs", "ru", "rw",
+  "sa", "sb", "sc", "sd", "se", "sg", "sh", "si", "sj", "sk", "sl", "sm", "sn", "so", "sr", "ss",
+  "st", "sv", "sx", "sy", "sz", "tc", "td", "tf", "tg", "th", "tj", "tk", "tl", "tm", "tn", "to",
+  "tr", "tt", "tv", "tw", "tz", "ua", "ug", "um", "us", "uy", "uz", "va", "vc", "ve", "vg", "vi",
+  "vn", "vu", "wf", "ws", "xk", "ye", "yt", "za", "zm", "zw"
+];
+
+const COUNTRY_CODE_ALIASES = {
+  "america": "us",
+  "britain": "gb",
+  "burma": "mm",
+  "cape verde": "cv",
+  "congo brazzaville": "cg",
+  "congo kinshasa": "cd",
+  "cote d ivoire": "ci",
+  "czech republic": "cz",
+  "czechia": "cz",
+  "democratic republic of the congo": "cd",
+  "dr congo": "cd",
+  "england": "gb",
+  "great britain": "gb",
+  "ivory coast": "ci",
+  "macedonia": "mk",
+  "north korea": "kp",
+  "north macedonia": "mk",
+  "palestine": "ps",
+  "republic of korea": "kr",
+  "republic of the congo": "cg",
+  "russia": "ru",
+  "scotland": "gb",
+  "south korea": "kr",
+  "swaziland": "sz",
+  "syria": "sy",
+  "tanzania": "tz",
+  "uae": "ae",
+  "uk": "gb",
+  "united kingdom": "gb",
+  "united states": "us",
+  "united states of america": "us",
+  "us": "us",
+  "usa": "us",
+  "vietnam": "vn",
+  "viet nam": "vn",
+  "wales": "gb"
+};
+
+let regionDisplayNames = null;
+
+function normalizeCountryName(countryName) {
+  return String(countryName || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function getRegionDisplayNames() {
+  if (regionDisplayNames !== null) return regionDisplayNames;
+
+  regionDisplayNames = typeof Intl !== "undefined" && Intl.DisplayNames
+    ? new Intl.DisplayNames(["en"], { type: "region" })
+    : false;
+
+  return regionDisplayNames;
+}
+
+function getCountryCode(countryName) {
+  const normalizedCountryName = normalizeCountryName(countryName);
+  if (!normalizedCountryName) return null;
+
+  if (/^[a-z]{2}$/.test(normalizedCountryName) && FLAG_COUNTRY_CODES.includes(normalizedCountryName)) {
+    return normalizedCountryName;
+  }
+
+  if (COUNTRY_CODE_ALIASES[normalizedCountryName]) {
+    return COUNTRY_CODE_ALIASES[normalizedCountryName];
+  }
+
+  const displayNames = getRegionDisplayNames();
+  if (!displayNames) return null;
+
+  return FLAG_COUNTRY_CODES.find((countryCode) => {
+    try {
+      return normalizeCountryName(displayNames.of(countryCode.toUpperCase())) === normalizedCountryName;
+    } catch (error) {
+      return false;
+    }
+  }) || null;
+}
+
+function setCountryFlag(flagUrl, countryName) {
+  const flagImg = document.getElementById("country-flag");
+  const placeholder = document.getElementById("country-flag-placeholder");
+
+  if (!flagImg || !placeholder) return;
+
+  if (flagUrl) {
+    flagImg.onerror = () => {
+      flagImg.onerror = null;
+      setCountryFlag(null, countryName);
+    };
+    flagImg.src = flagUrl;
+    flagImg.alt = `${countryName} flag`;
+    flagImg.style.display = "inline-block";
+    placeholder.style.display = "none";
+  } else {
+    flagImg.onerror = null;
+    flagImg.removeAttribute("src");
+    flagImg.alt = "";
+    flagImg.style.display = "none";
+    placeholder.style.display = countryName ? "inline-block" : "none";
+  }
+}
+
+function setCompanyLogo(logoUrl) {
+  const logoImg = document.getElementById("company-logo");
+  const placeholder = document.getElementById("company-logo-placeholder");
+
+  if (!logoImg || !placeholder) return;
+
+  if (logoUrl) {
+    logoImg.src = logoUrl;
+    logoImg.style.display = "block";
+    placeholder.style.display = "none";
+  } else {
+    logoImg.removeAttribute("src");
+    logoImg.style.display = "none";
+    placeholder.style.display = "flex";
+  }
+}
+
+let jobLocationMap = null;
+let jobLocationMarker = null;
+let jobLocationPanorama = null;
+let googleMapsAuthFailed = false;
+
+function normalizeLocationPart(value) {
+  return String(value || "").trim();
+}
+
+function buildJobLocationAddress(job) {
+  const parts = [job.location, job.city, job.country]
+    .map(normalizeLocationPart)
+    .filter(Boolean);
+
+  return parts
+    .filter((part, index) => {
+      const normalizedPart = part.toLowerCase();
+      return parts.findIndex((candidate) => candidate.toLowerCase() === normalizedPart) === index;
+    })
+    .join(", ");
+}
+
+function showLocationSnackbar(message) {
+  if (window.Snackbar) {
+    Snackbar.show({
+      text: message,
+      pos: "bottom-center",
+      showAction: true,
+      actionText: "Dismiss",
+      duration: 3000,
+      textColor: "#fff",
+      backgroundColor: "#fa0404ff",
+    });
+    return;
+  }
+
+  console.warn(message);
+}
+
+function setStreetViewButtonState(enabled) {
+  const streetViewButton = document.getElementById("streetView");
+  if (!streetViewButton) return;
+
+  streetViewButton.setAttribute("aria-disabled", enabled ? "false" : "true");
+}
+
+function googleMapsAvailable() {
+  if (googleMapsAuthFailed) return false;
+
+  return Boolean(
+    window.google &&
+    google.maps &&
+    google.maps.Map &&
+    google.maps.Geocoder &&
+    google.maps.StreetViewService
+  );
+}
+
+function geocodeJobAddress(address) {
+  return new Promise((resolve, reject) => {
+    const geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode({ address }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        resolve(results[0]);
+        return;
+      }
+
+      reject(new Error("Could not find this job location on Google Maps."));
+    });
+  });
+}
+
+function bindUnavailableStreetView(message) {
+  const streetViewButton = document.getElementById("streetView");
+  if (!streetViewButton) return;
+
+  setStreetViewButtonState(false);
+  streetViewButton.onclick = (event) => {
+    event.preventDefault();
+    showLocationSnackbar(message);
+  };
+}
+
+async function initJobLocationMap(job) {
+  const mapElement = document.getElementById("singleListingMap");
+  const streetViewButton = document.getElementById("streetView");
+  const address = buildJobLocationAddress(job);
+
+  if (!mapElement || !streetViewButton) return;
+
+  if (!address) {
+    bindUnavailableStreetView("Job location is not available.");
+    return;
+  }
+
+  if (googleMapsAuthFailed) {
+    bindUnavailableStreetView("Google Maps API key is not authorized for this site URL.");
+    return;
+  }
+
+  if (!googleMapsAvailable()) {
+    bindUnavailableStreetView("Google Maps is not available right now.");
+    return;
+  }
+
   try {
-    const response = await fetch(`https://restcountries.com/v3.1/name/${countryName}?fullText=true`);
-    if (!response.ok) throw new Error("Country not found");
-    
-    const data = await response.json();
-    const flagUrl = data[0].flags.png; // or .svg
-    return flagUrl;
+    const geocodeResult = await geocodeJobAddress(address);
+    const position = geocodeResult.geometry.location;
+
+    mapElement.dataset.latitude = position.lat();
+    mapElement.dataset.longitude = position.lng();
+
+    jobLocationMap = new google.maps.Map(mapElement, {
+      zoom: 15,
+      center: position,
+      scrollwheel: false,
+      streetViewControl: true,
+      mapTypeControl: false,
+      fullscreenControl: true,
+      gestureHandling: "cooperative",
+    });
+
+    jobLocationMarker = new google.maps.Marker({
+      position,
+      map: jobLocationMap,
+      title: address,
+    });
+
+    jobLocationPanorama = jobLocationMap.getStreetView();
+    const streetViewService = new google.maps.StreetViewService();
+
+    setStreetViewButtonState(true);
+    streetViewButton.onclick = (event) => {
+      event.preventDefault();
+
+      streetViewService.getPanorama(
+        {
+          location: position,
+          radius: 1000,
+          source: google.maps.StreetViewSource.OUTDOOR,
+        },
+        (panoramaData, status) => {
+          if (status === "OK" && panoramaData && panoramaData.location && panoramaData.location.latLng) {
+            jobLocationPanorama.setPosition(panoramaData.location.latLng);
+            jobLocationPanorama.setPov({ heading: 0, pitch: 0 });
+            jobLocationPanorama.setVisible(true);
+            return;
+          }
+
+          showLocationSnackbar("Street View is not available for this job location.");
+        }
+      );
+    };
   } catch (error) {
-    console.error("Error fetching flag:", error);
-    return null;
+    console.error(error);
+    bindUnavailableStreetView(error.message);
   }
 }
 
@@ -118,15 +448,15 @@ async function fetchSimilarJobs(jobId) {
               <img src="${job.company_info !== null ? job.company_info.logo_url : ""}" style="max-width: 100%; height: 100%;" alt="">
             </div>
 
-            <!-- Details -->
-            <div class="job-listing-description">
-              <h4 class="job-listing-company">
-                <span>Web79</span>
-                ${job.verified ? `<span class="verified-badge" title="Verified Employer" data-tippy-placement="top"></span>` : ""}
-              </h4>
-              <h3 class="job-listing-title">${job.title || ""}</h3>
+<!-- Details -->
+              <div class="job-listing-description">
+                <h4 class="job-listing-company">
+                  <span>${job.company_info && job.company_info.company_name ? job.company_info.company_name : "Company"}</span>
+                  ${job.company_info && job.company_info.verified ? `<span class="verified-badge" title="Verified Employer" data-tippy-placement="top"></span>` : ""}
+                </h4>
+                <h3 class="job-listing-title">${job.title || ""}</h3>
+              </div>
             </div>
-          </div>
 
           <!-- Job Listing Footer -->
           <div class="job-listing-footer">
@@ -141,7 +471,7 @@ async function fetchSimilarJobs(jobId) {
               </li>
               <li>
                 <i class="icon-material-outline-account-balance-wallet"></i>
-                $${job.salary_min || ""} - $${job.salary_max || ""}
+                ₦${job.salary_min || ""} - ₦${job.salary_max || ""}
               </li>
               <li>
                 <i class="icon-material-outline-access-time"></i>
@@ -179,6 +509,11 @@ function formatDate(dateString) {
 
 
 
+window.addEventListener("google-maps-auth-failure", () => {
+  googleMapsAuthFailed = true;
+  bindUnavailableStreetView("Google Maps API key is not authorized for this site URL.");
+});
+
 	document.addEventListener("DOMContentLoaded", async function () {
 		// const jobId = new URLSearchParams(window.location.search).get("id");
 		const jobId = window.location.pathname.split("/").filter(Boolean).pop();
@@ -187,19 +522,7 @@ function formatDate(dateString) {
 
     // handle Bookmark button
     const bookmarkButton = document.querySelector(".bookmark-button");
-
-		bookmarkButton.setAttribute("data-job-id", jobId);
-		if (bookmarkButton) {
-			bookmarkButton.addEventListener("click", () => {
-				console.log("Bookmark button got clicked")
-				if (bookmarkButton.classList.contains("bookmarked")) {
-					bookmarkHandling("delete", "job", bookmarkButton);
-
-				} else {
-					bookmarkHandling("create", "job", bookmarkButton);
-				}
-			});
-		}
+    initBookmarkButton(bookmarkButton, "job", jobId);
 		
 		countryName = await setCountryFromOnline();
 		if (jobId) {
@@ -238,20 +561,26 @@ function formatDate(dateString) {
         const comp_data = await getCompanyDetails(data.user);
 				console.log("Company data:", comp_data);
 				
-        document.querySelector(".header-image img").src = comp_data.logo_url;
-
-				document.querySelector("#country-name").textContent = comp_data.company_country; 
-				document.querySelector("#company-name").textContent = comp_data.company_name; 
-
-        const flagImg = document.querySelector(".flag");
-
-        getCountryFlag(comp_data.company_country).then(flagUrl => {
-				if (flagUrl) {
-					flagImg.src = flagUrl;
-				} else {
-					flagImg.alt = "Flag not available";
-				}
-				});
+        if (comp_data.company_country) {
+            setCompanyLogo(comp_data.logo_url);
+            document.querySelector("#country-name").textContent = comp_data.company_country; 
+            document.querySelector("#company-name").textContent = comp_data.company_name; 
+            const flagUrl = await getCountryFlag(comp_data.company_country);
+            setCountryFlag(flagUrl, comp_data.company_country);
+document.querySelector("#company-profile-link").href = `/single/company-profile/${data.user}/`;
+             document.querySelector("#company-name-container").style.display = "block";
+             renderEmployerRating(data.employer_rating);
+             
+             // Show verified badge only if company is verified
+             const verifiedBadgeLi = document.querySelector("#company-name-container").parentElement.querySelector("li:last-child .verified-badge-with-title");
+             if (comp_data.verified) {
+                 verifiedBadgeLi.style.display = "block";
+             } else {
+                 verifiedBadgeLi.style.display = "none";
+             }
+         } else {
+             document.querySelector("#company-name-container").style.display = "none";
+         }
 
       } else {
           if (userInfo && userInfo.role == "freelancer") {
@@ -296,45 +625,54 @@ function formatDate(dateString) {
         document.querySelector("h3").textContent = data.title;
         const container = document.querySelector(".attachments-container");
 
-				// Check if there’s a file
-				if (data.files) {
-					// Create the attachment box
+				// Build a downloadable attachment box (text set safely, no innerHTML)
+				function addAttachment(fileUrl, label) {
 					const attachment = document.createElement("a");
 					attachment.href = "#";
 					attachment.className = "attachment-box ripple-effect";
-					attachment.dataset.fileUrl = data.files; // Store file URL in dataset
-					attachment.innerHTML = `<span>${data.title} File</span><i>${data.files.split('.').pop().toUpperCase()}</i>`;
+					attachment.dataset.fileUrl = fileUrl;
 
-					// Add to container
+					const labelSpan = document.createElement("span");
+					labelSpan.textContent = label;
+					const extTag = document.createElement("i");
+					extTag.textContent = fileUrl.split("?")[0].split(".").pop().toUpperCase();
+					attachment.appendChild(labelSpan);
+					attachment.appendChild(extTag);
+
 					container.appendChild(attachment);
 
-					// Add click listener for download
 					attachment.addEventListener("click", function (e) {
-					e.preventDefault();
+						e.preventDefault();
 
-					const fileUrl = this.dataset.fileUrl;
+						const url = this.dataset.fileUrl;
+						if (!url) {
+							Snackbar.show({
+								text: "No file found to download!",
+								pos: "bottom-center",
+								showAction: true,
+								actionText: "Dismiss",
+								duration: 3000,
+								textColor: "#fff",
+								backgroundColor: "#fa0404ff",
+							});
+							return;
+						}
 
-					if (!fileUrl) {
-						Snackbar.show({
-						text: "No file found to download!",
-						pos: "bottom-center",
-						showAction: true,
-						actionText: "Dismiss",
-						duration: 3000,
-						textColor: "#fff",
-						backgroundColor: "#fa0404ff",
-						});
-						return;
-					}
-
-					// Create a temporary hidden <a> tag for download
-					const link = document.createElement("a");
-					link.href = fileUrl;
-					link.download = fileUrl.split("/").pop(); // Suggests a filename
-					document.body.appendChild(link);
-					link.click();
-					document.body.removeChild(link);
+						const link = document.createElement("a");
+						link.href = url;
+						link.download = url.split("/").pop();
+						document.body.appendChild(link);
+						link.click();
+						document.body.removeChild(link);
 					});
+				}
+
+				// Prefer the multiple-file list; fall back to the legacy single file
+				const uploadedFiles = Array.isArray(data.uploaded_files) ? data.uploaded_files : [];
+				if (uploadedFiles.length > 0) {
+					uploadedFiles.forEach((f, idx) => addAttachment(f.url, `${data.title} File ${idx + 1}`));
+				} else if (data.files) {
+					addAttachment(data.files, `${data.title} File`);
 				} else {
 					container.innerHTML = "<p>No attachments found.</p>";
 				}
@@ -347,11 +685,12 @@ function formatDate(dateString) {
 
 
 				//salary
-				document.querySelector(".salary-amount").textContent = `$${data.salary_min} - $${data.salary_max}`;
-				document.querySelector(".job-overview li:nth-child(3) h5").textContent = `$${data.salary_min} - $${data.salary_max}`;
+				document.querySelector(".salary-amount").textContent = `₦${data.salary_min} - ₦${data.salary_max}`;
+				document.querySelector(".job-overview li:nth-child(3) h5").textContent = `₦${data.salary_min} - ₦${data.salary_max}`;
 
 				// Location
 				document.querySelector(".job-overview li:nth-child(1) h5").textContent = data.location;
+        initJobLocationMap(data);
 
 				// Job Type
 				document.querySelector(".job-overview li:nth-child(2) h5").textContent = data.job_type;
@@ -384,6 +723,7 @@ function formatDate(dateString) {
 
 
 	document.querySelector('#message-employer-btn').addEventListener('click', async function () {
+    if (!await requireLogin()) return;
     try {
         const jobId = window.location.pathname.split("/").filter(Boolean).pop();
 
@@ -418,7 +758,7 @@ function formatDate(dateString) {
 		console.log(createConvData);
 		convId = createConvData.id;
 
-		window.location.href = `/dashboard/dashboard-messages/?conv_id=${convId}&UserId=${UserId}&EmpId=${EmpId}`;
+		window.location.href = `/dashboard/messages/?conv_id=${convId}&UserId=${UserId}&EmpId=${EmpId}`;
 
     } catch (error) {
         console.error('Error fetching user data:', error);
@@ -428,6 +768,7 @@ function formatDate(dateString) {
 
 
 document.querySelector('#apply-now-button').addEventListener('click', async function() {
+    if (!await requireLogin()) return;
     try {
         const jobId = window.location.pathname.split("/").filter(Boolean).pop();
         showLoading("Sending Application");
@@ -446,11 +787,25 @@ document.querySelector('#apply-now-button').addEventListener('click', async func
         }
 		
 		    
+        const proposal = document.getElementById('proposal').value.trim();
+        const bidAmount = document.getElementById('bid_amount').value;
+        if (!proposal) {
+          Snackbar.show({
+            text: "Please write a proposal before applying.",
+            pos: "bottom-center", showAction: true, actionText: "Dismiss",
+            duration: 3000, textColor: "#fff", backgroundColor: "#fc0707ff",
+          });
+          hideLoading();
+          return;
+        }
+
         const formData = new FormData();
-        formData.append("user", userInfo.id);
+        // The applicant's email is never collected here; the server derives it
+        // from the logged-in account and keeps it hidden from the employer.
         formData.append('job', jobId);
         formData.append('name', document.getElementById('name').value);
-        formData.append('email', document.getElementById('emailaddress').value);
+        formData.append('proposal', proposal);
+        formData.append('bid_amount', bidAmount);
         const files = document.querySelector("#upload-cv").files;
         for (let i = 0; i < files.length; i++) {
           formData.append("files", files[i]);

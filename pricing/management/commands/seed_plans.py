@@ -5,80 +5,38 @@ from django.core.management.base import BaseCommand
 from pricing.models import Plan, PlanFeature
 
 
+# Free + Pro model: everything core is free (profiles, applying, posting,
+# payments, KYC). One Pro plan per side carries the paid perks; old tiered
+# plans are deactivated (never deleted) so existing subscriptions keep working.
 PLANS = [
-    # ---------------- Freelancer ----------------
     {
-        "name": "basic",
+        "name": "pro",
         "user_type": "freelancer",
-        "description": "Basic Freelancer Plan — get started with limited applications and bids.",
-        "monthly_price": Decimal("3000.00"),
-        "yearly_price": Decimal("30000.00"),
+        "description": "Freelancer Pro — featured profile, see who viewed you, "
+                       "12h early access to new jobs, higher search ranking, priority support.",
+        "monthly_price": Decimal("15000.00"),
+        "yearly_price": Decimal("150000.00"),
         "features": [
-            {"feature_name": "job_applications", "limit": 5, "is_boolean": False},
-            {"feature_name": "biddings", "limit": 10, "is_boolean": False},
-            {"feature_name": "offers", "limit": 5, "is_boolean": False},
-        ],
-    },
-    {
-        "name": "standard",
-        "user_type": "freelancer",
-        "description": "Standard Freelancer Plan — higher monthly limits for active freelancers.",
-        "monthly_price": Decimal("7000.00"),
-        "yearly_price": Decimal("70000.00"),
-        "features": [
-            {"feature_name": "job_applications", "limit": 25, "is_boolean": False},
-            {"feature_name": "biddings", "limit": 100, "is_boolean": False},
-            {"feature_name": "offers", "limit": 20, "is_boolean": False},
+            {"feature_name": "featured_profile", "limit": None, "is_boolean": True},
+            {"feature_name": "profile_viewers", "limit": None, "is_boolean": True},
+            {"feature_name": "early_access", "limit": None, "is_boolean": True},
+            {"feature_name": "search_boost", "limit": None, "is_boolean": True},
+            {"feature_name": "priority_support", "limit": None, "is_boolean": True},
         ],
     },
     {
         "name": "pro",
-        "user_type": "freelancer",
-        "description": "Pro Freelancer Plan — unlimited applications, biddings, and a verified badge.",
-        "monthly_price": Decimal("15000.00"),
-        "yearly_price": Decimal("150000.00"),
+        "user_type": "employer",
+        "description": "Employer Pro — featured job posts, direct offers to freelancers, "
+                       "premium badge, advanced hiring analytics, priority support.",
+        "monthly_price": Decimal("25000.00"),
+        "yearly_price": Decimal("250000.00"),
         "features": [
-            {"feature_name": "job_applications", "limit": None, "is_boolean": False},
-            {"feature_name": "biddings", "limit": None, "is_boolean": False},
+            {"feature_name": "featured_job", "limit": 5, "is_boolean": False},
             {"feature_name": "offers", "limit": None, "is_boolean": False},
-            {"feature_name": "verified_badge", "limit": None, "is_boolean": True},
-        ],
-    },
-
-    # ---------------- Employer ----------------
-    {
-        "name": "basic",
-        "user_type": "employer",
-        "description": "Basic Employer Plan — small teams hiring occasionally.",
-        "monthly_price": Decimal("5000.00"),
-        "yearly_price": Decimal("50000.00"),
-        "features": [
-            {"feature_name": "job_listings", "limit": 4, "is_boolean": False},
-            {"feature_name": "task_listings", "limit": 6, "is_boolean": False},
-        ],
-    },
-    {
-        "name": "business",
-        "user_type": "employer",
-        "description": "Business Employer Plan — growing companies with active hiring.",
-        "monthly_price": Decimal("12000.00"),
-        "yearly_price": Decimal("120000.00"),
-        "features": [
-            {"feature_name": "job_listings", "limit": 8, "is_boolean": False},
-            {"feature_name": "task_listings", "limit": 12, "is_boolean": False},
-            {"feature_name": "verified_badge", "limit": None, "is_boolean": True},
-        ],
-    },
-    {
-        "name": "enterprise",
-        "user_type": "employer",
-        "description": "Enterprise Employer Plan — large companies hiring at scale.",
-        "monthly_price": Decimal("50000.00"),
-        "yearly_price": Decimal("500000.00"),
-        "features": [
-            {"feature_name": "job_listings", "limit": 50, "is_boolean": False},
-            {"feature_name": "task_listings", "limit": 50, "is_boolean": False},
-            {"feature_name": "verified_badge", "limit": None, "is_boolean": True},
+            {"feature_name": "premium_badge", "limit": None, "is_boolean": True},
+            {"feature_name": "hiring_analytics", "limit": None, "is_boolean": True},
+            {"feature_name": "priority_support", "limit": None, "is_boolean": True},
         ],
     },
 ]
@@ -129,6 +87,15 @@ class Command(BaseCommand):
                 f"  ✓ {verb} {plan.user_type}/{plan.name} "
                 f"(monthly ₦{plan.monthly_price:,.0f}, yearly ₦{plan.yearly_price:,.0f})"
             ))
+
+        # Deactivate plans not in the Free + Pro lineup. Never delete: existing
+        # subscriptions keep their plan FK and stay valid until they expire.
+        keep = {(p["user_type"], p["name"]) for p in PLANS}
+        for plan in Plan.objects.filter(is_active=True):
+            if (plan.user_type, plan.name) not in keep:
+                plan.is_active = False
+                plan.save(update_fields=["is_active"])
+                self.stdout.write(f"  - Deactivated {plan.user_type}/{plan.name}")
 
         self.stdout.write(self.style.SUCCESS(
             f"🎉 Done. {Plan.objects.count()} total plans, "

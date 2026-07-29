@@ -17,6 +17,11 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 # Two-Factor Authentication imports
 from .models import TwoFactorCode
+from django.utils import timezone
+from datetime import timedelta
+
+# How long a one-time code stays valid after being issued.
+OTP_VALIDITY_MINUTES = 10
 
 # Get the user model
 User = get_user_model()
@@ -33,7 +38,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
-            role=validated_data.get('role', 'freelancer')
+            role=validated_data.get('role', 'employer')
         )
         return user
 
@@ -52,22 +57,32 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = authenticate(username=email, password=password)
 
         if user is None:
+            # authenticate() rejects inactive (suspended/banned) users, so
+            # re-check the password to tell "wrong password" apart from
+            # "correct password but blocked account".
             user = User.objects.filter(email=email).first()
-            if user:
-                if user.is_banned or user.account_status in ["suspended", "banned"]:
-                    raise PermissionDenied("Account is suspended or banned")
+            if user and user.check_password(password) and (
+                user.is_banned or user.account_status in ["suspended", "banned"]
+            ):
+                raise PermissionDenied(self._blocked_payload(user))
             raise AuthenticationFailed("Invalid email or password")
-        elif user.account_status == "pending_verification" or not user.verified_email:
-            raise serializers.ValidationError({
-                "detail": "Email not verified.",
-                "code": "email_not_verified"
-            })
 
 
         self.user = user  # store user for get_token use
         data = super().validate(attrs)
         data['user_id'] = user.id
         return data
+
+    @staticmethod
+    def _blocked_payload(user):
+        is_banned = user.account_status == "banned" or user.is_banned
+        return {
+            "code": "account_blocked",
+            "account_status": "banned" if is_banned else "suspended",
+            "reason": (user.banned_reason if is_banned else user.suspension_reason) or "",
+            "suspended_until": user.suspended_until.isoformat() if user.suspended_until else None,
+            "email": user.email,
+        }
 
     @classmethod
     def get_token(cls, user):
@@ -83,7 +98,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 #Password Reset Serializer
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True)
+    old_password = serializers.CharField(required=False, allow_blank=True, default='')
     new_password = serializers.CharField(required=True)
 
     def validate_new_password(self, value):
@@ -136,6 +151,9 @@ class TwoFactorVerifySerializer(serializers.Serializer):
         except (User.DoesNotExist, TwoFactorCode.DoesNotExist):
             raise serializers.ValidationError("Invalid code")
 
+        if tf.created_at < timezone.now() - timedelta(minutes=OTP_VALIDITY_MINUTES):
+            raise serializers.ValidationError("Code has expired. Please request a new one.")
+
         attrs['user'] = user
         attrs['tf_code'] = tf
         return attrs
@@ -144,7 +162,26 @@ class TwoFactorVerifySerializer(serializers.Serializer):
         self.validated_data['tf_code'].is_used = True
         self.validated_data['tf_code'].save()
         return self.validated_data['user']
+
+class TwoFactorConfirmSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6)
     
 class EmailOTPVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
+
+
+class AppealSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    message = serializers.CharField(max_length=2000)
+
+
+class AppealLinkRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class AppealTokenSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    message = serializers.CharField(max_length=2000)

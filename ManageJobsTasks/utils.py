@@ -1,11 +1,186 @@
 # jobs/utils.py
 
+import os
 from datetime import timedelta
 from django.utils import timezone
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.urls import reverse
 from .models import Job
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+# Allowed upload types and size cap for job files (images, PDF, Word docs).
+ALLOWED_FILE_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".doc", ".docx",
+}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB per file
+
+
+def validate_job_file(uploaded_file):
+    """Validate a single uploaded job file.
+
+    Returns an error message string when the file is invalid, or None when it
+    passes. Used by the job create view to reject bad uploads server-side.
+    """
+    extension = os.path.splitext(uploaded_file.name)[1].lower()
+    if extension not in ALLOWED_FILE_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_FILE_EXTENSIONS))
+        return f"File type '{extension or uploaded_file.name}' is not allowed. Allowed types: {allowed}."
+
+    if uploaded_file.size > MAX_FILE_SIZE:
+        return f"File '{uploaded_file.name}' exceeds the 10 MB size limit."
+
+    return None
+
+
+def apply_early_access_window(jobs, request):
+    """Freelancer Pro perk: hide jobs younger than EARLY_ACCESS_HOURS from
+    non-Pro freelancers and anonymous visitors. Employers/admins and Pro
+    freelancers (early_access feature) see everything immediately."""
+    from pricing.features import EARLY_ACCESS, has_feature
+
+    user = request.user
+    if user.is_authenticated:
+        if getattr(user, "role", None) in ("employer", "admin"):
+            return jobs
+        if has_feature(user, EARLY_ACCESS):
+            return jobs
+    cutoff = timezone.now() - timedelta(hours=settings.EARLY_ACCESS_HOURS)
+    return jobs.filter(created_at__lte=cutoff)
+
+
+def notify_employer_of_application(application, request=None):
+    """Email the employer (HTML) that someone applied to their job.
+
+    Called after a JobApplication is created. Sends a plain-text body with an
+    HTML alternative. Failures are swallowed so a mail outage never breaks the
+    application flow.
+
+    Links are built from the incoming ``request`` so they point at whatever
+    host the app is served from (local, staging, production). The "Review
+    application" button deep-links to this job's manage-candidates page. Falls
+    back to ``settings.FRONTEND_URL`` when no request is available.
+    """
+    job = application.job
+    employer = job.user
+    employer_email = getattr(employer, "email", None)
+    if not employer_email:
+        return
+
+    subject = f"New application for your job: {job.title}"
+
+    # Path to the employer's candidate-review page for this specific job.
+    review_path = reverse("dashboard_manage_candidates", args=[job.id])
+    if request is not None:
+        site_url = request.build_absolute_uri("/")
+        review_url = request.build_absolute_uri(review_path)
+    else:
+        site_url = settings.FRONTEND_URL
+        review_url = settings.FRONTEND_URL.rstrip("/") + review_path
+
+    # Note: the applicant's email is deliberately omitted. It is platform-internal
+    # and must never be surfaced to the employer.
+    context = {
+        "applicant_name": application.name,
+        "bid_amount": application.bid_amount,
+        "job_title": job.title,
+        "applications_count": application.applications_count,
+        "link": review_url,
+        "site_url": site_url,
+    }
+
+    price_line = (
+        f"Proposed price: NGN {application.bid_amount}\n"
+        if application.bid_amount is not None else ""
+    )
+
+    # Plain-text fallback for clients that don't render HTML.
+    text_body = (
+        f"{application.name} has applied for your job posting \"{job.title}\".\n\n"
+        f"Applicant name: {application.name}\n"
+        f"{price_line}"
+        f"Total applications so far: {application.applications_count}\n\n"
+        f"Review the application here: {review_url}\n\n"
+        f"One Million Jobs"
+    )
+
+    try:
+        html_body = render_to_string("emails/job_application_notification.html", context)
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[employer_email],
+        )
+        email.attach_alternative(html_body, "text/html")
+        email.send(fail_silently=True)
+    except Exception as e:
+        # Don't let an email error surface to the applicant.
+        print(f"Failed to send employer application email: {e}")
+
+
+def notify_employer_of_bid(bid, request=None):
+    """Email the employer (HTML) that a freelancer bid on their task.
+
+    Called after a TaskBidding is created. Failures are swallowed so a mail
+    outage never breaks the bidding flow. Links are built from the incoming
+    ``request``; falls back to ``settings.FRONTEND_URL``.
+    """
+    task = bid.task
+    employer = task.user
+    employer_email = getattr(employer, "email", None)
+    if not employer_email:
+        return
+
+    freelancer = bid.freelancer
+    freelancer_name = f"{freelancer.first_name} {freelancer.last_name}".strip() or freelancer.email
+
+    subject = f"New bid on your task: {task.project_name}"
+
+    review_path = reverse("dashboard_manage_bidders", args=[task.id])
+    if request is not None:
+        site_url = request.build_absolute_uri("/")
+        review_url = request.build_absolute_uri(review_path)
+    else:
+        site_url = settings.FRONTEND_URL
+        review_url = settings.FRONTEND_URL.rstrip("/") + review_path
+
+    context = {
+        "freelancer_name": freelancer_name,
+        "task_name": task.project_name,
+        "bid_amount": bid.bid_amount,
+        "delivery_time": bid.delivery_time,
+        "bids_count": task.bidding.count(),
+        "link": review_url,
+        "site_url": site_url,
+    }
+
+    text_body = (
+        f"{freelancer_name} has placed a bid on your task \"{task.project_name}\".\n\n"
+        f"Bid amount: NGN {bid.bid_amount}\n"
+        f"Delivery time: {bid.delivery_time}\n"
+        f"Total bids so far: {context['bids_count']}\n\n"
+        f"Review the bid here: {review_url}\n\n"
+        f"One Million Jobs"
+    )
+
+    try:
+        html_body = render_to_string("emails/task_bid_notification.html", context)
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[employer_email],
+        )
+        email.attach_alternative(html_body, "text/html")
+        email.send(fail_silently=True)
+    except Exception as e:
+        # Don't let an email error surface to the bidder.
+        print(f"Failed to send employer bid email: {e}")
 
 
 SAMPLE_JOBS = [

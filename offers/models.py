@@ -16,6 +16,16 @@ class Offer(models.Model):
     sender_full_name = models.CharField(max_length=255)
     sender_email = models.EmailField()
 
+    # An offer may be tied to one of the sender's jobs or tasks (optional).
+    job = models.ForeignKey(
+        'ManageJobsTasks.Job', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='offers'
+    )
+    task = models.ForeignKey(
+        'ManageJobsTasks.Task', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='offers'
+    )
+
     message = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,85 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Disputes{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Contract Disputes</h4>
+    </div>
+
+    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 640px;">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by job title or email">
+        <select name="status" class="form-select" style="max-width: 220px;">
+            <option value="">All statuses</option>
+            <option value="open"              {% if status == 'open' %}selected{% endif %}>Open</option>
+            <option value="under_review"      {% if status == 'under_review' %}selected{% endif %}>Under review</option>
+            <option value="resolved_released" {% if status == 'resolved_released' %}selected{% endif %}>Resolved - released</option>
+            <option value="resolved_refunded" {% if status == 'resolved_refunded' %}selected{% endif %}>Resolved - refunded</option>
+            <option value="rejected"          {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+    </form>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Contract / Job</th>
+                            <th>Raised by</th>
+                            <th>Amount</th>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in page_obj %}
+                            <tr>
+                                <td>{{ d.id }}</td>
+                                <td>{{ d.contract.job.title }}<br><small class="text-muted">Contract #{{ d.contract.id }}</small></td>
+                                <td>{{ d.raised_by.get_full_name|default:d.raised_by.email }}</td>
+                                <td>NGN {{ d.contract.amount }}</td>
+                                <td>{{ d.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if d.status == 'resolved_released' %}
+                                        <span class="badge bg-success">Released</span>
+                                    {% elif d.status == 'resolved_refunded' %}
+                                        <span class="badge bg-info">Refunded</span>
+                                    {% elif d.status == 'rejected' %}
+                                        <span class="badge bg-secondary">Rejected</span>
+                                    {% elif d.status == 'under_review' %}
+                                        <span class="badge bg-primary">Under review</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Open</span>
+                                    {% endif %}
+                                </td>
+                                <td><a href="{% url 'admin_dispute_detail' d.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center text-muted py-4">No disputes.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

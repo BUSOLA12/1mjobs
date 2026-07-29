@@ -24,34 +24,53 @@
                             <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> User Management</a>
 								<ul>
 									{% comment %} <li><a href="{% url 'dashboard_manage_jobs' %}">Manage Jobs <span class="nav-tag"></span></a></li> {% endcomment %}
-									<li><a href="{% url 'admin_user_list' %}">Users</a></li>
+									<li><a href="{% url 'admin_user_list' %}"><i class="icon-material-outline-group"></i> Users</a></li>
 
-									<li><a href="{% url 'user-action-logs' %}">User Activity</a></li>
+									<li><a href="{% url 'admin_kyc_list' %}"><i class="icon-material-outline-fingerprint"></i> Identity Verification (KYC)</a></li>
+
+									<li><a href="{% url 'admin_appeal_list' %}"><i class="icon-material-outline-gavel"></i> Account Appeals</a></li>
+
+									<li><a href="{% url 'user-action-logs' %}"><i class="icon-material-outline-history"></i> User Activity</a></li>
 								</ul>
 							</li>
                             <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Pricing Management</a>
 								<ul>
-									<li><a href="{% url 'admin-pricing-list' %}">Plans</a></li>
-									<li><a href="{% url 'admin-pricing-create' %}">Create a Plan</a></li>
+									<li><a href="{% url 'admin-pricing-list' %}"><i class="icon-material-outline-local-offer"></i> Plans</a></li>
+									<li><a href="{% url 'admin-pricing-create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create a Plan</a></li>
 								</ul>	
 							</li>
                             <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Order and Subscription</a>
 								<ul>
-									<li><a href="{% url 'admin_order_list' %}">Orders</a></li>
-									<li><a href="{% url 'admin_subscription_list' %}">Subscriptions</a></li>
-									<li><a href="{% url 'admin_transaction_list' %}">Transactions</a></li>
-								</ul>	
+									<li><a href="{% url 'admin_order_list' %}"><i class="icon-material-outline-shopping-cart"></i> Orders</a></li>
+									<li><a href="{% url 'admin_subscription_list' %}"><i class="icon-material-outline-autorenew"></i> Subscriptions</a></li>
+									<li><a href="{% url 'admin_transaction_list' %}"><i class="icon-material-outline-account-balance-wallet"></i> Transactions</a></li>
+									<li><a href="{% url 'admin_withdrawal_list' %}"><i class="icon-material-outline-payment"></i> Withdrawals</a></li>
+									<li><a href="{% url 'admin_dispute_list' %}"><i class="icon-material-outline-gavel"></i> Disputes</a></li>
+									<li><a href="{% url 'admin_termination_list' %}"><i class="icon-material-outline-cancel"></i> Terminations</a></li>
+								</ul>
 							</li>
                             <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Jobs and Tasks</a>
 								<ul>
-									<li><a href="{% url 'admin_job_list' %}">Jobs</a></li>
-									<li><a href="{% url 'admin_task_list' %}">Tasks</a></li>
-								</ul>	
+									<li><a href="{% url 'admin_job_list' %}"><i class="icon-material-outline-assignment"></i> Jobs</a></li>
+									<li><a href="{% url 'admin_task_list' %}"><i class="icon-material-outline-check-circle"></i> Tasks</a></li>
+								</ul>
+							</li>
+                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Company Management</a>
+								<ul>
+									<li><a href="{% url 'admin_company_list' %}"><i class="icon-material-outline-business"></i> Companies</a></li>
+									<li><a href="{% url 'admin_company_create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create Company</a></li>
+								</ul>
 							</li>
 						</ul>
 
+						<ul data-submenu-title="Dev">
+							<li><a href="{% url 'admin_bulk_add' %}"><i class="icon-material-outline-library-add"></i> Bulk Add Jobs &amp; Tasks</a></li>
+							<li><a href="{% url 'admin_bulk_add_freelancers' %}"><i class="icon-material-outline-supervisor-account"></i> Bulk Add Freelancers</a></li>
+						</ul>
+
 						<ul data-submenu-title="Account">
-							<li><a href="{% url 'dashboard_settings' %}"><i class="icon-material-outline-settings"></i> Settings</a></li>
+							<li><a href="{% url 'admin_contact_message_list' %}"><i class="icon-material-outline-email"></i> Contact Messages</a></li>
+							<li><a href="{% url 'admin_contact_settings' %}"><i class="icon-material-outline-settings"></i> Contact Settings</a></li>
 							<li><a href="/login" onclick="logout()"><i class="icon-material-outline-power-settings-new"></i> Logout</a></li>
 						</ul>
 						

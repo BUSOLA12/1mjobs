@@ -1,0 +1,79 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Review appeal: {{ appeal.user.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_appeal_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to appeals</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">{{ appeal.user.get_full_name|default:appeal.user.email }}</h4>
+        {% if appeal.status == 'approved' %}
+            <span class="badge bg-success">Approved</span>
+        {% elif appeal.status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+        {% else %}
+            <span class="badge bg-secondary">Pending</span>
+        {% endif %}
+    </div>
+
+    <p class="text-muted">
+        {{ appeal.user.email }} &middot; Submitted {{ appeal.created_at|date:"Y-m-d H:i" }}
+        {% if appeal.reviewed_at %}&middot; Reviewed {{ appeal.reviewed_at|date:"Y-m-d H:i" }} by {{ appeal.reviewed_by.email|default:"—" }}{% endif %}
+    </p>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="mb-2">Account status</h6>
+            {% if appeal.account_status == 'banned' %}
+                <p class="mb-1"><span class="badge bg-dark">Banned</span></p>
+                <p class="mb-0"><strong>Ban reason given to user:</strong> {{ appeal.user.banned_reason|default:"—" }}</p>
+            {% else %}
+                <p class="mb-1"><span class="badge bg-warning text-dark">Suspended</span></p>
+                <p class="mb-1"><strong>Suspension reason given to user:</strong> {{ appeal.user.suspension_reason|default:"—" }}</p>
+                <p class="mb-0"><strong>Suspended until:</strong> {{ appeal.user.suspended_until|date:"Y-m-d H:i"|default:"Indefinite" }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="mb-2">Appeal from user</h6>
+            <p class="mb-0" style="white-space: pre-wrap;">{{ appeal.message }}</p>
+        </div>
+    </div>
+
+    {% if appeal.admin_response %}
+        <div class="alert {% if appeal.status == 'approved' %}alert-success{% else %}alert-warning{% endif %}">
+            <strong>Your response:</strong> {{ appeal.admin_response }}
+        </div>
+    {% endif %}
+
+    {% if appeal.status == 'pending' %}
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" data-bs-toggle="collapse" data-bs-target="#approveBox">Approve &amp; reinstate</button>
+            <button class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectBox">Reject</button>
+        </div>
+
+        <div class="collapse mt-3" id="approveBox">
+            <form method="post" action="{% url 'admin_appeal_approve' appeal.id %}" class="card card-body">
+                {% csrf_token %}
+                <label class="form-label">Optional note to the user (emailed on approval)</label>
+                <textarea name="response" rows="2" class="form-control mb-2"></textarea>
+                <button type="submit" class="btn btn-success">Confirm approval &amp; reinstate account</button>
+            </form>
+        </div>
+
+        <div class="collapse mt-3" id="rejectBox">
+            <form method="post" action="{% url 'admin_appeal_reject' appeal.id %}" class="card card-body">
+                {% csrf_token %}
+                <label class="form-label">Reason for rejection (emailed to the user)</label>
+                <textarea name="response" rows="3" class="form-control mb-2" required></textarea>
+                <button type="submit" class="btn btn-danger">Confirm rejection &amp; notify</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-secondary">This appeal has already been {{ appeal.status }}.</div>
+    {% endif %}
+</div>
+{% endblock %}

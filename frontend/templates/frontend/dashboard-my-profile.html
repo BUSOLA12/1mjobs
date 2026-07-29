@@ -1,0 +1,290 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<title>1mjobs - My Profile</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+<style>
+	/* Align the hero identity block with the "My Profile" content below it
+	   (the hero used a centered .container, which indented the avatar). */
+	.single-page-header .container { max-width: 100%; padding-left: 50px; padding-right: 15px; }
+
+	/* Bigger profile name in the hero */
+	.single-page-header #profile-fullname { font-size: 34px; font-weight: 700; line-height: 1.2; }
+
+	/* Keep the hero header on one row and let the button size to its text */
+	.single-page-header-inner { align-items: center; flex-wrap: wrap; gap: 16px; }
+	.single-page-header .right-side { max-width: none; flex: 0 0 auto; margin-left: auto; margin-right: 90px; }
+	#go-to-dashboard-btn {
+		display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+		white-space: nowrap; width: auto; min-width: max-content;
+		padding: 0 26px; height: 50px; line-height: 50px; font-weight: 600;
+	}
+	#go-to-dashboard-btn i { font-size: 20px; }
+
+	/* Attention-grabbing shake + glow for the "Go to Dashboard" button */
+	@keyframes ob-shake {
+		0%, 100%   { transform: translateX(0) rotate(0deg); }
+		15%        { transform: translateX(-5px) rotate(-1.5deg); }
+		30%        { transform: translateX(5px) rotate(1.5deg); }
+		45%        { transform: translateX(-4px) rotate(-1deg); }
+		60%        { transform: translateX(4px) rotate(1deg); }
+		75%        { transform: translateX(-2px) rotate(-0.5deg); }
+	}
+	@keyframes ob-glow {
+		0%, 100% { box-shadow: 0 0 0 0 rgba(42, 65, 232, 0.55); }
+		50%      { box-shadow: 0 0 0 12px rgba(42, 65, 232, 0); }
+	}
+	#go-to-dashboard-btn.attention {
+		animation: ob-shake 0.8s ease-in-out infinite, ob-glow 1.6s ease-out infinite;
+		transform-origin: center;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		#go-to-dashboard-btn.attention { animation: ob-glow 1.6s ease-out infinite; }
+	}
+</style>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+
+		<!-- Profile Banner -->
+		<div class="single-page-header freelancer-header">
+			<div class="background-image-container" style="background-image: url('{% static 'images/herojob.png' %}');"></div>
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12">
+						<div class="single-page-header-inner">
+							<div class="left-side">
+								<div class="profile-avatar-wrapper">
+									<div class="header-image freelancer-avatar">
+										<img id="profile-avatar" src="" alt="">
+									</div>
+								</div>
+								<div class="header-details">
+									<h3 id="profile-fullname"></h3>
+									<ul>
+										<li><div class="star-rating" id="profile-star-rating"></div></li>
+										<li id="profile-account-type"></li>
+										<li id="profile-nationality"></li>
+										<li id="verified-badge"></li>
+									</ul>
+								</div>
+							</div>
+							<div class="right-side">
+								<a href="{% url 'dashboard' %}" id="go-to-dashboard-btn"
+									class="button ripple-effect">
+									<span>Go to Dashboard</span>
+									<i class="icon-material-outline-arrow-right-alt"></i>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Profile Banner / End -->
+
+		<div class="dashboard-content-inner">
+
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3 style="font-size:32px;font-weight:700;">My Profile</h3>
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+						<li>My Profile</li>
+					</ul>
+				</nav>
+			</div>
+
+			<!-- Main Content Row -->
+			<div class="row">
+
+				<!-- Left Column -->
+				<div class="col-xl-8 col-lg-8 content-right-offset">
+
+					<!-- About Me -->
+					<div class="single-page-section" id="about-section">
+					</div>
+
+					<!-- Company Profile (employers only) -->
+					<div class="boxed-list margin-bottom-60" id="company-section" style="display:none;">
+						<div class="boxed-list-headline">
+							<h3><i class="icon-material-outline-business"></i> Company Profile</h3>
+						</div>
+						<div id="company-section-body" style="padding:30px;">
+						</div>
+					</div>
+
+					<!-- Work History and Feedback -->
+					<div class="boxed-list margin-bottom-60">
+						<div class="boxed-list-headline">
+							<h3><i class="icon-material-outline-thumb-up"></i> Work History and Feedback</h3>
+						</div>
+						<ul class="boxed-list-ul" id="work-history-and-feedback-list">
+						</ul>
+					</div>
+
+					<!-- Employment History -->
+					<div class="boxed-list margin-bottom-60" id="employment-history-box">
+						<div class="boxed-list-headline">
+							<h3><i class="icon-material-outline-business"></i> Employment History</h3>
+						</div>
+						<ul class="boxed-list-ul" id="work-history-list">
+						</ul>
+					</div>
+
+				</div>
+				<!-- Left Column / End -->
+
+
+				<!-- Right Sidebar -->
+				<div class="col-xl-4 col-lg-4">
+					<div class="sidebar-container">
+
+						<!-- Profile Overview -->
+						<div class="profile-overview">
+							<div class="overview-item" id="hourly-rate-overview"><strong>₦<span id="hourly_rate">0</span></strong><span>Hourly Rate</span></div>
+							<div class="overview-item"><strong id="profile-rating-value">0</strong><span>Rating</span></div>
+							<div class="overview-item" id="job-success-overview"><strong id="job_success">0%</strong><span>Job Success</span></div>
+							<!-- Employer-only metrics (shown in place of Hourly Rate / Job Success) -->
+							<div class="overview-item" id="jobs-posted-overview" style="display:none;"><strong id="jobs_posted">0</strong><span>Jobs Posted</span></div>
+							<div class="overview-item" id="hires-overview" style="display:none;"><strong id="hires">0</strong><span>Hires</span></div>
+						</div>
+
+						<!-- Edit Profile Button -->
+						<a href="{% url 'dashboard_settings' %}" class="apply-now-button margin-bottom-50">
+							Edit Profile <i class="icon-material-outline-edit"></i>
+						</a>
+
+						<!-- Skills -->
+						<div class="sidebar-widget" id="skills-widget">
+							<h3>Skills</h3>
+							<div class="task-tags" id="skills-container">
+								<span>No skills added yet</span>
+							</div>
+						</div>
+
+						<!-- Attachments -->
+						<div class="sidebar-widget" id="attachments-widget">
+							<h3>CV / Portfolio</h3>
+							<div class="attachments-container" id="attachments-container">
+								<p>No attachments</p>
+							</div>
+						</div>
+
+					</div>
+				</div>
+				<!-- Right Sidebar / End -->
+
+			</div>
+			<!-- Main Content Row / End -->
+
+			<!-- Spacer -->
+			<div class="margin-top-15"></div>
+
+		</div>
+		<!-- Dashboard Content Inner / End -->
+
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<script src="{% static 'js/for/dashboard-my-profile.js' %}"></script>
+
+<script>
+// When the user has just finished registration we arrive here with ?welcome=1.
+// Make the "Go to Dashboard" button shake and beep until they click it.
+(function () {
+	if (new URLSearchParams(window.location.search).get('welcome') !== '1') return;
+
+	const btn = document.getElementById('go-to-dashboard-btn');
+	if (!btn) return;
+	btn.classList.add('attention');
+
+	// Tidy the URL so a refresh does not keep replaying the effect.
+	if (window.history.replaceState) {
+		window.history.replaceState({}, document.title, window.location.pathname);
+	}
+
+	// Short beep via the Web Audio API (no asset needed).
+	let audioCtx = null;
+	function beep() {
+		try {
+			if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+			if (audioCtx.state === 'suspended') audioCtx.resume();
+			const osc = audioCtx.createOscillator();
+			const gain = audioCtx.createGain();
+			osc.type = 'sine';
+			osc.frequency.value = 880;
+			gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+			gain.gain.exponentialRampToValueAtTime(0.18, audioCtx.currentTime + 0.02);
+			gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.18);
+			osc.connect(gain).connect(audioCtx.destination);
+			osc.start();
+			osc.stop(audioCtx.currentTime + 0.2);
+		} catch (e) { /* audio unavailable, the shake still plays */ }
+	}
+
+	const beeper = setInterval(beep, 1500);
+	beep();
+
+	// Browsers block sound until the user interacts: retry on first gesture.
+	function kickstart() {
+		beep();
+		window.removeEventListener('pointerdown', kickstart);
+		window.removeEventListener('keydown', kickstart);
+	}
+	window.addEventListener('pointerdown', kickstart);
+	window.addEventListener('keydown', kickstart);
+
+	// Stop everything once they head to the dashboard.
+	btn.addEventListener('click', function () {
+		clearInterval(beeper);
+		btn.classList.remove('attention');
+	});
+})();
+</script>
+
+</body>
+</html>

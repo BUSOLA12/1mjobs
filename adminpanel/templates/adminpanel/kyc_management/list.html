@@ -1,0 +1,77 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}KYC Verification{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Identity Verification (KYC)</h4>
+    </div>
+
+    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 640px;">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or email">
+        <select name="status" class="form-select" style="max-width: 200px;">
+            <option value="">All statuses</option>
+            <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+            <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+    </form>
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Freelancer</th>
+                            <th>ID Type</th>
+                            <th>Submitted</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kyc in page_obj %}
+                            <tr>
+                                <td>{{ kyc.id }}</td>
+                                <td>{{ kyc.user.get_full_name|default:kyc.user.email }}<br><small class="text-muted">{{ kyc.user.email }}</small></td>
+                                <td>{{ kyc.get_id_type_display|default:"—" }}</td>
+                                <td>{{ kyc.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    {% if kyc.verification_status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif kyc.verification_status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td><a href="{% url 'admin_kyc_detail' kyc.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-4">No KYC submissions.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

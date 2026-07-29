@@ -1,0 +1,503 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+<!-- Header Container / End -->
+
+
+<!-- Dashboard Container -->
+<div class="dashboard-container">
+
+	<!-- Dashboard Sidebar
+	================================================== -->
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+
+	<!-- Dashboard Sidebar / End -->
+
+
+	<!-- Dashboard Content
+	================================================== -->
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner" >
+
+			<!-- Dashboard Headline -->
+			<div class="dashboard-headline">
+				<h3>My Job Applications</h3>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="#">Home</a></li>
+						<li><a href="#">Dashboard</a></li>
+						<li>My Job Applications</li>
+					</ul>
+				</nav>
+			</div>
+
+			<!-- Row -->
+			<div class="row">
+
+				<!-- Dashboard Box -->
+				<div class="col-xl-12">
+					<div class="dashboard-box margin-top-0">
+
+						<!-- Headline -->
+						<div class="headline">
+							<h3><i class="icon-material-outline-business-center"></i> Applications List</h3>
+							<div class="sort-by">
+								<select class="selectpicker hide-tick" id="application-status-filter">
+									<option value="all" selected>All Statuses</option>
+									<option value="pending">Pending</option>
+									<option value="accepted">Accepted</option>
+									<option value="rejected">Rejected</option>
+									<option value="cancelled">Cancelled</option>
+									<option value="completed">Completed</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="content">
+							<ul class="dashboard-box-list applications">
+
+
+							</ul>
+						</div>
+					</div>
+				</div>
+
+			</div>
+			<!-- Row / End -->
+
+			<!-- Footer -->
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+			<!-- Footer / End -->
+
+		</div>
+	</div>
+	<!-- Dashboard Content / End -->
+
+</div>
+<!-- Dashboard Container / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Applications</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+<script>
+// Snackbar for user status switcher
+$('#snackbar-user-status label').click(function() {
+	Snackbar.show({
+		text: 'Your status has been changed!',
+		pos: 'bottom-center',
+		showAction: false,
+		actionText: "Dismiss",
+		duration: 3000,
+		textColor: '#fff',
+		backgroundColor: '#383838'
+	});
+});
+</script>
+
+<script>
+
+function showLoading(message = null) {
+    document.getElementById('loadingOverlay').classList.add('active');
+    if (message !== null) {
+      document.getElementById('my-pop-up').textContent = message;
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+
+// Status badge colors: green = good news, yellow = waiting, red = bad news
+function applicationStatusClass(appStatus) {
+	if (["accepted", "completed"].includes(appStatus)) return "green";
+	if (appStatus === "pending") return "yellow";
+	return "red";
+}
+
+let applications_data = [];
+// application_id -> latest offer (pending/accepted preferred) received on it.
+let offersByApp = {};
+
+function renderApplications(statusFilter = "all") {
+	const app_list = document.querySelector(".dashboard-box-list.applications");
+	app_list.innerHTML = "";
+
+	const filtered = applications_data.filter(
+		(app) => statusFilter === "all" || app.status === statusFilter
+	);
+
+	if (filtered.length === 0) {
+		app_list.innerHTML = `
+			<li>
+				<div class="job-listing width-adjustment">
+					<div class="job-listing-details">
+						<div class="job-listing-description">
+							<h3 class="job-listing-title">No applications found</h3>
+							<p class="job-listing-text">You have not applied to any jobs yet. <a href="/jobs/">Browse jobs</a> to get started.</p>
+						</div>
+					</div>
+				</div>
+			</li>`;
+		return;
+	}
+
+	for (const app of filtered) {
+		const job = app.job_info || {};
+		const statusClass = applicationStatusClass(app.status);
+		const appliedDate = new Date(app.created_at).toLocaleDateString("en-GB", {
+			day: "numeric", month: "short", year: "numeric"
+		});
+		const jobType = job.job_type ? job.job_type.replace("-", " ") : "N/A";
+		const location = job.location || "N/A";
+
+		// Withdrawing only makes sense while the employer has not decided yet
+		const withdrawButton = app.status === "pending"
+			? `<a href="#" class="cancel-application-btn button red ripple-effect ico" data-appid="${app.id}" title="Withdraw Application" data-tippy-placement="top"><i class="icon-feather-trash-2"></i></a>`
+			: "";
+
+		// If the employer sent an offer on this application, surface it with
+		// Accept / Decline actions (pending) or a status note (resolved).
+		const offer = offersByApp[app.id];
+		let offerPanel = "";
+		if (offer) {
+			const terms = `<strong>NGN ${offer.amount}/month</strong> &middot; paid on day ${offer.payment_day} (${offer.cadence || "monthly"})`;
+			const noteHtml = offer.note ? `<p class="job-listing-text" style="margin-top:6px;white-space:pre-wrap;">${offer.note}</p>` : "";
+			const meetingHtml = offer.meeting_terms ? `<p style="margin:6px 0 0;"><strong>Meeting terms:</strong> <span style="white-space:pre-wrap;">${offer.meeting_terms}</span></p>` : "";
+			if (offer.status === "pending") {
+				offerPanel = `
+				<div class="offer-panel" style="flex:0 0 100%;width:100%;margin:14px 0 0;padding:14px 16px;border:1px solid #e3e8ef;border-radius:8px;background:#f9fbff;">
+					<div style="margin-bottom:8px;font-weight:600;"><i class="icon-material-outline-loyalty"></i> You received a long-term offer</div>
+					<p style="margin:0;">${terms}</p>
+					${meetingHtml}
+					${noteHtml}
+					<label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;">
+						<input type="checkbox" class="agree-check" data-offerid="${offer.id}" style="width:auto;">
+						<span>I have read and agree to these terms.</span>
+					</label>
+					<div style="margin-top:10px;display:flex;gap:10px;">
+						<a href="#" class="accept-offer-btn button ripple-effect" data-offerid="${offer.id}"><i class="icon-material-outline-check"></i> Sign &amp; Accept</a>
+						<a href="#" class="reject-offer-btn button red ripple-effect" data-offerid="${offer.id}">Decline</a>
+					</div>
+				</div>`;
+			} else if (offer.status === "accepted") {
+				offerPanel = `<div class="offer-panel" style="flex:0 0 100%;width:100%;margin:14px 0 0;padding:12px 16px;border:1px solid #cdebd6;border-radius:8px;background:#f0fbf4;"><i class="icon-material-outline-check-circle"></i> Agreement signed: ${terms}</div>`;
+			}
+		}
+
+		const app_item_html = `
+			<li>
+			<!-- Job Listing -->
+			<div class="job-listing width-adjustment">
+
+				<!-- Job Listing Details -->
+				<div class="job-listing-details">
+
+					<!-- Details -->
+					<div class="job-listing-description">
+						<h3 class="job-listing-title"><a href="/job-page/${app.job}/">${job.title || "Job"}</a></h3>
+						<div class="job-listing-footer">
+							<ul>
+								<li><i class="icon-material-outline-location-on"></i> ${location}</li>
+								<li><i class="icon-material-outline-business-center"></i> ${jobType}</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Application Details -->
+			<ul class="dashboard-task-info">
+				<li><strong>${appliedDate}</strong><span>Date Applied</span></li>
+				<li><span class="dashboard-status-button ${statusClass}">${app.status}</span></li>
+			</ul>
+
+			${offerPanel}
+
+			<!-- Buttons -->
+			<div class="buttons-to-right always-visible margin-top-25 margin-bottom-0">
+				<a href="/job-page/${app.job}/" class="button dark ripple-effect ico" title="View Job" data-tippy-placement="top"><i class="icon-feather-eye"></i></a>
+				${withdrawButton}
+			</div>
+		</li>
+		`;
+		app_list.insertAdjacentHTML('beforeend', app_item_html);
+	}
+}
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+	showLoading("Loading Applications");
+	try {
+		const apps_res = await fetchProtected(`/api/jobs/myapplications/`, {
+			method: "GET",
+		});
+		applications_data = await apps_res.json();
+		console.log("Applications data:", applications_data);
+
+		// Load offers received on these applications.
+		try {
+			const offersRes = await fetchProtected(`/api/contracts/offers/received/`);
+			if (offersRes.ok) {
+				const received = await offersRes.json();
+				offersByApp = {};
+				for (const o of received) {
+					const existing = offersByApp[o.application];
+					if (!existing || o.status === "pending" || o.status === "accepted") {
+						offersByApp[o.application] = o;
+					}
+				}
+			}
+		} catch (e) {
+			console.warn("Could not load received offers:", e);
+		}
+
+		renderApplications();
+	} catch (error) {
+		console.error("Error loading applications:", error);
+		Snackbar.show({
+			text: 'Error loading applications. Please try again.',
+			pos: 'bottom-center',
+			showAction: false,
+			duration: 3000,
+			textColor: '#fff',
+			backgroundColor: '#e74c3c'
+		});
+	}
+	hideLoading();
+
+	// Status filter
+	$('#application-status-filter').on('changed.bs.select', function () {
+		renderApplications(this.value);
+	});
+
+	// Handle withdraw button clicks
+	const app_list = document.querySelector(".dashboard-box-list.applications");
+
+	// Respond to an offer (accept / decline).
+	app_list.addEventListener("click", async (e) => {
+		const respondBtn = e.target.closest(".accept-offer-btn, .reject-offer-btn");
+		if (!respondBtn) return;
+		e.preventDefault();
+
+		const offerId = respondBtn.dataset.offerid;
+		const accept = respondBtn.classList.contains("accept-offer-btn");
+		const action = accept ? "accept" : "reject";
+
+		if (accept) {
+			const chk = document.querySelector(`.agree-check[data-offerid="${offerId}"]`);
+			if (!chk || !chk.checked) {
+				Snackbar.show({
+					text: "Please tick the box to agree to the terms first.",
+					pos: "bottom-center", showAction: false, duration: 3500,
+					textColor: "#fff", backgroundColor: "#e74c3c",
+				});
+				return;
+			}
+			if (!confirm("Sign the agreement and accept this long-term offer?")) return;
+		} else {
+			if (!confirm("Decline this offer?")) return;
+		}
+
+		showLoading(accept ? "Signing & Accepting" : "Declining Offer");
+		try {
+			const res = await fetchProtected(`/api/contracts/offers/${offerId}/respond/`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ action, agreed: accept }),
+			});
+			const data = await res.json().catch(() => ({}));
+			hideLoading();
+			if (!res.ok) {
+				throw new Error(data.message || "Could not respond to offer");
+			}
+			Snackbar.show({
+				text: accept ? "Offer accepted!" : "Offer declined.",
+				pos: "bottom-center", showAction: false, duration: 3000,
+				textColor: "#fff", backgroundColor: accept ? "#09f859ff" : "#e74c3c",
+			});
+			// Refresh so statuses (application + offer) reflect the change.
+			location.reload();
+		} catch (err) {
+			hideLoading();
+			console.error("Offer response error:", err);
+			Snackbar.show({
+				text: err.message || "Error responding to offer",
+				pos: "bottom-center", showAction: false, duration: 3500,
+				textColor: "#fff", backgroundColor: "#e74c3c",
+			});
+		}
+	});
+
+	app_list.addEventListener("click", async (e) => {
+		const withdrawButton = e.target.closest(".cancel-application-btn");
+
+		if (!withdrawButton) {
+			return;
+		}
+
+		e.preventDefault();
+
+		if (confirm("Are you sure you want to withdraw this application?")) {
+			showLoading("Withdrawing Application");
+			try {
+				const appId = withdrawButton.dataset.appid;
+
+				const delRes = await fetchProtected(`/api/jobs/deleteapplication/${appId}/`, {
+					method: "DELETE"
+				});
+				const delData = await delRes.json();
+				console.log("Application withdraw response:", delData);
+				hideLoading();
+
+				if (!delRes.ok) {
+					throw new Error(delData.error || "Withdraw failed");
+				}
+
+				applications_data = applications_data.filter((app) => app.id !== parseInt(appId));
+				renderApplications(document.getElementById('application-status-filter').value);
+
+				Snackbar.show({
+					text: 'Application withdrawn successfully!',
+					pos: 'bottom-center',
+					showAction: false,
+					duration: 3000,
+					textColor: '#fff',
+					backgroundColor: '#09f859ff'
+				});
+			} catch (error) {
+				hideLoading();
+				console.error("Error withdrawing application:", error);
+				Snackbar.show({
+					text: 'Error withdrawing application. Please try again.',
+					pos: 'bottom-center',
+					showAction: false,
+					duration: 3000,
+					textColor: '#fff',
+					backgroundColor: '#e74c3c'
+				});
+			}
+		}
+	});
+
+});
+</script>
+
+<script>
+//in other pages
+	showForRole("freelancer", "my-active-bid-element");
+
+    //in other pages
+	empList = ["jobs-id", "tasks-id"];
+	for (const id of empList) {
+		showForRole("employer", id);
+	}
+
+</script>
+</body>
+</html>

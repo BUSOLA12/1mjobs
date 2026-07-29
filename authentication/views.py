@@ -13,27 +13,51 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
 from rest_framework import serializers
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.views import View
 from django.http import HttpResponseBadRequest, JsonResponse
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.mail import send_mail
 import random
-from .utils import renew_session, send_verification_email
+from .utils import renew_session
 
 from .models import TwoFactorCode, EmailVerificationCode
 from .serializers import (
     UserRegistrationSerializer, UserLoginSerializer,
     CustomTokenObtainPairSerializer, ChangePasswordSerializer,
     ResetPasswordRequestSerializer, ResetPasswordConfirmSerializer,
-    TwoFactorRequestSerializer, TwoFactorVerifySerializer, EmailOTPVerifySerializer
+    TwoFactorRequestSerializer, TwoFactorVerifySerializer, EmailOTPVerifySerializer,
+    TwoFactorConfirmSerializer, AppealSerializer,
+    AppealLinkRequestSerializer, AppealTokenSerializer, OTP_VALIDITY_MINUTES
 )
+from users.models import Appeal
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from datetime import timedelta
+from django.utils import timezone
 from django.conf import settings
+
+
+def send_two_factor_code(user):
+    """Issue a fresh one-time login/confirmation code and email it to the user.
+
+    Any previously issued, still-unused codes for the user are invalidated first
+    so that only the most recent code can be used.
+    """
+    TwoFactorCode.objects.filter(user=user, is_used=False).update(is_used=True)
+    code = str(random.randint(100000, 999999))
+    TwoFactorCode.objects.create(user=user, code=code)
+    send_mail(
+        "Your verification code",
+        f"Use this code to continue: {code}\n\nThis code expires in {OTP_VALIDITY_MINUTES} minutes.",
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+    )
+    return code
 
 
 User = get_user_model()
@@ -43,10 +67,7 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
 
     def perform_create(self, serializer):
-        user = serializer.save()
-
-        # Send OTP email
-        send_verification_email(user)
+        serializer.save()
 
 class VerifyEmailOTPView(APIView):
     serializer_class = EmailOTPVerifySerializer
@@ -85,11 +106,12 @@ class LoginView(TokenObtainPairView):
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
+        except PermissionDenied as e:
+            # Suspended/banned account: return the structured block payload so
+            # the frontend can redirect to the appeal page.
+            return Response(e.detail, status=status.HTTP_403_FORBIDDEN)
         except serializers.ValidationError as e:
             print("Login error:", e)
-            if "email_not_verified" in str(e):
-                user = User.objects.filter(email=request.data.get("email")).first()
-                send_verification_email(user)
             return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print("Unexpected error:", e)
@@ -101,6 +123,138 @@ class LoginView(TokenObtainPairView):
             return Response({'two_factor_required': True}, status=status.HTTP_200_OK)
 
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+def _record_appeal(user, message):
+    """Create an appeal for a blocked user and notify the admin inbox.
+
+    Returns a DRF Response on any precondition failure (active account or an
+    existing pending appeal), or None on success so the caller can return its
+    own success payload.
+    """
+    if not (user.is_banned or user.account_status in ["suspended", "banned"]):
+        return Response(
+            {"detail": "Your account is active. No appeal is needed."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if Appeal.objects.filter(user=user, status="pending").exists():
+        return Response(
+            {"detail": "You already have an appeal under review."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    Appeal.objects.create(
+        user=user, account_status=user.account_status, message=message
+    )
+    try:
+        send_mail(
+            "New account appeal",
+            f"{user.email} ({user.account_status}) submitted an appeal:\n\n{message}",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.DEFAULT_FROM_EMAIL],
+        )
+    except Exception as e:
+        print("Appeal notification email failed:", e)
+    return None
+
+
+class AppealView(APIView):
+    """Let a suspended/banned user submit an appeal. The account owner is
+    verified by re-checking the password, since no session exists for a
+    blocked user. Passwordless (Google) accounts use AppealLinkRequestView /
+    AppealTokenView instead."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AppealSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+        message = serializer.validated_data["message"]
+
+        user = User.objects.filter(email=email).first()
+        if not user or not user.check_password(password):
+            raise AuthenticationFailed("Invalid email or password")
+
+        failure = _record_appeal(user, message)
+        if failure is not None:
+            return failure
+
+        return Response(
+            {"detail": "Your appeal has been submitted. Our team will review it."},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AppealLinkRequestView(APIView):
+    """Email a tokenized appeal link to a blocked user. Used by passwordless
+    (Google) accounts that cannot verify ownership with a password. Always
+    returns a generic response so account state is never revealed."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AppealLinkRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        user = User.objects.filter(email=email).first()
+        if user and _is_blocked(user):
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            query = _blocked_query(user)
+            query.update({"uid": uid, "token": token})
+            link = request.build_absolute_uri(
+                f"{reverse('account_suspended')}?{urllib.parse.urlencode(query)}"
+            )
+            send_mail(
+                "Appeal your account restriction",
+                f"Hello,\n\nUse the link below to appeal the restriction on your "
+                f"account. The link expires in a few days.\n\n{link}\n\n"
+                f"If you did not request this, you can ignore this email.\n\n"
+                f"Thank you,\nOne Million Jobs",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True,
+            )
+
+        return Response(
+            {"detail": "If your account is eligible, an appeal link has been sent to your email."}
+        )
+
+
+class AppealTokenView(APIView):
+    """Submit an appeal using the tokenized link from AppealLinkRequestView,
+    for accounts with no usable password."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = AppealTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.validated_data["message"]
+
+        try:
+            uid = force_str(urlsafe_base64_decode(serializer.validated_data["uid"]))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response(
+                {"detail": "Invalid or expired appeal link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not default_token_generator.check_token(user, serializer.validated_data["token"]):
+            return Response(
+                {"detail": "Invalid or expired appeal link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        failure = _record_appeal(user, message)
+        if failure is not None:
+            return failure
+
+        return Response(
+            {"detail": "Your appeal has been submitted. Our team will review it."},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LogoutView(APIView):
@@ -135,6 +289,23 @@ class LogoutView(APIView):
 
 
 User = get_user_model()
+
+
+def _is_blocked(user):
+    """True if the account is suspended or banned (mirrors the password-login gate)."""
+    return user.is_banned or user.account_status in ("suspended", "banned")
+
+
+def _blocked_query(user):
+    """Query params for the /account-suspended/ page (used by the Google redirect
+    flow, which can't hand JSON to the frontend)."""
+    is_banned = user.is_banned or user.account_status == "banned"
+    return {
+        "status": "banned" if is_banned else "suspended",
+        "reason": (user.banned_reason if is_banned else user.suspension_reason) or "",
+        "until": user.suspended_until.isoformat() if user.suspended_until else "",
+        "email": user.email,
+    }
 
 
 class GoogleAuthInitView(View):
@@ -222,13 +393,19 @@ class GoogleAuthCallbackView(View):
             defaults={"first_name": first_name, "last_name": last_name},
         )
 
+        # Block suspended/banned accounts, matching the password-login gate.
+        # Only an existing account can be blocked; a freshly created one is active.
+        if not created and _is_blocked(user):
+            params = urllib.parse.urlencode(_blocked_query(user))
+            return redirect(f"/account-suspended/?{params}")
+
         print(f"------------User with email {email} {'created' if created else 'retrieved'}. {first_name} {last_name} -----------")
         print(picture)
 
         if created:
             user.is_active = True
+            user.set_unusable_password()
 
-        user.set_unusable_password()
         user.save()
 
         # 5. Login user using Django session
@@ -253,104 +430,6 @@ class GoogleAuthCallbackView(View):
 
         return response
 
-class FacebookLoginRedirectView(View):
-    def get(self, request):
-        fb_auth_url = "https://www.facebook.com/v18.0/dialog/oauth"
-        params = {
-            "client_id": settings.FACEBOOK_CLIENT_ID,
-            "redirect_uri": settings.FACEBOOK_REDIRECT_URI,
-            "state": "secure-random-state-value",
-            "scope": "email public_profile"
-        }
-
-        url = f"{fb_auth_url}?{urllib.parse.urlencode(params)}"
-        return redirect(url)
-
-class FacebookCallbackView(View):
-
-    def get(self, request):
-        # Check if user denied permissions
-        error = request.GET.get("error")
-        if error:
-            # Option 1: redirect back to login with a message
-            return redirect("/login/?error=facebook_access_denied")
-
-        # Get authorization code
-        code = request.GET.get("code")
-        state = request.GET.get("state")
-
-        if not code:
-            return HttpResponseBadRequest("Missing code parameter")
-
-        # Exchange code for access token
-        token_url = "https://graph.facebook.com/v18.0/oauth/access_token"
-
-        token_params = {
-            "client_id": settings.FACEBOOK_APP_ID,
-            "client_secret": settings.FACEBOOK_APP_SECRET,
-            "redirect_uri": settings.FACEBOOK_REDIRECT_URI,
-            "code": code,
-        }
-
-        token_res = requests.get(token_url, params=token_params).json()
-
-        access_token = token_res.get("access_token")
-        if not access_token:
-            return HttpResponseBadRequest("Unable to get access token")
-
-        # Fetch user profile
-        profile_url = "https://graph.facebook.com/me"
-        profile_params = {
-            "fields": "id,name,email,picture.type(large)",
-            "access_token": access_token,
-        }
-
-        fb_user = requests.get(profile_url, params=profile_params).json()
-
-        email = fb_user.get("email")
-        name = fb_user.get("name").split(" ")
-        avatar = fb_user.get("picture", {}).get("data", {}).get("url")
-
-        first_name = name[0] if len(name) > 0 else ""
-        last_name = name[1] if len(name) > 1 else ""
-
-        if not email:
-            return HttpResponseBadRequest("Facebook account has no email")
-
-        # Create or get user
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={"first_name": first_name, "full_name": last_name},
-        )
-
-        print(f"------------User with email {email} {'created' if created else 'retrieved'}. {first_name} {last_name} -----------")
-        print(avatar)
-
-        if created:
-            user.is_active = True
-            
-        user.set_unusable_password()
-        user.save()
-
-        # Log the user in via Django session
-        login(request, user)
-
-        # Generate JWT tokens
-        refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
-
-        # Store refresh token in cookie
-        response = redirect("/dashboard/")   # Where to redirect after login
-        response.set_cookie(
-            key="refresh_token",
-            value=str(refresh),
-            httponly=True,
-            samesite="Lax",
-            max_age=86400,
-            path="/api/auth/token/refresh/"
-        )
-
-        return response
 
 class UpdatePasswordView(generics.UpdateAPIView):
     serializer_class = ChangePasswordSerializer
@@ -365,8 +444,13 @@ class UpdatePasswordView(generics.UpdateAPIView):
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
-            if not self.object.check_password(serializer.data.get("old_password")):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+            # Google/social accounts have no usable password — skip old password check
+            if self.object.has_usable_password():
+                old_password = serializer.data.get("old_password", "")
+                if not old_password:
+                    return Response({"old_password": ["Current password is required."]}, status=status.HTTP_400_BAD_REQUEST)
+                if not self.object.check_password(old_password):
+                    return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
 
             self.object.set_password(serializer.data.get("new_password"))
             self.object.save()
@@ -386,11 +470,14 @@ class ResetPasswordRequestView(generics.GenericAPIView):
         if user:
             token = PasswordResetTokenGenerator().make_token(user)
             uid = urlsafe_base64_encode(force_str(user.pk).encode())
-            # Send email (replace with your frontend reset link)
-            reset_link = f"http:{settings.DOMAIN}/reset-password/{uid}/{token}/"
-            send_mail("Reset your password", f"Click here to reset: {reset_link}", "demomailtrap.co", [email])
+            # Build the link from the current request so the token is always validated
+            # by the same instance that issued it (same SECRET_KEY + database). Hardcoding
+            # the host breaks resets when the email is generated on a different instance.
+            reset_path = reverse('reset-password', kwargs={'uid': uid, 'token': token})
+            reset_link = request.build_absolute_uri(reset_path)
+            send_mail("Reset your password", f"Click here to reset: {reset_link}", settings.DEFAULT_FROM_EMAIL, [email])
 
-            print("Reset your password", f"Click here to reset: {reset_link}", "demomailtrap.co", [email])
+            print("Password reset link for", email, ":", reset_link)
 
         return Response({"detail": "If an account with that email exists, a reset link has been sent."})
 
@@ -414,10 +501,7 @@ class TwoFactorRequestView(generics.GenericAPIView):
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            code = str(random.randint(100000, 999999))
-            TwoFactorCode.objects.create(user=user, code=code)
-            send_mail("Your verification code",f"Use this code to login: {code}", settings.DEFAULT_FROM_EMAIL, [email])
-            print("Your verification code", f"Use this code to login: {code}", settings.DEFAULT_FROM_EMAIL, [email])
+            send_two_factor_code(user)
         return Response({"detail": "If the email is valid, a verification code has been sent."})
 
 
@@ -433,6 +517,58 @@ class TwoFactorVerifyView(generics.GenericAPIView):
             'refresh': str(token),
             'access': str(token.access_token)
         })
+
+
+class TwoFactorEnableRequestView(APIView):
+    """Send a confirmation code to the logged-in user's email so they can prove
+    they control the inbox before two-factor authentication is switched on."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        send_two_factor_code(request.user)
+        return Response({"detail": "A confirmation code has been sent to your email."})
+
+
+class TwoFactorEnableConfirmView(generics.GenericAPIView):
+    """Verify the confirmation code, then enable two-factor for the user."""
+    serializer_class = TwoFactorConfirmSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.validated_data['code'].strip()
+
+        tf = (
+            TwoFactorCode.objects
+            .filter(user=request.user, code=code, is_used=False)
+            .order_by('-created_at')
+            .first()
+        )
+        if not tf:
+            return Response({"detail": "Invalid code"}, status=status.HTTP_400_BAD_REQUEST)
+        if tf.created_at < timezone.now() - timedelta(minutes=OTP_VALIDITY_MINUTES):
+            return Response(
+                {"detail": "Code has expired. Please request a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        tf.is_used = True
+        tf.save(update_fields=["is_used"])
+
+        request.user.two_step_verification = True
+        request.user.save(update_fields=["two_step_verification"])
+        return Response({"detail": "Two-factor authentication enabled."})
+
+
+class TwoFactorDisableView(APIView):
+    """Turn off two-factor authentication for the logged-in user."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.user.two_step_verification = False
+        request.user.save(update_fields=["two_step_verification"])
+        return Response({"detail": "Two-factor authentication disabled."})
 
 
 # expermenting with JWT token refresh   
@@ -577,7 +713,7 @@ class CookieGoogleLoginView(generics.GenericAPIView):
             google_user = id_token.verify_oauth2_token(
                 id_token_value,
                 google_requests.Request(),
-                settings.GOOGLE_CLIENT_ID
+                settings.GOOGLE_OAUTH2_CLIENT_ID
             )
             email = google_user.get("email")
             first_name = google_user.get("given_name", "")
@@ -589,6 +725,12 @@ class CookieGoogleLoginView(generics.GenericAPIView):
             email=email,
             defaults={"first_name": first_name, "last_name": last_name}
         )
+
+        # Block suspended/banned accounts, matching the password-login gate.
+        if not created and _is_blocked(user):
+            return JsonResponse(
+                CustomTokenObtainPairSerializer._blocked_payload(user), status=403
+            )
 
         refresh = RefreshToken.for_user(user)
         access = str(refresh.access_token)
@@ -610,50 +752,4 @@ class CookieGoogleLoginView(generics.GenericAPIView):
 
         return response
     
-class CookieFacebookLoginView(generics.GenericAPIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        access_token_value = request.data.get("access_token")
-        if not access_token_value:
-            return JsonResponse({"error": "access_token is required"}, status=400)
-
-        url = f"https://graph.facebook.com/me?fields=id,name,email&access_token={access_token_value}"
-        request = requests.get(url)
-        data = request.json()
-
-        if "error" in data:
-            return JsonResponse({"error": "Invalid or expired Facebook token"}, status=400)
-
-        email = data.get("email")
-        name = data.get("name", "").split(" ")
-        first_name = name[0] if len(name) > 0 else ""
-        last_name = name[1] if len(name) > 1 else ""
-
-        if not email:
-            return JsonResponse({"error": "Facebook account has no email"}, status=400)
-
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={"first_name": first_name, "last_name": last_name}
-        )
-
-        refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
-
-        response = JsonResponse({
-            "access": access,
-            "user_id": user.id
-        })
-        response.set_cookie(
-            key="refresh_token",
-            value=str(refresh),
-            httponly=True,
-            secure=False,  # True in production
-            samesite="Lax",
-            max_age=86400,       # 1 day
-            path="/api/auth/token/refresh/"
-        )
-
-        return response
     

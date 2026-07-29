@@ -4,6 +4,9 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path('login/', views.LoginView.as_view()),
+    path('appeal/', views.AppealView.as_view(), name='appeal'),
+    path('appeal/request-link/', views.AppealLinkRequestView.as_view(), name='appeal-request-link'),
+    path('appeal/token/', views.AppealTokenView.as_view(), name='appeal-token'),
     path('logout/', views.LogoutView.as_view()),
     path('register/', views.RegisterView.as_view()),
 
@@ -14,13 +17,13 @@ urlpatterns = [
     path('reset-password/confirm/', views.ResetPasswordConfirmView.as_view()),
     path('two-factor/request/', views.TwoFactorRequestView.as_view()),
     path('two-factor/verify/', views.TwoFactorVerifyView.as_view()),
+    path('two-factor/enable/request/', views.TwoFactorEnableRequestView.as_view()),
+    path('two-factor/enable/confirm/', views.TwoFactorEnableConfirmView.as_view()),
+    path('two-factor/disable/', views.TwoFactorDisableView.as_view()),
 
     # Social Auth
     path("google/", views.GoogleAuthInitView.as_view(), name="google_init"),
     path("google/callback/", views.GoogleAuthCallbackView.as_view(), name="google_callback"),
-
-    path("auth/facebook/", views.FacebookLoginRedirectView.as_view(), name="facebook_login"),
-    path("auth/facebook/callback/", views.FacebookCallbackView.as_view(), name="facebook_callback"),
 
     # jwt refresh
     path('token-refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -31,5 +34,4 @@ urlpatterns = [
     path('token/delete/', views.CookiesTokenDeleteView.as_view(), name='token_delete'),
 
     path("token/google/", views.CookieGoogleLoginView.as_view(), name="cookie-google-login"),
-    path("token/facebook/", views.CookieFacebookLoginView.as_view(), name="cookie-facebook-login"),
 ]

@@ -49,12 +49,15 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
         # Determine applicant for different models: Task and Job
         valid_status = ['accepted', 'completed']
+        applicant = None
         if model_name == 'Task':
             TaskBidding = apps.get_model('ManageJobsTasks', 'TaskBidding')
-            applicant = TaskBidding.objects.filter(task=obj, status__in=valid_status).first().freelancer
+            accepted_bid = TaskBidding.objects.filter(task=obj, status__in=valid_status).first()
+            applicant = accepted_bid.freelancer if accepted_bid else None
         elif model_name == 'Job':
             JobApplication = apps.get_model('ManageJobsTasks', 'JobApplication')
-            applicant = JobApplication.objects.filter(job=obj, status__in=valid_status).first().user
+            accepted_app = JobApplication.objects.filter(job=obj, status__in=valid_status).first()
+            applicant = accepted_app.user if accepted_app else None
 
         if not applicant:
             raise serializers.ValidationError("This job/task has no accepted applicant yet.")

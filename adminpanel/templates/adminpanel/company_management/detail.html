@@ -1,0 +1,112 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block title %}Review: {{ company.company_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_company_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to companies</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Review: {{ company.company_name }}</h4>
+        {% if company.verification_status == 'approved' %}
+            <span class="badge bg-success">Verified</span>
+        {% elif company.verification_status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+        {% else %}
+            <span class="badge bg-secondary">Pending</span>
+        {% endif %}
+    </div>
+
+    <p class="text-muted">
+        Owner: {{ company.created_by.email|default:"—" }}
+        {% if company.reviewed_at %}
+            &middot; Last reviewed {{ company.reviewed_at|date:"Y-m-d H:i" }}
+            by {{ company.reviewed_by.email|default:"—" }}
+        {% endif %}
+    </p>
+
+    <form method="post" action="{% url 'admin_company_review' company.id %}">
+        {% csrf_token %}
+
+        <button type="button" id="approveAll" class="btn btn-outline-success btn-sm mb-3">
+            Approve all remaining
+        </button>
+
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:22%">Field</th>
+                                <th>Submitted value</th>
+                                <th style="width:250px">Decision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for f in fields %}
+                            <tr>
+                                <td><strong>{{ f.label }}</strong></td>
+                                <td>
+                                    {% if f.is_file %}
+                                        {% if f.value %}
+                                            <a href="{{ f.value.url }}" target="_blank" rel="noopener">View / download</a>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    {% else %}
+                                        {{ f.value|default:"—" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <select name="status_{{ f.name }}" class="form-select form-select-sm status-select">
+                                        <option value="pending"  {% if f.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="approved" {% if f.status == 'approved' %}selected{% endif %}>Approve</option>
+                                        <option value="rejected" {% if f.status == 'rejected' %}selected{% endif %}>Reject</option>
+                                    </select>
+                                    <textarea name="note_{{ f.name }}" rows="2"
+                                              placeholder="Reason (emailed to employer)"
+                                              class="form-control form-control-sm mt-1 note-box"
+                                              {% if f.status != 'rejected' %}style="display:none"{% endif %}>{{ f.note }}</textarea>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Save review &amp; notify employer</button>
+    </form>
+</div>
+
+<script>
+    function toggleNote(sel) {
+        var note = sel.closest('td').querySelector('.note-box');
+        if (note) { note.style.display = sel.value === 'rejected' ? '' : 'none'; }
+    }
+    document.querySelectorAll('.status-select').forEach(function (sel) {
+        sel.addEventListener('change', function () { toggleNote(this); });
+    });
+    var approveAllBtn = document.getElementById('approveAll');
+    var originalBtnText = approveAllBtn.textContent;
+    approveAllBtn.addEventListener('click', function () {
+        var changed = 0;
+        document.querySelectorAll('.status-select').forEach(function (sel) {
+            if (sel.value !== 'rejected' && sel.value !== 'approved') {
+                sel.value = 'approved';
+                toggleNote(sel);
+                sel.closest('tr').style.background = '#e9f7ef';
+                changed++;
+            }
+        });
+        approveAllBtn.textContent = changed
+            ? '✓ ' + changed + ' set to Approve — click Save to apply'
+            : 'Nothing left to approve';
+        setTimeout(function () { approveAllBtn.textContent = originalBtnText; }, 4000);
+    });
+</script>
+{% endblock %}

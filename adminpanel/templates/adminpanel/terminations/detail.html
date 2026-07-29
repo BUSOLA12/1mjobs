@@ -1,0 +1,99 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Termination #{{ t.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_termination_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to termination requests</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Termination #{{ t.id }} &middot; {{ contract.subject_title }}</h4>
+        {% if t.status == 'approved' %}
+            <span class="badge bg-success fs-6">Terminated</span>
+        {% elif t.status == 'denied' %}
+            <span class="badge bg-secondary fs-6">Denied</span>
+        {% else %}
+            <span class="badge bg-warning text-dark fs-6">Pending</span>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Contract</h6>
+                    <table class="table table-sm mb-0">
+                        <tr><th style="width:45%;">Monthly rate</th><td>NGN {{ contract.monthly_rate|default:contract.amount }}</td></tr>
+                        <tr><th>Employer</th><td>{{ contract.employer.get_full_name|default:contract.employer.email }}</td></tr>
+                        <tr><th>Freelancer</th><td>{{ contract.freelancer.get_full_name|default:contract.freelancer.email }}</td></tr>
+                        <tr><th>Contract status</th><td>{{ contract.get_status_display }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Request</h6>
+                    <p class="mb-1"><strong>Requested by:</strong> {{ t.requested_by.get_full_name|default:t.requested_by.email }}
+                        {% if t.requested_by_id == contract.employer_id %}(employer){% else %}(freelancer){% endif %}</p>
+                    <p class="mb-1"><strong>Opened:</strong> {{ t.created_at|date:"Y-m-d H:i" }}</p>
+                    <div class="alert alert-secondary mt-2 mb-0" style="white-space:pre-wrap;">{{ t.reason }}</div>
+                    {% if t.admin_note %}<p class="mt-2 mb-0"><strong>Admin note:</strong> {{ t.admin_note }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="text-muted">Billing periods</h6>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>#</th><th>Amount</th><th>Funding due</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for p in periods %}
+                        <tr>
+                            <td>{{ p.period_number }}</td>
+                            <td>NGN {{ p.amount }}</td>
+                            <td>{{ p.funding_due_date|date:"Y-m-d" }}</td>
+                            <td>{{ p.get_status_display }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-muted">No periods.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="text-muted small mt-2 mb-0">Terminating settles any <strong>funded</strong> or <strong>in-review</strong> period to the freelancer's wallet.</p>
+        </div>
+    </div>
+
+    {% if t.status == 'pending' %}
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#executeBox">Verify &amp; terminate</button>
+            <button class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#denyBox">Deny</button>
+        </div>
+
+        <div class="collapse mt-3" id="executeBox">
+            <form method="post" action="{% url 'admin_termination_execute' t.id %}" class="card card-body"
+                  onsubmit="return confirm('Terminate this contract? Funded work will be released to the freelancer. This cannot be undone.');">
+                {% csrf_token %}
+                <label class="form-label">Note (optional)</label>
+                <textarea name="note" rows="2" class="form-control mb-2"></textarea>
+                <button type="submit" class="btn btn-danger">Terminate &amp; settle funded work</button>
+            </form>
+        </div>
+
+        <div class="collapse mt-3" id="denyBox">
+            <form method="post" action="{% url 'admin_termination_deny' t.id %}" class="card card-body">
+                {% csrf_token %}
+                <label class="form-label">Reason for denial (optional)</label>
+                <textarea name="note" rows="2" class="form-control mb-2"></textarea>
+                <button type="submit" class="btn btn-outline-secondary">Deny &amp; keep contract active</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-secondary">This request is resolved{% if t.resolved_at %} ({{ t.resolved_at|date:"Y-m-d H:i" }}){% endif %}; no further action.</div>
+    {% endif %}
+</div>
+{% endblock %}

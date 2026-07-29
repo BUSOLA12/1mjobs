@@ -69,8 +69,12 @@
 						</div>
 					</div>
 
+					{% if not user.is_authenticated or user.role != 'employer' %}
 					<!-- Pricing Plans Container Freelancers -->
-					<div class="pricing-plans-container margin-top-50 margin-bottom-50" id="freelancer">
+					<div class="section-headline margin-top-30">
+						<h3>Freelancer Plans</h3>
+					</div>
+					<div class="pricing-plans-container margin-top-60 margin-bottom-50" id="freelancer">
 						<!-- Plan -->
 						<div class="pricing-plan">
 							<h3></h3>
@@ -114,6 +118,58 @@
 							<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
 						</div>
 					</div>
+					{% endif %}
+
+					{% if not user.is_authenticated or user.role != 'freelancer' %}
+					<!-- Pricing Plans Container Employers -->
+					<div class="section-headline margin-top-30">
+						<h3>Employer Plans</h3>
+					</div>
+					<div class="pricing-plans-container margin-top-60 margin-bottom-50" id="employer">
+						<!-- Plan -->
+						<div class="pricing-plan">
+							<h3></h3>
+							<p class="margin-top-10"></p>
+							<div class="pricing-plan-label billed-monthly-label"></div>
+							<div class="pricing-plan-label billed-yearly-label"></div>
+							<div class="pricing-plan-features">
+								<strong></strong>
+								<ul>
+								</ul>
+							</div>
+							<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+						</div>
+
+						<!-- Plan -->
+						<div class="pricing-plan recommended">
+							<div class="recommended-badge">Recommended</div>
+							<h3></h3>
+							<p class="margin-top-10"></p>
+							<div class="pricing-plan-label billed-monthly-label"></div>
+							<div class="pricing-plan-label billed-yearly-label"></div>
+							<div class="pricing-plan-features">
+								<strong></strong>
+								<ul>
+								</ul>
+							</div>
+							<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+						</div>
+
+						<!-- Plan -->
+						<div class="pricing-plan">
+							<h3></h3>
+							<p class="margin-top-10"></p>
+							<div class="pricing-plan-label billed-monthly-label"></div>
+							<div class="pricing-plan-label billed-yearly-label"></div>
+							<div class="pricing-plan-features">
+								<strong></strong>
+								<ul>
+								</ul>
+							</div>
+							<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+						</div>
+					</div>
+					{% endif %}
 
 					{% comment %}
 					<!-- Tabs Container -->

@@ -147,8 +147,10 @@ document.querySelector(".button.ripple-effect.big.margin-top-30").addEventListen
       });
       const result = await response.json();
       console.log(result);
-      // const company_id = result.id;
-      // window.location.href = `/single/company-page/${company_id}/`;
+      // Company created: take the employer to their profile preview
+      // (shows profile + company) with the "Go to Dashboard" prompt.
+      window.location.href = '/dashboard/my-profile/?welcome=1';
+      return;
     } else {
       const result = await response.json();
       console.log(result);
@@ -182,4 +184,122 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+// Back out: a user who changed their mind reverts to a freelancer account.
+(function setupRoleBackout() {
+  const btn = document.getElementById("switch-to-freelancer-btn");
+  if (!btn) return;
+  btn.addEventListener("click", async function () {
+    btn.disabled = true;
+    try {
+      const res = await fetchProtected("/api/users/role/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "freelancer" }),
+      });
+      if (!res.ok) throw new Error("Role update failed");
+      // Now a freelancer: the onboarding middleware no longer blocks the dashboard.
+      window.location.href = "/dashboard/";
+    } catch (error) {
+      console.error("Failed to switch role:", error);
+      btn.disabled = false;
+      if (window.Snackbar) {
+        Snackbar.show({
+          text: "Could not switch back. Please try again.",
+          pos: "bottom-center",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#fa0404ff",
+        });
+      }
+    }
+  });
+})();
+
+// Let users remove staged files before submitting.
+(function setupStagedFileRemoval() {
+  function chip(name, onRemove) {
+    const c = document.createElement("span");
+    c.style.cssText = "display:inline-flex;align-items:center;gap:6px;background:#eef0f4;border-radius:6px;padding:4px 10px;margin:6px 6px 0 0;font-size:13px;color:#333;";
+    const label = document.createElement("span");
+    label.textContent = name;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", "Remove " + name);
+    remove.style.cssText = "border:none;background:transparent;cursor:pointer;font-size:16px;line-height:1;color:#e74c3c;padding:0;";
+    remove.addEventListener("click", onRemove);
+    c.appendChild(label);
+    c.appendChild(remove);
+    return c;
+  }
+
+  // --- Supporting documents (multiple) ---
+  const docInput = document.getElementById("upload");
+  const docNameField = document.querySelector(".uploadButton-file-name");
+  if (docInput && docNameField && window.DataTransfer) {
+    const defaultHint = docNameField.textContent;
+    const dt = new DataTransfer();
+
+    function renderDocs() {
+      if (dt.items.length === 0) {
+        docNameField.textContent = defaultHint;
+        return;
+      }
+      docNameField.innerHTML = "";
+      Array.from(dt.files).forEach((file, idx) => {
+        docNameField.appendChild(chip(file.name, function () {
+          dt.items.remove(idx);
+          docInput.files = dt.files;
+          renderDocs();
+        }));
+      });
+    }
+
+    docInput.addEventListener("change", function () {
+      // Accumulate across selections, de-duped by name+size.
+      Array.from(docInput.files).forEach(f => {
+        const dup = Array.from(dt.files).some(x => x.name === f.name && x.size === f.size);
+        if (!dup) dt.items.add(f);
+      });
+      docInput.files = dt.files;
+      // Run after the theme's own change handler so our chips win.
+      setTimeout(renderDocs, 0);
+    });
+  }
+
+  // --- Company logo (single) ---
+  const logoInput = document.getElementById("company-logo");
+  const logoNameField = document.getElementById("logo-file-name");
+  if (logoInput && logoNameField) {
+    logoInput.addEventListener("change", function () {
+      setTimeout(function () {
+        logoNameField.innerHTML = "";
+        const file = logoInput.files[0];
+        if (!file) return;
+        logoNameField.appendChild(chip(file.name, function () {
+          logoInput.value = "";
+          logoNameField.innerHTML = "";
+        }));
+      }, 0);
+    });
+  }
+})();
+
+// Re-entry guard: if this employer already has a company, skip straight to
+// the profile preview instead of showing the "already posted" dead-end.
+document.addEventListener("DOMContentLoaded", async function () {
+  try {
+    const user = await fetchUserId();
+    if (!user || !user.id) return;
+    const res = await fetchProtected(`/api/companies/exists/${user.id}/`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.status === true) {
+      window.location.href = '/dashboard/my-profile/';
+    }
+  } catch (error) {
+    console.error("Company existence check failed:", error);
+  }
+});
 

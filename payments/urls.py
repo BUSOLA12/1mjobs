@@ -12,4 +12,10 @@ urlpatterns = [
     path("employer/", views.EmployerPaymentListAPIView.as_view()),
     path("employer/<int:pk>/", views.EmployerPaymentDetailAPIView.as_view()),
     path("employer/<int:pk>/initiate/", views.InitiatePaymentAPIView.as_view()),
+    path("employer/<int:pk>/release/", views.ReleasePaymentAPIView.as_view()),
+    path("create/", views.CreateJobPaymentAPIView.as_view()),
+    path("wallet/", views.WalletAPIView.as_view()),
+    path("transactions/", views.TransactionListAPIView.as_view()),
+    path("confirmation/", views.PaymentConfirmationAPIView.as_view()),
+    path("withdrawals/", views.WithdrawalListCreateAPIView.as_view()),
 ]

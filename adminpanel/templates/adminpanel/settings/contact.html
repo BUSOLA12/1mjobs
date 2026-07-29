@@ -1,0 +1,89 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block title %}Contact Settings{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Site Contact Details</h4>
+        <a href="/contact/" target="_blank" class="btn btn-secondary btn-sm">View contact page</a>
+    </div>
+
+    <p class="text-muted">
+        These details power the public
+        <a href="/contact/" target="_blank">contact page</a>
+        (email, phone, address and social links).
+    </p>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Display name</label>
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.gmail.label }} <span class="text-danger">*</span></label>
+                        {{ form.gmail }}
+                        {{ form.gmail.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Phone</label>
+                        {{ form.phone }}
+                        {{ form.phone.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address</label>
+                        {{ form.address }}
+                        {{ form.address.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Facebook</label>
+                        {{ form.facebook }}
+                        {{ form.facebook.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">LinkedIn</label>
+                        {{ form.linkedin }}
+                        {{ form.linkedin.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.x.label }}</label>
+                        {{ form.x }}
+                        {{ form.x.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">GitHub</label>
+                        {{ form.github }}
+                        {{ form.github.errors }}
+                    </div>
+
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save contact details</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -280,6 +280,20 @@ $('#snackbar-user-status label').click(function() {
 
 				for (const job of jobs) {
 					console.log("Job:", job);
+
+					// Determine the primary approval status badge
+					let statusClass, statusText;
+					if (job.status === 'rejected') {
+						statusClass = 'red';
+						statusText = 'Rejected';
+					} else if (job.approved) {
+						statusClass = 'green';
+						statusText = 'Active';
+					} else {
+						statusClass = 'yellow';
+						statusText = 'Pending Approval';
+					}
+
 					const jobItem = document.createElement("li");
 					jobItem.innerHTML = `
 						<div class="job-listing">
@@ -287,8 +301,8 @@ $('#snackbar-user-status label').click(function() {
 								<div class="job-listing-description">
 									<h3 class="job-listing-title">
 										<a href="/job-page/${job.id}/">${job.title}</a>
-										<span class="dashboard-status-button green">${job.appoved ? 'Active' : 'Pending Approval'}</span>
-										<span class="dashboard-status-button red">${job.is_expired ? 'Expired' : ''}</span>
+										<span class="dashboard-status-button ${statusClass}">${statusText}</span>
+										${job.is_expired ? '<span class="dashboard-status-button red">Expired</span>' : ''}
 									</h3>
 									<div class="job-listing-footer">
 										<ul>

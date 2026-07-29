@@ -26,12 +26,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# DOMAIN = 'freelancetesting.onemillionjobs.com.ng'
-DOMAIN = 'lichtcode.pythonanywhere.com'
-FRONTEND_URL = f'https://{DOMAIN}/'  # Replace with frontend URL
-# LOGIN_URL = 'pages_login'  # URL to redirect to for login
+# Public host used to build absolute links in emails (e.g. password reset).
+# Env-driven so prod (Fly) and local can differ without code changes.
+DOMAIN = config('DOMAIN', default='one-million-jobs.fly.dev')
+_SCHEME = 'http' if DOMAIN.startswith(('localhost', '127.')) else 'https'
+FRONTEND_URL = f'{_SCHEME}://{DOMAIN}/'
+# Where @login_required sends unauthenticated users (the frontend login page).
+# Without this, Django falls back to /accounts/login/ which does not exist here.
+LOGIN_URL = '/login/'
 
-PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
+# African Money is the only payment gateway (Paystack was removed).
+PAYMENT_GATEWAY = 'africanmoney'
+AFRICANMONEY_BASE_URL = config('AFRICANMONEY_BASE_URL', default='https://africanmoney.net')
+# api_key authenticates collection/create; secret_key authenticates verify (Bearer).
+AFRICANMONEY_API_KEY = config('AFRICANMONEY_API_KEY', default='')
+AFRICANMONEY_SECRET_KEY = config('AFRICANMONEY_SECRET_KEY', default='')
+AFRICANMONEY_COLLECTION_URL = config(
+    'AFRICANMONEY_COLLECTION_URL',
+    default=f'{AFRICANMONEY_BASE_URL}/collection/create',
+)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
@@ -40,6 +53,11 @@ SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['freelancetesting.onemillionjobs.com.ng', 'www.freelancetesting.onemillionjobs.com.ng', '*']
+
+# Extra hosts/origins supplied at runtime (e.g. the Fly.io app domain). Comma-separated.
+# Example: FLY_APP_HOST=one-million-jobs.fly.dev
+_EXTRA_HOSTS = [h.strip() for h in config('EXTRA_ALLOWED_HOSTS', default='').split(',') if h.strip()]
+ALLOWED_HOSTS += _EXTRA_HOSTS
 
 
 # Application definition
@@ -51,6 +69,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.sites',
+    'django.contrib.humanize',
     'daphne',
     'django.contrib.staticfiles',
     'rest_framework',
@@ -69,6 +88,7 @@ INSTALLED_APPS = [
     'offers',  # Custom app for offers
     'adminpanel',  # Custom app for admin panel
     'payments',  # Custom app for payment processing
+    'contracts',  # Custom app for the hiring flow: offers, contracts, escrow, disputes
 
     'notifications',
 
@@ -82,11 +102,13 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # serve static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'jobwebsite.middleware.request_debugger.RequestDebugMiddleware',  # NEW MIDDLEWARE
+    'jobwebsite.middleware.onboarding.OnboardingRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
@@ -125,6 +147,13 @@ CSRF_TRUSTED_ORIGINS = [
     "http://www.freelancetesting.onemillionjobs.com.ng",
 ]
 
+# Trust the deployment host(s) for CSRF over HTTPS (e.g. the Fly.io domain).
+# Comma-separated list of full origins, e.g. CSRF_EXTRA_ORIGINS=https://one-million-jobs.fly.dev
+CSRF_TRUSTED_ORIGINS += [o.strip() for o in config('CSRF_EXTRA_ORIGINS', default='').split(',') if o.strip()]
+
+# Django sits behind the Fly.io proxy which terminates TLS; trust its forwarded header.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CORS_ALLOWED_ORIGINS = [
     "https://freelancetesting.onemillionjobs.com.ng",
 ]
@@ -134,14 +163,31 @@ CORS_ALLOWED_ORIGINS = [
 # CORS_ALLOW_METHODS = ['*']
 
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+# Channel layer selection:
+#   - REDIS_URL set            -> Redis (e.g. Upstash on Fly.io); scales across machines.
+#   - USE_INMEMORY_CHANNELS=1  -> in-process layer (single machine; no Redis needed).
+#   - otherwise                -> local Redis on 127.0.0.1:6379 (dev default).
+REDIS_URL = config('REDIS_URL', default='')
+USE_INMEMORY_CHANNELS = config('USE_INMEMORY_CHANNELS', default=False, cast=bool)
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {"hosts": [REDIS_URL]},
         },
-    },
-}
+    }
+elif USE_INMEMORY_CHANNELS:
+    CHANNEL_LAYERS = {
+        'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {"hosts": [('127.0.0.1', 6379)]},
+        },
+    }
 
 # For development, you can use in-memory channel layer (not recommended for production)
 # CHANNEL_LAYERS = {
@@ -166,14 +212,14 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'logs/subscription.log',
+            'filename': BASE_DIR / 'logs' / 'subscription.log',
         },
 
         # NEW HANDLER → Writes request failures
         'request_debug_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'logs/request_debug.log',
+            'filename': BASE_DIR / 'logs' / 'request_debug.log',
         },
     },
 
@@ -197,10 +243,12 @@ LOGGING = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# SQLITE_PATH lets us point the DB at a persistent volume in production
+# (e.g. /data/db.sqlite3 on Fly.io). Defaults to the project dir for local dev.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': config('SQLITE_PATH', default=str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -248,9 +296,19 @@ STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "static",  # adjust this based on where your CSS files are
 ]
 
-# Media files settings
+# WhiteNoise: compressed, cache-busted static file serving in production.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+# Media files settings. MEDIA_ROOT can point at a persistent volume in production.
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = config('MEDIA_ROOT', default=os.path.join(BASE_DIR, 'media'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -266,14 +324,22 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'frontend.exceptions.custom_exception_handler',
 }
 
-# mail settings
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = 'live.smtp.mailtrap.io'
-EMAIL_HOST_USER = 'api'
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+# mail settings (Resend SMTP)
+# Port 587 (STARTTLS) is blocked on some networks/ISPs; 465 (implicit SSL) is the
+# reliable default. Override EMAIL_PORT / EMAIL_USE_SSL in .env per environment.
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.resend.com'
+EMAIL_HOST_USER = 'resend'
+EMAIL_HOST_PASSWORD = config('RESEND_API_KEY', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=465, cast=int)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=True, cast=bool)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='One Million Jobs <onboarding@resend.dev>')
+
+# Use the console backend locally (prints emails to the terminal) by setting
+# EMAIL_USE_CONSOLE=True in .env, so dev work doesn't burn Resend quota.
+if config('EMAIL_USE_CONSOLE', default=False, cast=bool):
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # -----USE LOCALLY-------
 
@@ -299,15 +365,13 @@ EMAIL_USE_TLS = True
 # social login settings
 GOOGLE_OAUTH2_CLIENT_ID = config('GOOGLE_OAUTH2_CLIENT_ID', default='')
 GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
+
+# Google Maps JavaScript API key (used by the maps/autocomplete widgets)
+GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='')
 GOOGLE_OAUTH2_REDIRECT_URI = "http://127.0.0.1:8000/api/auth/google/callback/" # for local testing
 # GOOGLE_OAUTH2_REDIRECT_URI = "http://freelancetesting.onemillionjobs.com.ng/api/auth/google/callback/" # for production
 # GOOGLE_OAUTH2_REDIRECT_URI = "https://lichtcode.pythonanywhere.com/api/auth/google/callback/" # for pythonanywhere
 
-
-FACEBOOK_CLIENT_ID = config('FACEBOOK_CLIENT_ID', default='')
-FACEBOOK_APP_SECRET = config('FACEBOOK_APP_SECRET', default='')
-# FACEBOOK_REDIRECT_URI = "https://freelancetesting.onemillionjobs.com.ng/api/auth/facebook/callback/"
-FACEBOOK_REDIRECT_URI = "https://lichtcode.pythonanywhere.com/api/auth/google/callback/"
 
 # JWT settings
 # These settings are for the Simple JWT package, which provides JSON Web Token authentication.
@@ -324,9 +388,21 @@ COOKIE_KWARGS = dict(
 )
 
 VAT_ENABLED = True  # Set to True if you want to apply VAT
-VAT_RATE = 20  # VAT rate in percentage, e.g., 20 for 20%
+VAT_RATE = 20  # VAT rate in percentage, e.g., 20 for 20%. Used by subscription checkout.
 
-PLATFORM_FEE_PERCENTAGE = 10  # Platform fee as a percentage of the transaction amount
+PLATFORM_FEE_PERCENTAGE = 10
+
+# Job/escrow payments: the platform commission (PLATFORM_FEE_PERCENTAGE) is taken
+# from the freelancer at release, and VAT is charged ON THAT COMMISSION (the
+# platform's service fee) -- not on the freelancer's earnings or the escrow
+# amount. This mirrors Upwork/Fiverr/Freelancer.com. Kept separate from the
+# subscription VAT_RATE so the two can differ (Nigeria VAT is 7.5%).
+ESCROW_VAT_ENABLED = True
+ESCROW_VAT_RATE = 7.5  # percentage applied to the commission, e.g. 7.5 for 7.5%
+
+# Freelancer Pro perk: new jobs are visible only to Pro freelancers (and
+# employers/admins) for this many hours before everyone else sees them.
+EARLY_ACCESS_HOURS = 12  # Platform fee as a percentage of the transaction amount
 
 # User: onemilm5_freelance_online
 

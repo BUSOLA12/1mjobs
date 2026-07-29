@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load Offers Received
     async function loadOffersReceived() {
         const container = document.querySelector("#offers-received-list");
+        if (!container) return; // section hidden for this role
         container.innerHTML = `<li>Loading...</li>`;
 
         try {
@@ -64,6 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load Offers Sent
     async function loadOffersSent() {
         const container = document.querySelector("#offers-sent-list");
+        if (!container) return; // section hidden for this role
         container.innerHTML = `<li>Loading...</li>`;
 
         try {
@@ -150,11 +152,7 @@ function offerDetailsSetup(offerId, offerType) {
 
             buildOfferDetail(data, offerType);
             buildAttachments(data.files);
-            if (offerType === "sent") {
-                setupMessageButton(data.receiver_id);
-            } else {
-                setupMessageButton(data.sender_id);
-            }
+            setupMessageButton(offerId);
 
         } catch (err) {
             document.querySelector("#offer-detail-content").innerHTML =
@@ -182,6 +180,9 @@ function offerDetailsSetup(offerId, offerType) {
                         <div class="detail-item">
                             <i class="icon-material-outline-date-range"></i> ${timeSince(data.created_at)}
                         </div>
+                        ${data.linked_to ? `<div class="detail-item">
+                            <i class="icon-material-outline-business-center"></i> Regarding ${data.linked_to.type}: ${data.linked_to.title}
+                        </div>` : ""}
                     </div>
 
                     <div class="item-description margin-top-20">
@@ -216,11 +217,27 @@ function offerDetailsSetup(offerId, offerType) {
         });
     }
 
-    // Send message button setup
-    function setupMessageButton(senderId) {
+    // Send message button: open (or create) a direct conversation with the
+    // offer's counterparty, then go to the messages page with it selected.
+    function setupMessageButton(offerId) {
         const button = document.querySelector("#send-message-btn");
-
-        button.href = `/messages/chat/${senderId}/`; 
+        if (!button) return;
+        button.href = "#";
+        button.onclick = async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetchProtected(`/api/offers/${offerId}/conversation/`, { method: "POST" });
+                const data = await res.json();
+                if (res.ok && data.conversation_id) {
+                    window.location.href = `/dashboard/messages/?conv_id=${data.conversation_id}`;
+                } else {
+                    appendError(data.error || "Could not open the conversation.");
+                }
+            } catch (err) {
+                console.error("Open conversation error:", err);
+                appendError("Could not open the conversation.");
+            }
+        };
     }
 
 };

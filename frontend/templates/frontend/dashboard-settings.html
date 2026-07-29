@@ -55,6 +55,42 @@
 				</nav>
 			</div>
 			
+			{% if not request.user.onboarding_completed %}
+			<div class="onboarding-progress" id="onboarding-progress"
+				style="background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:22px 24px;margin-bottom:30px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+				<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+					<h4 style="margin:0;font-size:17px;">Complete your profile</h4>
+					<span id="onboarding-percent" style="font-weight:600;color:#2a41e8;">0%</span>
+				</div>
+				<p style="margin:0 0 14px;color:#808691;font-size:14px;">
+					Fill in the required details below to unlock your dashboard.
+				</p>
+
+				<!-- Progress bar -->
+				<div style="background:#eef0f4;border-radius:20px;height:10px;overflow:hidden;margin-bottom:18px;">
+					<div id="onboarding-bar"
+						style="background:#2a41e8;height:100%;width:0%;border-radius:20px;transition:width 0.35s ease;"></div>
+				</div>
+
+				<!-- Required-field checklist -->
+				<ul id="onboarding-checklist"
+					style="list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px 28px;">
+					<li data-req="first_name" style="display:flex;align-items:center;gap:8px;font-size:14px;color:#999;">
+						<span class="ob-icon" style="font-weight:700;">&#9675;</span> First name
+					</li>
+					<li data-req="last_name" style="display:flex;align-items:center;gap:8px;font-size:14px;color:#999;">
+						<span class="ob-icon" style="font-weight:700;">&#9675;</span> Last name
+					</li>
+					<li data-req="photo" style="display:flex;align-items:center;gap:8px;font-size:14px;color:#999;">
+						<span class="ob-icon" style="font-weight:700;">&#9675;</span> Profile photo
+					</li>
+					<li data-req="address" style="display:flex;align-items:center;gap:8px;font-size:14px;color:#999;">
+						<span class="ob-icon" style="font-weight:700;">&#9675;</span> Address
+					</li>
+				</ul>
+			</div>
+			{% endif %}
+
 			<!-- Error Container -->
 			<div class="page-error-container" id="login-error"></div>
 
@@ -172,21 +208,21 @@
 							<ul class="fields-ul">
 							<li>
 								<div class="row">
-									<div class="col-xl-4">
+									<div class="col-xl-4" id="hourly-rate-field">
 										<div class="submit-field">
 											<div class="bidding-widget" id="bidding-widget">
 												<!-- Headline -->
 												<span class="bidding-detail">Set your <strong>minimal hourly rate</strong></span>
 
 												<!-- Slider -->
-												<div class="bidding-value margin-bottom-10">$<span id="biddingVal"></span></div>
-												<input class="bidding-slider" type="text" value="" data-slider-handle="custom" data-slider-currency="$" data-slider-min="5" data-slider-max="150" data-slider-value="0" data-slider-step="1" data-slider-tooltip="hide" />
+												<div class="bidding-value margin-bottom-10">₦<span id="biddingVal"></span></div>
+												<input class="bidding-slider" type="text" value="" data-slider-handle="custom" data-slider-currency="₦" data-slider-min="5" data-slider-max="150" data-slider-value="0" data-slider-step="1" data-slider-tooltip="hide" />
 
 											</div>
 										</div>
 									</div>
 
-									<div class="col-xl-4">
+									<div class="col-xl-4" id="skills-field">
 										<div class="submit-field">
 											<h5>Skills <i class="help-icon" data-tippy-placement="right" title="Add up to 10 skills"></i></h5>
 
@@ -204,21 +240,27 @@
 										</div>
 									</div>
 
-									<div class="col-xl-4">
+									<div class="col-xl-4" id="attachments-field">
 										<div class="submit-field">
-											<h5>Attachments</h5>
-											
-											<!-- Attachments -->
+											<h5>CV / Portfolio</h5>
+
+											<!-- Upload a CV (PDF/PNG) or add a portfolio link. Either is fine. -->
 											<div class="attachments-container margin-top-0 margin-bottom-0">
 												<!-- Where user files go -->
 											</div>
 											<div class="clearfix"></div>
-											
+
 											<!-- Upload Button -->
 											<div class="uploadButton margin-top-0">
 												<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload" multiple/>
-												<label class="uploadButton-button ripple-effect" for="upload">Upload Files</label>
-												<span class="uploadButton-file-name">Maximum file size: 10 MB</span>
+												<label class="uploadButton-button ripple-effect" for="upload">Upload CV</label>
+												<span class="uploadButton-file-name">PDF or PNG, max 10 MB</span>
+											</div>
+
+											<!-- Portfolio link (alternative to uploading a CV) -->
+											<div class="margin-top-20">
+												<label for="portfolio-url" style="font-size:15px;">or add a portfolio link</label>
+												<input type="url" id="portfolio-url" class="with-border" placeholder="https://your-portfolio.com">
 											</div>
 
 										</div>
@@ -227,7 +269,7 @@
 							</li>
 							<li>
 								<div class="row">
-									<div class="col-xl-6">
+									<div class="col-xl-6" id="tagline-field">
 										<div class="submit-field">
 											<h5>Tagline</h5>
 											<input type="text" id="tagline" class="with-border" placeholder="iOS Expert + Node Dev">
@@ -237,7 +279,7 @@
 									<div class="col-xl-6">
 										<div class="submit-field">
 											<h5>Nationality</h5>
-											<select class="selectpicker with-border" data-size="7" title="Select Job Type" data-live-search="true" id="nationalityInput">
+											<select class="selectpicker with-border" data-size="7" title="Select Nationality" data-live-search="true" id="nationalityInput">
 												<option value="AR">Argentina</option>
 												<option value="AM">Armenia</option>
 												<option value="AW">Aruba</option>
@@ -331,10 +373,17 @@
 										</div>
 									</div>
 
-									<div class="col-xl-12">
+									<div class="col-xl-12" id="intro-field">
 										<div class="submit-field">
 											<h5>Introduce Yourself</h5>
 											<textarea cols="30" rows="5" class="with-border" id="bio-intro"></textarea>
+										</div>
+									</div>
+
+									<div class="col-xl-12">
+										<div class="submit-field" id="autocomplete-container">
+											<h5>Address</h5>
+											<input type="text" id="autocomplete-input" class="with-border" placeholder="Enter your address...">
 										</div>
 									</div>
 
@@ -346,7 +395,7 @@
 				</div>
 
 				<!-- Dashboard Box -->
-				<div class="col-xl-12">
+				<div class="col-xl-12" id="work-history-box">
 					<div id="test1" class="dashboard-box">
 
 						<!-- Headline -->
@@ -362,7 +411,7 @@
 
 				<!-- Dashboard Box -->
 				<div class="col-xl-12">
-					<div id="test1" class="dashboard-box">
+					<div id="password-security-box" class="dashboard-box">
 
 						<!-- Headline -->
 						<div class="headline">
@@ -371,33 +420,30 @@
 
 						<div class="content with-padding">
 							<div class="row">
-								<div class="col-xl-4">
-									<div class="submit-field">
-										<h5>Current Password</h5>
-										<input type="password" class="with-border">
-									</div>
-								</div>
-
-								<div class="col-xl-4">
-									<div class="submit-field">
-										<h5>New Password</h5>
-										<input type="password" class="with-border">
-									</div>
-								</div>
-
-								<div class="col-xl-4">
-									<div class="submit-field">
-										<h5>Repeat New Password</h5>
-										<input type="password" class="with-border">
-									</div>
+								<div class="col-xl-12">
+									<a href="#change-password-dialog" class="button ripple-effect popup-with-zoom-anim">
+										<i class="icon-material-outline-lock"></i> Change Password
+									</a>
 								</div>
 
 								<div class="col-xl-12">
-									<div class="checkbox">
-										<input type="checkbox" id="two-step" checked>
-										<label for="two-step"><span class="checkbox-icon"></span> Enable Two-Step Verification via Email</label>
+									<div class="submit-field margin-top-25">
+										<h5>Two-Factor Authentication</h5>
+										<div class="switches-list">
+											<div class="switch-container">
+												<label class="switch">
+													<input type="checkbox" id="two-step">
+													<span class="switch-button"></span>
+													Email me a 6-digit code at every login
+												</label>
+											</div>
+										</div>
+										<p class="note margin-top-10" style="color:#808080; font-size:14px;">
+											When enabled, you'll confirm a code sent to your email each time you sign in.
+										</p>
 									</div>
 								</div>
+
 							</div>
 						</div>
 					</div>
@@ -475,6 +521,55 @@
     </div>
 </div>
 
+<!-- Change Password Modal -->
+<div id="change-password-dialog" class="zoom-anim-dialog mfp-hide"
+	style="background:#fff; border-radius:10px; padding:35px 40px; max-width:480px; width:100%; margin:20px auto; position:relative;">
+	<button type="button" class="mfp-close">×</button>
+	<div class="page-error-container" id="password-modal-error"></div>
+	<h3 style="margin-bottom:25px; font-size:20px;">
+		<i class="icon-material-outline-lock" style="margin-right:8px;"></i> Change Password
+	</h3>
+	<div class="submit-field">
+		<h5>Current Password</h5>
+		<input type="password" id="modal-current-password" class="with-border" autocomplete="current-password" placeholder="Enter current password">
+	</div>
+	<div class="submit-field">
+		<h5>New Password</h5>
+		<input type="password" id="modal-new-password" class="with-border" autocomplete="new-password" placeholder="Enter new password">
+	</div>
+	<div class="submit-field">
+		<h5>Repeat New Password</h5>
+		<input type="password" id="modal-repeat-password" class="with-border" autocomplete="new-password" placeholder="Repeat new password">
+	</div>
+	<button id="submit-password-btn" class="button ripple-effect" style="margin-top:15px; width:100%; display:block; text-align:center;">
+		Update Password
+	</button>
+</div>
+<!-- Change Password Modal / End -->
+
+<!-- Two-Factor Confirmation Modal -->
+<div id="two-factor-dialog" class="zoom-anim-dialog mfp-hide"
+	style="background:#fff; border-radius:10px; padding:35px 40px; max-width:480px; width:100%; margin:20px auto; position:relative;">
+	<button type="button" class="mfp-close">×</button>
+	<div class="page-error-container" id="two-factor-modal-error"></div>
+	<h3 style="margin-bottom:15px; font-size:20px;">
+		<i class="icon-material-outline-lock" style="margin-right:8px;"></i> Confirm Two-Factor Authentication
+	</h3>
+	<p style="margin-bottom:20px; color:#666;">
+		We sent a 6-digit code to your email. Enter it below to turn on two-factor authentication.
+	</p>
+	<div class="submit-field">
+		<h5>Verification Code</h5>
+		<input type="text" id="two-factor-code" class="with-border" maxlength="6" inputmode="numeric"
+			autocomplete="one-time-code" placeholder="123456" style="letter-spacing:4px; text-align:center;">
+	</div>
+	<button id="confirm-two-factor-btn" class="button ripple-effect" style="margin-top:15px; width:100%; display:block; text-align:center;">
+		Confirm &amp; Enable
+	</button>
+	<a href="#" id="resend-two-factor-code" style="display:inline-block; margin-top:15px; font-size:14px;">Resend code</a>
+</div>
+<!-- Two-Factor Confirmation Modal / End -->
+
 <div class="loading-overlay" id="submitOverlay">
     <div class="loading-popup">
         <div class="loading-spinner"></div>
@@ -507,15 +602,17 @@ $('#snackbar-user-status label').click(function() {
 </script>
 
 <!-- Chart.js // documentation: http://www.chartjs.org/docs/latest/ -->
-<script src="js/chart.min.js"></script>
+<script src="{% static 'js/chart.min.js' %}"></script>
 <script>
 	Chart.defaults.global.defaultFontFamily = "Nunito";
 	Chart.defaults.global.defaultFontColor = '#888';
 	Chart.defaults.global.defaultFontSize = '14';
 
-	var ctx = document.getElementById('chart').getContext('2d');
+	var chartCanvas = document.getElementById('chart');
+	if (!chartCanvas) { console.warn('Chart canvas not found on this page.'); }
+	var ctx = chartCanvas ? chartCanvas.getContext('2d') : null;
 
-	var chart = new Chart(ctx, {
+	var chart = ctx && new Chart(ctx, {
 		type: 'line',
 
 		// The data for our dataset
@@ -589,27 +686,6 @@ $('#snackbar-user-status label').click(function() {
 
 
 
-<!-- Google Autocomplete -->
-<script>
-	function initAutocomplete() {
-		 var options = {
-		  types: ['(cities)'],
-		  // componentRestrictions: {country: "us"}
-		 };
-
-		 var input = document.getElementById('autocomplete-input');
-		 var autocomplete = new google.maps.places.Autocomplete(input, options);
-
-		if ($('.submit-field')[0]) {
-		    setTimeout(function(){ 
-		        $(".pac-container").prependTo("#autocomplete-container");
-		    }, 300);
-		}
-	}
-</script>
-
-<!-- Google API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places&callback=initAutocomplete"></script>
 <script src="{% static 'js/for/dashboard-settings.js' %}"></script>
 <script>
 //in other pages 
@@ -622,7 +698,21 @@ $('#snackbar-user-status label').click(function() {
 	}
 
 	showForRole("employer", "Add-your-company", "inline-flex");
-/*	
+
+	// Freelancer-only profile fields on the Settings page. Hidden for employers,
+	// who have no hourly rate, skills, portfolio, tagline, bio, or work history.
+	const freelancerOnlyFields = [
+		"hourly-rate-field",
+		"skills-field",
+		"attachments-field",
+		"tagline-field",
+		"intro-field",
+		"work-history-box",
+	];
+	for (const id of freelancerOnlyFields) {
+		showForRole("freelancer", id);
+	}
+/*
 console.log("Script loaded");
 console.log("getAccessToken available?", typeof getAccessToken);
 console.log("userInfo:", userInfo);

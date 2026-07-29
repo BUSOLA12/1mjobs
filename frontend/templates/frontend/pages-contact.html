@@ -104,7 +104,7 @@
 
 				</div>
 				<div id="single-job-map-container">
-					<div id="singleListingMap" data-latitude="37.777842" data-longitude="-122.391805" data-map-icon="im im-icon-Hamburger"></div>
+					<div id="singleListingMap"></div>
 					<a href="#" id="streetView">Street View</a>
 				</div>
 			</div>
@@ -254,12 +254,11 @@ $('#snackbar-user-status label').click(function() {
 }); 
 </script>
 
-<!-- Google API & Maps -->
+<!-- Google Maps: geocodes the company contact address into a single map marker -->
 <!-- Geting an API Key: https://developers.google.com/maps/documentation/javascript/get-api-key -->
-<script src="../../maps/api/js?key=AIzaSyAaoOT9ioUE4SA8h-anaFyU4K63a7H-7bc&libraries=places"></script>
-<script src="js/infobox.min.js"></script>
-<script src="js/markerclusterer.js"></script>
-<script src="js/maps.js"></script>
+{% if google_maps_api_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+{% endif %}
 
 
 
@@ -277,26 +276,72 @@ function hideLoading() {
     document.getElementById('loadingOverlay').classList.remove('active');
 }
 
+// Map style, kept consistent with the listing maps used elsewhere on the site.
+const CONTACT_MAP_STYLE = [{"featureType":"poi","elementType":"labels.text.fill","stylers":[{"color":"#747474"},{"lightness":"23"}]},{"featureType":"poi.attraction","elementType":"geometry.fill","stylers":[{"color":"#f38eb0"}]},{"featureType":"poi.government","elementType":"geometry.fill","stylers":[{"color":"#ced7db"}]},{"featureType":"poi.medical","elementType":"geometry.fill","stylers":[{"color":"#ffa5a8"}]},{"featureType":"poi.park","elementType":"geometry.fill","stylers":[{"color":"#c7e5c8"}]},{"featureType":"poi.place_of_worship","elementType":"geometry.fill","stylers":[{"color":"#d6cbc7"}]},{"featureType":"poi.school","elementType":"geometry.fill","stylers":[{"color":"#c4c9e8"}]},{"featureType":"poi.sports_complex","elementType":"geometry.fill","stylers":[{"color":"#b1eaf1"}]},{"featureType":"road","elementType":"geometry","stylers":[{"lightness":"100"}]},{"featureType":"road","elementType":"labels","stylers":[{"visibility":"off"},{"lightness":"100"}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#ffd4a5"}]},{"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#ffe9d2"}]},{"featureType":"water","elementType":"all","stylers":[{"color":"#d2e7f7"}]}];
+
+// Geocode the company contact address and drop a single marker on the map.
+function initContactMap(address) {
+	const container = document.getElementById("single-job-map-container");
+	const el = document.getElementById("singleListingMap");
+	// No map API key, no address, or map element missing -> nothing to show.
+	if (!el || !address || !(window.google && google.maps)) {
+		if (container) container.style.display = "none";
+		return;
+	}
+
+	new google.maps.Geocoder().geocode({ address: address }, (results, status) => {
+		if (status !== "OK" || !results || !results[0]) {
+			console.warn("Could not geocode contact address:", status);
+			if (container) container.style.display = "none";
+			return;
+		}
+
+		const position = results[0].geometry.location;
+		const map = new google.maps.Map(el, {
+			zoom: 15,
+			center: position,
+			scrollwheel: false,
+			mapTypeControl: false,
+			streetViewControl: false,
+			styles: CONTACT_MAP_STYLE,
+		});
+		new google.maps.Marker({ map: map, position: position, title: address });
+
+		// Street View toggle (button already in the markup).
+		const streetViewBtn = document.getElementById("streetView");
+		if (streetViewBtn) {
+			streetViewBtn.addEventListener("click", (e) => {
+				e.preventDefault();
+				map.getStreetView().setOptions({ visible: true, position: position });
+			});
+		}
+	});
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
 	showLoading("Loading");
 	// Fetch contact information
 	try {
 		const contact_res = await fetch("/api/admins/contact/");
 		const contact_data = await contact_res.json();
-		const contact = contact_data[0];
-		
+		const contact = Array.isArray(contact_data) ? contact_data[0] : null;
+
 		console.log("Contact Info:", contact);
-		
-		// Update contact links
-		document.querySelector(".facebook-link").href = contact.facebook || "#";
-		document.querySelector(".google-link").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
-		document.querySelector(".linkedin-link").href = contact.linkedin || "#";
-		document.querySelector(".x-link").href = contact.x || "#";
-		document.querySelector(".the-contact-address").textContent = contact.address || "";
-		document.querySelector(".the-contact-phone").textContent = contact.phone || "";
-		document.querySelector(".the-contact-mail").textContent = contact.gmail || "";
-		document.querySelector(".the-contact-mail").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
-		document.querySelector(".github-link").href = contact.github || "#";
+
+		// Update contact links (only when an admin contact profile is configured)
+		if (contact) {
+			document.querySelector(".facebook-link").href = contact.facebook || "#";
+			document.querySelector(".google-link").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
+			document.querySelector(".linkedin-link").href = contact.linkedin || "#";
+			document.querySelector(".x-link").href = contact.x || "#";
+			document.querySelector(".the-contact-address").textContent = contact.address || "";
+			document.querySelector(".the-contact-phone").textContent = contact.phone || "";
+			document.querySelector(".the-contact-mail").textContent = contact.gmail || "";
+			document.querySelector(".the-contact-mail").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
+			document.querySelector(".github-link").href = contact.github || "#";
+		}
+		// Show the company address on the map (hides the map if none is set).
+		initContactMap(contact ? contact.address : null);
 		hideLoading();
 	} catch (error) {
 		console.error("Error fetching contact info:", error);

@@ -13,6 +13,10 @@
         <div>
             <span class="badge bg-info">{{ user_obj.role|title }}</span>
 
+            {% if user_obj.role == "freelancer" and user_obj.user_profile.verified %}
+            <span class="badge bg-primary">Verified</span>
+            {% endif %}
+
             {% if user_obj.account_status == "active" %}
             <span class="badge bg-success">Active</span>
             {% elif user_obj.account_status == "suspended" %}
@@ -123,6 +127,20 @@
                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#banModal">Ban</button>
                 {% else %}
                 <a href="{% url 'user-unban' user_obj.pk %}" class="btn btn-secondary btn-sm">Unban</a>
+                {% endif %}
+
+                {% if user_obj.role == "freelancer" %}
+                    {% if user_obj.user_profile.verified %}
+                    <form method="post" action="{% url 'admin_user_unverify' user_obj.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Remove verification</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'admin_user_verify' user_obj.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">Verify freelancer</button>
+                    </form>
+                    {% endif %}
                 {% endif %}
 
             </div>

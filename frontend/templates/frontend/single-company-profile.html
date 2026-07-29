@@ -1,0 +1,370 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Basic Page Needs
+================================================== -->
+    <title>1mjobs</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+
+    <!-- CSS
+================================================== -->
+    {% include 'frontend/partials/css_links.html' %}
+    <style>
+      .header-image .company-logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: none;
+      }
+
+      .header-image .company-logo-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9aa0a6;
+        background: #f5f6f8;
+        border-radius: inherit;
+        font-size: 42px;
+      }
+
+      .country-flag-placeholder {
+        display: none;
+        color: #8a8f98;
+        font-size: 18px;
+        line-height: 1;
+        margin-right: 3px;
+        position: relative;
+        top: 2px;
+      }
+
+      .single-page-header .header-details li img.flag {
+        display: none;
+      }
+
+      #streetView[aria-disabled="true"] {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body  id="mainBody">
+
+    <!-- Wrapper -->
+    <div id="wrapper">
+      <!-- Header Container
+================================================== -->
+      {% include 'frontend/partials/headers.html' %}
+      <div class="clearfix"></div>
+      <!-- Header Container / End -->
+
+      <!-- Titlebar
+================================================== -->
+      <div
+        class="single-page-header"
+        data-background-image="images/single-job.jpg"
+      >
+        <div class="container">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="single-page-header-inner">
+                <div class="left-side">
+                  <div class="header-image">
+                    <a href="#">
+                      <img id="company-logo" class="company-logo-img" src="" alt="Company logo" />
+                      <span id="company-logo-placeholder" class="company-logo-placeholder" aria-label="Company logo placeholder">
+                        <i class="icon-material-outline-business"></i>
+                      </span>
+                    </a>
+                  </div>
+                  <div class="header-details">
+                    <h3></h3>
+                    <h5>About the Employer</h5>
+                    <ul>
+                      <li id="company-name-container">
+                        <a href="#" id="company-profile-link"
+                          ><i class="icon-material-outline-business"></i>
+                          <span id="company-name"></span>
+                          </a
+                        >
+                      </li>
+                      <li><div class="star-rating" data-rating="4.9"></div></li>
+                      <li class="">
+                        <img id="country-flag" class="flag" src="" alt="" />
+                        <i id="country-flag-placeholder" class="icon-material-outline-language country-flag-placeholder" aria-hidden="true"></i>
+                        <span id="country-name"></span>
+                      </li>
+                      <li>
+                        <div class="verified-badge-with-title">Verified</div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="right-side">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Content
+================================================== -->
+      <div class="container">
+        <div class="row">
+          <!-- Content -->
+          <div class="col-xl-8 col-lg-8 content-right-offset">
+            <div class="single-page-section">
+              <h3 class="margin-bottom-25">About Company</h3>
+              <p id="company-description"></p>
+            </div>
+
+            <div class="single-page-section">
+              <h3 class="margin-bottom-30">Location</h3>
+              <div id="single-job-map-container">
+                <div
+                  id="singleListingMap"
+                  data-latitude="51.507717"
+                  data-longitude="-0.131095"
+                  data-map-icon="im im-icon-Hamburger"
+                ></div>
+                <a href="#" id="streetView" aria-disabled="true">Street View</a>
+              </div>
+            </div>
+
+
+          </div>
+
+          <!-- Sidebar -->
+          <div class="col-xl-4 col-lg-4">
+            <div class="sidebar-container">
+              <!-- Sidebar Widget -->
+              <div class="sidebar-widget">
+                <div class="job-overview">
+                  <div class="job-overview-headline">Company Summary</div>
+                  <div class="job-overview-inner">
+                    <ul>
+                      <li>
+                        <i class="icon-material-outline-location-on"></i>
+                        <span>Location</span>
+                        <h5 id="summary-location"></h5>
+                      </li>
+                      <li>
+                        <i class="icon-material-outline-business-center"></i>
+                        <span>Industry</span>
+                        <h5 id="summary-industry"></h5>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              
+              <!-- Sidebar Widget -->
+              <div class="sidebar-widget">
+                <h3>Bookmark or Share</h3>
+
+                <!-- Bookmark Button -->
+                <button class="bookmark-button margin-bottom-25">
+                  <span class="bookmark-icon"></span>
+                  <span class="bookmark-text">Bookmark</span>
+                  <span class="bookmarked-text">Bookmarked</span>
+                </button>
+
+                <!-- Copy URL -->
+                <div class="copy-url">
+                  <input
+                    id="copy-url"
+                    type="text"
+                    value=""
+                    class="with-border"
+                  />
+                  <button
+                    class="copy-url-button ripple-effect"
+                    data-clipboard-target="#copy-url"
+                    title="Copy to Clipboard"
+                    data-tippy-placement="top"
+                  >
+                    <i class="icon-material-outline-file-copy"></i>
+                  </button>
+                </div>
+
+                <!-- Share Buttons -->
+                <div class="share-buttons margin-top-25">
+                  <div class="share-buttons-trigger">
+                    <i class="icon-feather-share-2"></i>
+                  </div>
+                  <div class="share-buttons-content">
+                    <span>Interesting? <strong>Share It!</strong></span>
+                    <ul class="share-buttons-icons">
+                      <li>
+                        <a
+                          href="#"
+                          data-button-color="#3b5998"
+                          title="Share on Facebook"
+                          data-tippy-placement="top"
+                          ><i class="icon-brand-facebook-f"></i
+                        ></a>
+                      </li>
+                      <li>
+                        <a
+                          href="#"
+                          data-button-color="#1da1f2"
+                          title="Share on Twitter"
+                          data-tippy-placement="top"
+                          ><i class="icon-brand-twitter"></i
+                        ></a>
+                      </li>
+                      <li>
+                        <a
+                          href="#"
+                          data-button-color="#dd4b39"
+                          title="Share on Google Plus"
+                          data-tippy-placement="top"
+                          ><i class="icon-brand-google-plus-g"></i
+                        ></a>
+                      </li>
+                      <li>
+                        <a
+                          href="#"
+                          data-button-color="#0077b5"
+                          title="Share on LinkedIn"
+                          data-tippy-placement="top"
+                          ><i class="icon-brand-linkedin-in"></i
+                        ></a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer
+================================================== -->
+      {% include 'frontend/partials/footer.html' %}
+      <!-- Footer / End -->
+    </div>
+    <!-- Wrapper / End -->
+
+    <!-- Apply for a job popup
+================================================== -->
+<style>
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-popup {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2a41e8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-popup h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #333;
+}
+
+.loading-popup p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
+}
+</style>
+
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3 id="my-pop-up">Loading Company Details</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+    <!-- Scripts
+================================================== -->
+    {% include 'frontend/partials/scripts.html' %}
+
+    {% if google_maps_api_key %}
+    <script>
+      window.gm_authFailure = function () {
+        window.dispatchEvent(new CustomEvent("google-maps-auth-failure"));
+      };
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+    {% endif %}
+
+    <script src="{% static 'js/for/single-company-profile.js' %}"></script>
+
+    <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
+    <script>
+      // Snackbar for user status switcher
+      $("#snackbar-user-status label").click(function () {
+        Snackbar.show({
+          text: "Your status has been changed!",
+          pos: "bottom-center",
+          showAction: false,
+          actionText: "Dismiss",
+          duration: 3000,
+          textColor: "#fff",
+          backgroundColor: "#383838",
+        });
+      });
+
+      // Snackbar for copy to clipboard button
+      $(".copy-url-button").click(function () {
+        Snackbar.show({
+          text: "Copied to clipboard!",
+        });
+      });
+    </script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+
+
+
+  </body>
+</html>

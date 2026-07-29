@@ -13,7 +13,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['username', 'full_name', 'avatar_url', 'is_online', 'last_seen', 'user_type']
 
     def get_full_name(self, obj):
-        return obj.user.get_full_name() or obj.user.username
+        return obj.user.get_full_name or obj.user.username
 
     def get_avatar_url(self, obj):
         if obj.avatar:

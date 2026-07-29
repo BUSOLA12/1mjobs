@@ -1,0 +1,82 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <title>1mjobs | Billing &amp; Subscription</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    {% include 'frontend/partials/css_links.html' %}
+    <script src="{% static 'js/protectpage.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/wallet-ui.css' %}">
+</head>
+<body class="gray" style="display:none" id="mainBody">
+<div id="wrapper">
+    {% include 'frontend/partials/headers.html' %}
+    <div class="dashboard-container">
+        {% include 'frontend/partials/Dashboard_sidebar.html' %}
+        <div class="dashboard-content-container" data-simplebar>
+            <div class="dashboard-content-inner">
+
+                <div class="dashboard-headline">
+                    <h3>Billing &amp; Subscription</h3>
+                    <nav id="breadcrumbs" class="dark">
+                        <ul>
+                            <li><a href="{% url 'index' %}">Home</a></li>
+                            <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                            <li>Billing</li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <div class="wallet">
+
+                    <!-- Current subscription (JS injects a .plan-card here) -->
+                    <div id="current-subscription">
+                        <div class="plan-card">
+                            <span class="plan-card__crest"><i class="icon-material-outline-loyalty"></i></span>
+                            <div class="plan-card__body">
+                                <span class="wallet-skel" style="display:block;width:160px;height:20px;"></span>
+                                <span class="wallet-skel" style="display:block;width:220px;height:12px;margin-top:12px;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing history -->
+                    <section class="wallet-panel" aria-label="Billing history">
+                        <div class="wallet-panel__head">
+                            <h4><i class="icon-material-outline-receipt"></i> Billing history</h4>
+                            <span class="wallet-count" id="billing-count" hidden></span>
+                        </div>
+                        <div class="wallet-table-wrap">
+                            <table class="wallet-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th><th>Plan</th><th>Billing</th>
+                                        <th>Amount</th><th>Status</th><th>Invoice</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billing-history-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="billing-empty" class="wallet-empty" style="display:none;">
+                            <div class="wallet-empty__icon"><i class="icon-material-outline-receipt"></i></div>
+                            <h5>No billing history</h5>
+                            <p>You have not made any subscription purchases yet. <a href="{% url 'pricing_plans' %}">View plans</a>.</p>
+                        </div>
+                    </section>
+
+                </div><!-- /.wallet -->
+
+                <div class="dashboard-footer-spacer"></div>
+                {% include 'frontend/partials/small_footer.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/billing-history.js' %}"></script>
+</body>
+</html>

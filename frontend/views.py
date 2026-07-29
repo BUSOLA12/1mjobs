@@ -1,11 +1,25 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 import logging
 
-from django.shortcuts import render
+from django.conf import settings
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth import get_user_model
+
+from datetime import timedelta
+from django.utils import timezone
+
+from company.models import Company, VERIFIABLE_FIELDS
+from users.models import UserKYC
+from users.forms import KYCSubmitForm
+from company.forms import CompanyResubmitForm
+from authentication.models import EmailVerificationCode
+from authentication.utils import send_verification_email
+
+# How long an emailed verification code stays valid.
+EMAIL_CODE_VALIDITY_MINUTES = 10
 
 
 logging.basicConfig(
@@ -22,9 +36,19 @@ def testing(request):
     return render(request, 'frontend/test.html')
 
 def payments_page(request):
-    # if request.user.role != 'employer':
-    #     return render(request, 'frontend/freelancer-payments.html')
+    # Freelancers use the Wallet as their earnings hub; employers manage the
+    # payments they make to freelancers here.
+    if getattr(request.user, "role", None) == "freelancer":
+        return redirect('wallet_page')
     return render(request, 'frontend/employer-payments.html')
+
+def wallet_page(request):
+    # Dedicated wallet: balances (available/pending) + transaction history.
+    # Balances/transactions are loaded client-side from the payments API.
+    return render(request, 'frontend/wallet.html')
+
+def billing_history_page(request):
+    return render(request, 'frontend/billing-history.html')
 
 def password_reset_request_view(request):
     return render(request, 'frontend/request-reset-password.html')
@@ -68,6 +92,29 @@ def dashboard_manage_candidates(request, job_id=None):
     return render(request, 'frontend/dashboard-manage-candidates.html')
 
 @login_required(login_url='/login/')
+def dashboard_contracts(request):
+    return render(request, 'frontend/dashboard-contracts.html')
+
+@login_required(login_url='/login/')
+def dashboard_contract_detail(request, pk=None):
+    # Render the employer or freelancer view depending on which party the viewer
+    # is on THIS contract (not their global account role). Non-parties are sent
+    # back to the contracts list. Live data is still fetched client-side from
+    # /api/contracts/<id>/, which independently enforces party-only access.
+    from contracts.models import Contract
+
+    contract = Contract.objects.filter(pk=pk).first()
+    if contract is None:
+        return redirect('dashboard_contracts')
+
+    if request.user.id == contract.employer_id:
+        return render(request, 'frontend/dashboard-contract-detail-employer.html')
+    if request.user.id == contract.freelancer_id:
+        return render(request, 'frontend/dashboard-contract-detail-freelancer.html')
+
+    return redirect('dashboard_contracts')
+
+@login_required(login_url='/login/')
 def dashboard_manage_jobs(request):
     return render(request, 'frontend/dashboard-manage-jobs.html')
 
@@ -84,6 +131,10 @@ def dashboard_my_active_bids(request):
     return render(request, 'frontend/dashboard-my-active-bids.html')
 
 @login_required(login_url='/login/')
+def dashboard_my_applications(request):
+    return render(request, 'frontend/dashboard-my-applications.html')
+
+@login_required(login_url='/login/')
 def dashboard_post_a_job(request):
     return render(request, 'frontend/dashboard-post-a-job.html')
 
@@ -94,6 +145,92 @@ def dashboard_post_a_task(request):
 @login_required(login_url='/login/')
 def dashboard_post_a_company(request):
     return render(request, 'frontend/dashboard-post-a-company.html')
+
+@login_required(login_url='/login/', redirect_field_name='redirect')
+def verify_identity(request):
+    if request.user.role != 'freelancer':
+        messages.info(request, 'Identity verification is for freelancer accounts.')
+        return redirect('dashboard')
+    kyc = UserKYC.objects.filter(user=request.user).first()
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        # Freelancer requests an email verification code.
+        if action == 'send_email_code':
+            if request.user.verified_email:
+                messages.info(request, 'Your email is already verified.')
+            else:
+                send_verification_email(request.user)
+                messages.success(request, f'A verification code was sent to {request.user.email}.')
+            return redirect('verify_identity')
+
+        # Freelancer submits the code to verify their email.
+        if action == 'verify_email_code':
+            if request.user.verified_email:
+                messages.info(request, 'Your email is already verified.')
+                return redirect('verify_identity')
+            code = (request.POST.get('email_code') or '').strip()
+            cutoff = timezone.now() - timedelta(minutes=EMAIL_CODE_VALIDITY_MINUTES)
+            record = (
+                EmailVerificationCode.objects
+                .filter(user=request.user, code=code, created_at__gte=cutoff)
+                .first()
+            )
+            if record:
+                request.user.verified_email = True
+                request.user.save(update_fields=['verified_email'])
+                EmailVerificationCode.objects.filter(user=request.user).delete()
+                messages.success(request, 'Your email has been verified.')
+            else:
+                messages.error(request, 'Invalid or expired verification code. Please request a new one.')
+            return redirect('verify_identity')
+
+        form = KYCSubmitForm(request.POST, request.FILES, instance=kyc)
+        if form.is_valid():
+            kyc = form.save(commit=False)
+            kyc.user = request.user
+            kyc.verification_status = 'pending'   # resubmitting resets to pending
+            kyc.notes = ''
+            kyc.save()
+            messages.success(request, 'Your identity documents were submitted for review.')
+            return redirect('verify_identity')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = KYCSubmitForm(instance=kyc)
+    return render(request, 'frontend/verify-identity.html', {'form': form, 'kyc': kyc})
+
+@login_required(login_url='/login/', redirect_field_name='redirect')
+def company_edit_resubmit(request):
+    company = Company.objects.filter(created_by=request.user).first()
+    if not company:
+        return redirect('dashboard_post_a_company')
+
+    if request.method == 'POST':
+        form = CompanyResubmitForm(request.POST, request.FILES, instance=company)
+        if form.is_valid():
+            company = form.save(commit=False)
+            # Any field the admin flagged is reset to pending so only changed
+            # fields get re-checked; already-approved fields keep their status.
+            reviews = company.field_reviews or {}
+            for name, meta in list(reviews.items()):
+                if meta.get('status') == 'rejected':
+                    reviews[name] = {'status': 'pending', 'note': ''}
+            company.field_reviews = reviews
+            company.recompute_verification()
+            company.save()
+            messages.success(request, 'Your changes were resubmitted for review.')
+            return redirect('company_edit_resubmit')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CompanyResubmitForm(instance=company)
+
+    rejected = [
+        (label, company.get_field_note(name))
+        for name, label in VERIFIABLE_FIELDS
+        if company.get_field_status(name) == 'rejected'
+    ]
+    return render(request, 'frontend/company-edit-resubmit.html',
+                  {'form': form, 'company': company, 'rejected': rejected})
 
 @login_required(login_url='/login/')
 def dashboard_reviews(request):
@@ -212,7 +349,9 @@ def pages_contact_openstreetmap(request):
     return render(request, 'frontend/pages-contact-OpenStreetMap.html')
 
 def pages_contact(request):
-    return render(request, 'frontend/pages-contact.html')
+    return render(request, 'frontend/pages-contact.html', {
+        'google_maps_api_key': getattr(settings, 'GOOGLE_MAPS_API_KEY', ''),
+    })
 
 def pages_icons_cheatsheet(request):
     return render(request, 'frontend/pages-icons-cheatsheet.html')
@@ -231,6 +370,10 @@ def pages_login(request):
     return render(request, 'frontend/pages-login.html')
 
 
+def account_suspended(request):
+    return render(request, 'frontend/account-suspended.html')
+
+
 
 def pages_404(request):
     return render(request, 'frontend/pages-404.html')
@@ -238,6 +381,12 @@ def pages_404(request):
 @login_required(login_url='/login/')
 def pages_order_confirmation(request):
     return render(request, 'frontend/pages-order-confirmation.html')
+
+@login_required(login_url='/login/')
+def pages_payment_confirmation(request):
+    # Employer returns here from African Money after paying a freelancer; the
+    # page JS verifies the collection and moves the payment into escrow.
+    return render(request, 'frontend/pages-payment-confirmation.html')
 
 def pages_pricing_plans(request):
     return render(request, 'frontend/pages-pricing-plans.html')
@@ -254,8 +403,10 @@ def pages_user_interface_elements(request):
 def single_company_profile_openstreetmap(request):
     return render(request, 'frontend/single-company-profile-OpenStreetMap.html')
 
-def single_company_profile(request):
-    return render(request, 'frontend/single-company-profile.html')
+def single_company_profile(request, id=None):
+    return render(request, 'frontend/single-company-profile.html', {
+        'google_maps_api_key': getattr(settings, 'GOOGLE_MAPS_API_KEY', ''),
+    })
 
 def single_freelancer_profile(request, id=None):
     return render(request, 'frontend/single-freelancer-profile.html')
@@ -264,7 +415,9 @@ def single_job_page_openstreetmap(request):
     return render(request, 'frontend/single-job-page-OpenStreetMap.html')
 
 def single_job_page(request, job_id=None):
-    return render(request, 'frontend/single-job-page.html')
+    return render(request, 'frontend/single-job-page.html', {
+        'google_maps_api_key': getattr(settings, 'GOOGLE_MAPS_API_KEY', ''),
+    })
 
 def single_task_page(request, task_id=None):
     return render(request, 'frontend/single-task-page.html')
@@ -280,3 +433,10 @@ def tasks_list_layout_1(request):
 
 def tasks_list_layout_2(request):
     return render(request, 'frontend/tasks-list-layout-2.html')
+
+@login_required(login_url='/login/')
+def dashboard_my_profile(request):
+    return render(request, 'frontend/dashboard-my-profile.html')
+
+def custom_404(request, exception=None):
+    return render(request, 'frontend/pages-404.html', status=404)

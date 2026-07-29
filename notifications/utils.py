@@ -36,14 +36,15 @@ def create_notification(title, message, recipient=None, related_object=None):
             )
 
 
-def send_email(name, subject, body, to, their_email, from_email=None):
+def send_email(name, subject, body, to, their_email, from_email=None, link=None):
     if from_email is None:
         from_email = settings.DEFAULT_FROM_EMAIL
     context = {
         "name": name,
         "email": their_email,
         "subject": subject,
-        "body": body
+        "body": body,
+        "link": link,
     }
     html_content = render_to_string("emails/contact_mails.html", context)
     email = EmailMultiAlternatives(subject=subject, body=body, from_email=from_email, to=[to])

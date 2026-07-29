@@ -80,7 +80,8 @@
 					<div class="margin-top-55"></div>
 
 					<!-- Range Slider -->
-					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="10" data-slider-max="5000" data-slider-step="25" data-slider-value="[50,2500]">
+					<input class="range-slider" type="text" value="" data-slider-currency="₦" data-slider-min="10" data-slider-max="1000000" data-slider-step="1000" data-slider-value="[10,1000000]">
+					<div id="budgetValue" class="salary-slider-value" style="text-align:center; font-weight:600; margin-top:15px; color:#333;"></div>
 				</div>
 
 				{% comment %} <!-- Hourly Rate -->
@@ -89,42 +90,17 @@
 					<div class="margin-top-55"></div>
 
 					<!-- Range Slider -->
-					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="10" data-slider-max="150" data-slider-step="5" data-slider-value="[10,200]">
+					<input class="range-slider" type="text" value="" data-slider-currency="₦" data-slider-min="10" data-slider-max="150" data-slider-step="5" data-slider-value="[10,200]">
 				</div> {% endcomment %}
 
 				<!-- Tags -->
 				<div class="sidebar-widget">
 					<h3>Skills</h3>
 
+					<input type="text" id="skillSearch" class="tag-search-input" placeholder="Search skills..."
+						style="width:100%; margin-bottom:12px; padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px;"/>
 					<div class="tags-container">
-						<div class="tag">
-							<input type="checkbox" id="tag1">
-							<label for="tag1">front-end dev</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag2">
-							<label for="tag2">angular</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag3">
-							<label for="tag3">react</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag4">
-							<label for="tag4">vue js</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag5">
-							<label for="tag5">web apps</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag6">
-							<label for="tag6">design</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag7">
-							<label for="tag7">wordpress</label>
-						</div>
+						<!-- populated dynamically from the /api/tasks/list response (data.skills) -->
 					</div>
 					<div class="clearfix"></div>
 
@@ -162,10 +138,6 @@
 			<h3 class="page-title">Search Results</h3>
 
 			<div class="notify-box margin-top-15">
-				<div class="switch-container">
-					<label class="switch"><input type="checkbox"><span class="switch-button"></span><span class="switch-text">Turn on email alerts for this search</span></label>
-				</div>
-
 				<div class="sort-by">
 					<span>Sort by:</span>
 					<select class="selectpicker hide-tick">
@@ -185,20 +157,15 @@
 			<!-- Tasks Container / End -->
 
 			<!-- Pagination -->
-			{% comment %} <div class="clearfix"></div>
+			<div class="clearfix"></div>
 			<div class="pagination-container margin-top-20 margin-bottom-20">
 				<nav class="pagination">
-					<ul>
-						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
-						<li><a href="#" class="ripple-effect">1</a></li>
-						<li><a href="#" class="ripple-effect current-page">2</a></li>
-						<li><a href="#" class="ripple-effect">3</a></li>
-						<li><a href="#" class="ripple-effect">4</a></li>
-						<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+					<ul id="pagination-list">
+						<!-- Populated by JS (updateTaskPaginationControls) -->
 					</ul>
 				</nav>
 			</div>
-			<div class="clearfix"></div> {% endcomment %}
+			<div class="clearfix"></div>
 			<!-- Pagination / End -->
 
 			<!-- Footer -->
@@ -333,17 +300,59 @@ $('#snackbar-user-status label').click(function() {
 	function hideLoading() {
 		document.getElementById('loadingOverlay').classList.remove('active');
 	}
-	async function fetchTasks(query = "") {
+	let currentPage = 1;
+	let pageSize = 5;
+	let totalPages = 1;
+	let lastTaskQuery = ""; // stores the current query string (no leading '?')
+
+	/**
+	 * fetchTasks accepts:
+	 *  - query: string (like "?search=foo" or "search=foo") OR URLSearchParams OR {} (object)
+	 *  - page: number
+	 */
+	async function fetchTasks(query = "", page = 1) {
 		const container = document.querySelector(".tasks-list-container");
 		showLoading();
 
 		try {
-			const response = await fetch(`/api/tasks/list${query}`);
-			const tasks = await response.json();
-			console.log(tasks);
+			// Normalize query into a URLSearchParams instance
+			let params;
+			if (query instanceof URLSearchParams) {
+				params = new URLSearchParams(query.toString());
+			} else if (typeof query === "string") {
+				const clean = query.startsWith("?") ? query.slice(1) : query;
+				params = new URLSearchParams(clean);
+			} else if (query && typeof query === "object") {
+				params = new URLSearchParams(query);
+			} else {
+				params = new URLSearchParams();
+			}
+
+			// Remember the active filters so sorting/pagination can preserve them.
+			lastTaskQuery = params.toString();
+
+			// Ensure page and page_size are set (overwrites existing keys)
+			params.set("page", page);
+			params.set("page_size", pageSize);
+
+			const response = await fetch(`/api/tasks/list?${params.toString()}`);
+			const data = await response.json();
+			console.log(data);
+
+			currentPage = page;
+			totalPages = Math.ceil((data.count || 0) / pageSize);
+
+			// Skills come back on every list response; render the sidebar once.
+			if (data.skills && !window.__skillsRendered) {
+				renderSkills(data.skills);
+				window.__skillsRendered = true;
+			}
+
+			const tasks = data.results || [];
 
 			if (tasks.length === 0) {
 				container.innerHTML = "<p>No tasks found</p>";
+				updateTaskPaginationControls();
 				hideLoading();
 				return;
 			}
@@ -351,6 +360,18 @@ $('#snackbar-user-status label').click(function() {
 			container.innerHTML = "";
 
 			tasks.forEach(task => {
+				const er = task.employer_rating;
+				let ratingHtml;
+				if (er && er.count) {
+					let stars = '';
+					for (let i = 1; i <= 5; i++) {
+						stars += er.avg >= i ? '<span class="star"></span>'
+							: (er.avg >= i - 0.5 ? '<span class="star half"></span>' : '<span class="star empty"></span>');
+					}
+					ratingHtml = `<div class="star-rating" data-rating="${er.avg}">${stars}</div> <span class="rating-counter">${er.avg.toFixed(1)} (${er.count})</span>`;
+				} else {
+					ratingHtml = `<span class="rating-counter text-muted">No ratings yet</span>`;
+				}
 				const taskHtml = `
 				<a href="/task-page/${task.id}/" class="task-listing">
 					<div class="task-listing-details">
@@ -359,15 +380,16 @@ $('#snackbar-user-status label').click(function() {
 							<ul class="task-icons">
 								<li><i class="icon-material-outline-location-on"></i> ${task.location}</li>
 								<li><i class="icon-material-outline-business-center"></i> ${task.project_type}</li>
-								<li><i class="icon-material-outline-account-balance-wallet"></i> $${task.budget_min} - $${task.budget_max}</li>
+								<li><i class="icon-material-outline-account-balance-wallet"></i> ₦${task.budget_min} - ₦${task.budget_max}</li>
 							</ul>
+							<div class="task-listing-rating">${ratingHtml}</div>
 							<p class="task-listing-text">${task.description || ""}</p>
 						</div>
 					</div>
 					<div class="task-listing-bid">
 						<div class="task-listing-bid-inner">
 							<div class="task-offers">
-								<strong>$${task.budget_min} - $${task.budget_max}</strong>
+								<strong>₦${task.budget_min} - ₦${task.budget_max}</strong>
 								<span>${task.project_type}</span>
 							</div>
 							<span class="button button-sliding-icon ripple-effect">Bid Now <i class="icon-material-outline-arrow-right-alt"></i></span>
@@ -377,6 +399,8 @@ $('#snackbar-user-status label').click(function() {
 				`;
 				container.insertAdjacentHTML("beforeend", taskHtml);
 			});
+
+			updateTaskPaginationControls();
 			hideLoading();
 
 		} catch (error) {
@@ -385,7 +409,67 @@ $('#snackbar-user-status label').click(function() {
 		}
 	}
 
-	fetchTasks();
+	function updateTaskPaginationControls() {
+		const paginationContainer = document.querySelector(".pagination ul");
+		if (!paginationContainer) return;
+		paginationContainer.innerHTML = "";
+
+		const pc = document.querySelector(".pagination-container");
+		if (totalPages <= 1) {
+			if (pc) pc.style.display = "none";
+			return;
+		} else if (pc) {
+			pc.style.display = "block";
+		}
+
+		// Previous button
+		const prevLi = document.createElement("li");
+		prevLi.classList.add("pagination-arrow");
+		prevLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a>`;
+		if (currentPage === 1) {
+			prevLi.classList.add("disabled");
+		} else {
+			prevLi.addEventListener("click", e => {
+				e.preventDefault();
+				fetchTasks(lastTaskQuery, currentPage - 1);
+			});
+		}
+		paginationContainer.appendChild(prevLi);
+
+		// Page numbers
+		for (let i = 1; i <= totalPages; i++) {
+			const pageLi = document.createElement("li");
+			const pageLink = document.createElement("a");
+			pageLink.href = "#";
+			pageLink.textContent = i;
+			pageLink.classList.add("ripple-effect");
+			if (i === currentPage) pageLink.classList.add("current-page");
+
+			pageLink.addEventListener("click", e => {
+				e.preventDefault();
+				fetchTasks(lastTaskQuery, i);
+			});
+
+			pageLi.appendChild(pageLink);
+			paginationContainer.appendChild(pageLi);
+		}
+
+		// Next button
+		const nextLi = document.createElement("li");
+		nextLi.classList.add("pagination-arrow");
+		nextLi.innerHTML = `<a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a>`;
+		if (currentPage === totalPages) {
+			nextLi.classList.add("disabled");
+		} else {
+			nextLi.addEventListener("click", e => {
+				e.preventDefault();
+				fetchTasks(lastTaskQuery, currentPage + 1);
+			});
+		}
+		paginationContainer.appendChild(nextLi);
+	}
+
+	fetchTasks("", 1);
 
 
 	function applyFilters() {
@@ -397,7 +481,7 @@ const keywordInputs = Array.from(document.querySelectorAll(".keywords-list .keyw
 		.filter(keywordInput => keywordInput.length > 0);
 		console.log("keywordInputs:", keywordInputs);
 		if (keywordInputs.length === 0) {
-			alert("Please add at least one skill before submitting!");
+			alert("Please add at least one keyword before submitting!");
 			return; // stop form submission
 		}
 
@@ -448,6 +532,85 @@ fetchTasks("?" + params.toString());
 }
 
 document.querySelector(".sidebar-search-button-container button").addEventListener("click", applyFilters);
+
+// Re-fetch when the sort dropdown changes, preserving the current filters.
+// This is a bootstrap-select ("selectpicker") widget. When bootstrap-select is
+// active we bind its "changed.bs.select" event; otherwise we fall back to the
+// native "change" event. We bind only one to avoid a double fetch, since the
+// widget fires both.
+function applySort() {
+    const sortSelect = document.querySelector(".sort-by select");
+    const params = new URLSearchParams(lastTaskQuery); // keep active search/filters
+    params.set("sort", sortSelect.value.toLowerCase());
+    fetchTasks("?" + params.toString());
+}
+
+const sortSelectEl = document.querySelector(".sort-by select");
+if (window.jQuery && jQuery.fn.selectpicker) {
+    jQuery(sortSelectEl).on("changed.bs.select", applySort);
+} else {
+    sortSelectEl.addEventListener("change", applySort);
+}
+</script>
+
+<!-- Dynamic skills: rendered from the /api/tasks/list response (data.skills), with a client-side search filter -->
+<script>
+function renderSkills(skills) {
+    const container = document.querySelector(".tags-container");
+    if (!container) return;
+    container.innerHTML = "";
+    skills.forEach((s, i) => {
+        const id = "skill" + i;
+        const div = document.createElement("div");
+        div.className = "tag";
+        // s is { tag: "react", count: 12 }
+        div.innerHTML =
+            `<input type="checkbox" id="${id}">` +
+            `<label for="${id}">${s.tag}</label>`;
+        container.appendChild(div);
+    });
+}
+
+// Filter the visible skills as the user types (does not touch checked state).
+(function () {
+    const searchInput = document.getElementById("skillSearch");
+    if (!searchInput) return;
+    searchInput.addEventListener("input", function () {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll(".tags-container .tag").forEach(tag => {
+            const label = tag.querySelector("label").textContent.toLowerCase();
+            tag.style.display = label.includes(q) ? "" : "none";
+        });
+    });
+})();
+</script>
+
+<!-- Always-visible budget range label (the plugin's hover tooltip is clipped by the sidebar) -->
+<script>
+(function () {
+    var sliderEl = document.querySelector('.range-slider');
+    var label = document.getElementById('budgetValue');
+    if (!sliderEl || !label) return;
+
+    function fmt(v) { return '₦' + Number(v).toLocaleString(); }
+    function render(min, max) { label.textContent = fmt(min) + ' - ' + fmt(max); }
+
+    // Initial value read straight from the data attribute (no plugin dependency).
+    try {
+        var init = JSON.parse(sliderEl.getAttribute('data-slider-value'));
+        render(init[0], init[1]);
+    } catch (e) {}
+
+    // Live update while dragging. bootstrap-slider fires "slide" with an array
+    // value, and "change" with { oldValue, newValue }.
+    if (window.jQuery) {
+        jQuery(sliderEl).on('slide change', function (ev) {
+            var v = ev.value;
+            if (v && v.newValue) v = v.newValue;
+            if (Array.isArray(v)) render(v[0], v[1]);
+        });
+    }
+})();
 </script>
 
 

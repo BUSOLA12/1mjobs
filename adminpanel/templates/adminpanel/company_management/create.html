@@ -1,0 +1,150 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block title %}Create Company{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Create Company</h4>
+        <a href="{% url 'admin_company_list' %}" class="btn btn-secondary btn-sm">Back to companies</a>
+    </div>
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label">Company name <span class="text-danger">*</span></label>
+                        {{ form.company_name }}
+                        {{ form.company_name.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Brand name</label>
+                        {{ form.brand_name }}
+                        {{ form.brand_name.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Industry <span class="text-danger">*</span></label>
+                        {{ form.industry }}
+                        {{ form.industry.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Company country</label>
+                        {{ form.company_country }}
+                        {{ form.company_country.errors }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Description <span class="text-danger">*</span></label>
+                        {{ form.description }}
+                        {{ form.description.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.created_by.label }}</label>
+                        {{ form.created_by }}
+                        {{ form.created_by.errors }}
+                        <div class="form-text">Links the company to a user account (used when bulk-adding jobs).</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.members.label }}</label>
+                        {{ form.members }}
+                        {{ form.members.errors }}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Registration number</label>
+                        {{ form.registration_number }}
+                        {{ form.registration_number.errors }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">TIN</label>
+                        {{ form.tin }}
+                        {{ form.tin.errors }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Established date</label>
+                        {{ form.established_date }}
+                        {{ form.established_date.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Company size</label>
+                        {{ form.company_size }}
+                        {{ form.company_size.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Headquarters address</label>
+                        {{ form.headquarters_address }}
+                        {{ form.headquarters_address.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Primary phone</label>
+                        {{ form.primary_phone }}
+                        {{ form.primary_phone.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Secondary phone</label>
+                        {{ form.secondary_phone }}
+                        {{ form.secondary_phone.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Email</label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Website</label>
+                        {{ form.website }}
+                        {{ form.website.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Facebook</label>
+                        {{ form.facebook }}
+                        {{ form.facebook.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">LinkedIn</label>
+                        {{ form.linkedin }}
+                        {{ form.linkedin.errors }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Logo</label>
+                        {{ form.logo }}
+                        {{ form.logo.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Documents</label>
+                        {{ form.documents }}
+                        {{ form.documents.errors }}
+                    </div>
+
+                </div>
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Create Company</button>
+                    <a href="{% url 'admin_company_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -13,6 +13,5 @@ urlpatterns = [
     path('subscription/check/', views.SubscriptionCheckView.as_view(), name='subscription-check'),
 
 
-    path('webhook/paystack/', views.paystack_webhook, name='paystack-webhook'),
     path('payment/confirmation/', views.PaymentConfirmationView.as_view(), name='payment_confirmation'),
 ]

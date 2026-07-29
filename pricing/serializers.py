@@ -35,10 +35,10 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            "id", "user", "plan", "plan_data", "billing_cycle",
+            "id", "user", "plan", "plan_data", "plan_name_snapshot", "billing_cycle",
             "amount", "status", "payment_reference", "created_at"
         ]
-        read_only_fields = ["user", "status", "payment_reference", "created_at"]
+        read_only_fields = ["user", "status", "payment_reference", "created_at", "plan_name_snapshot"]
 
     def validate(self, data):
         """

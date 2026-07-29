@@ -1,0 +1,107 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Dispute #{{ d.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_dispute_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to disputes</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Dispute #{{ d.id }} &middot; {{ contract.job.title }}</h4>
+        {% if d.status == 'resolved_released' %}
+            <span class="badge bg-success fs-6">Released</span>
+        {% elif d.status == 'resolved_refunded' %}
+            <span class="badge bg-info fs-6">Refunded</span>
+        {% elif d.status == 'under_review' %}
+            <span class="badge bg-primary fs-6">Under review</span>
+        {% else %}
+            <span class="badge bg-warning text-dark fs-6">Open</span>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Contract</h6>
+                    <table class="table table-sm mb-0">
+                        <tr><th style="width:45%;">Amount</th><td>NGN {{ contract.amount }}</td></tr>
+                        <tr><th>Delivery</th><td>{{ contract.delivery_days }} day(s)</td></tr>
+                        <tr><th>Employer</th><td>{{ contract.employer.get_full_name|default:contract.employer.email }}</td></tr>
+                        <tr><th>Freelancer</th><td>{{ contract.freelancer.get_full_name|default:contract.freelancer.email }}</td></tr>
+                        <tr><th>Contract status</th><td>{{ contract.get_status_display }}</td></tr>
+                        <tr><th>Escrow</th><td>
+                            {% if escrow_payment %}<span class="text-success">Funds held (NGN {{ escrow_payment.amount }})</span>
+                            {% else %}<span class="text-muted">No escrowed payment</span>{% endif %}
+                        </td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Dispute</h6>
+                    <p class="mb-1"><strong>Raised by:</strong> {{ d.raised_by.get_full_name|default:d.raised_by.email }}
+                        {% if d.raised_by_id == contract.employer_id %}(employer){% else %}(freelancer){% endif %}</p>
+                    <p class="mb-1"><strong>Opened:</strong> {{ d.created_at|date:"Y-m-d H:i" }}</p>
+                    <div class="alert alert-secondary mt-2 mb-0" style="white-space:pre-wrap;">{{ d.reason }}</div>
+                    {% if d.admin_note %}<p class="mt-2 mb-0"><strong>Admin note:</strong> {{ d.admin_note }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="text-muted">Submitted work</h6>
+            {% for s in submissions %}
+                <div class="border rounded p-2 mb-2">
+                    <div class="text-muted">v{{ s.version }} &middot; {{ s.submitted_at|date:"Y-m-d H:i" }}</div>
+                    {% if s.message %}<p class="mb-1" style="white-space:pre-wrap;">{{ s.message }}</p>{% endif %}
+                    {% for f in s.files.all %}<a href="{{ f.file_url|default:f.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary me-1">File {{ forloop.counter }}</a>{% endfor %}
+                </div>
+            {% empty %}
+                <p class="text-muted mb-0">No work was submitted on this contract.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if d.status == 'open' or d.status == 'under_review' %}
+        <div class="d-flex gap-2 flex-wrap">
+            {% if d.status == 'open' %}
+                <form method="post" action="{% url 'admin_dispute_under_review' d.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Mark under review</button>
+                </form>
+            {% endif %}
+            <button class="btn btn-success" data-bs-toggle="collapse" data-bs-target="#releaseBox">Resolve: release to freelancer</button>
+            <button class="btn btn-info" data-bs-toggle="collapse" data-bs-target="#refundBox">Resolve: refund employer</button>
+        </div>
+
+        <div class="collapse mt-3" id="releaseBox">
+            <form method="post" action="{% url 'admin_dispute_resolve_release' d.id %}" class="card card-body"
+                  onsubmit="return confirm('Release the escrowed funds to the freelancer? This completes the contract.');">
+                {% csrf_token %}
+                <label class="form-label">Resolution note (optional)</label>
+                <textarea name="note" rows="2" class="form-control mb-2"></textarea>
+                <button type="submit" class="btn btn-success">Release escrow to freelancer</button>
+            </form>
+        </div>
+
+        <div class="collapse mt-3" id="refundBox">
+            <form method="post" action="{% url 'admin_dispute_resolve_refund' d.id %}" class="card card-body"
+                  onsubmit="return confirm('Mark as refunded and cancel the contract? The money return is handled off-platform.');">
+                {% csrf_token %}
+                <label class="form-label">Resolution note (optional)</label>
+                <textarea name="note" rows="2" class="form-control mb-2"></textarea>
+                <p class="text-muted small mb-2">The contract is cancelled. African Money refunds are manual, so process the employer refund directly.</p>
+                <button type="submit" class="btn btn-info">Refund employer &amp; cancel contract</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-secondary">This dispute is resolved{% if d.resolved_at %} ({{ d.resolved_at|date:"Y-m-d H:i" }}){% endif %}; no further action.</div>
+    {% endif %}
+</div>
+{% endblock %}

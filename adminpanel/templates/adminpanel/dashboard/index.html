@@ -1,198 +1,320 @@
 {% extends "adminpanel/base.html" %}
+{% load humanize %}
 {% block content %}
 
-<div class="container-fluid">
+<!-- Dashboard Headline -->
+<div class="dashboard-headline">
+  <h3>Admin Dashboard</h3>
+  <span>Platform activity at a glance.</span>
 
-  <!-- Row 1 -->
-  <div class="row g-3">
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Jobs Posted (24H)</h6>
-          <h3>{{ jobs_24h }}</h3>
-          <small>7D: {{ jobs_7d }} | 30D: {{ jobs_30d }}</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Tasks Posted (24H)</h6>
-          <h3>{{ tasks_24h }}</h3>
-          <small>7D: {{ tasks_7d }} | 30D: {{ tasks_30d }}</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>New Users (24H)</h6>
-          <h3>{{ users_24h }}</h3>
-          <small>7D: {{ users_7d }} | 30D: {{ users_30d }}</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 col-sm-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Revenue Today</h6>
-          <h3>₦{{ revenue_today }}</h3>
-          <small>30D: ₦{{ revenue_30d }}</small>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Row 2 -->
-  <div class="row g-3 mt-2">
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <h6>Avg Applications / Job</h6>
-          <h3>{{ avg_applications_per_job }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <h6>Avg Bids / Task</h6>
-          <h3>{{ avg_bids_per_task }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <h6>Active Subscriptions</h6>
-          <h3>{{ active_subscriptions }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card">
-        <div class="card-body">
-          <h6>Payment Success Rate</h6>
-          <h3>{{ payment_success_rate }}%</h3>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Row 3 -->
-  <div class="row g-3 mt-2">
-    <div class="col-md-3">
-      <div class="card text-danger">
-        <div class="card-body">
-          <h6>Pending Jobs</h6>
-          <h3>{{ pending_jobs }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card text-warning">
-        <div class="card-body">
-          <h6>Pending Applications</h6>
-          <h3>{{ pending_applications }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card text-warning">
-        <div class="card-body">
-          <h6>Pending Bids</h6>
-          <h3>{{ pending_bids }}</h3>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="card text-danger">
-        <div class="card-body">
-          <h6>Suspended Users</h6>
-          <h3>{{ suspended_users }}</h3>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row g-3 mt-4">
-
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Jobs Posted (Last 7 Days)</h6>
-          <canvas id="jobsChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Tasks Posted (Last 7 Days)</h6>
-          <canvas id="tasksChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>User Signups (Last 7 Days)</h6>
-          <canvas id="usersChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h6>Revenue (Last 7 Days)</h6>
-          <canvas id="revenueChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-
+  <!-- Breadcrumbs -->
+  <nav id="breadcrumbs" class="dark">
+    <ul>
+      <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+      <li>Dashboard</li>
+    </ul>
+  </nav>
 </div>
 
+<!-- Fun Facts (KPIs) -->
+<div class="fun-facts-container">
+  <div class="fun-fact" data-fun-fact-color="#2a41e8">
+    <div class="fun-fact-text">
+      <span>Jobs Posted (24H)</span>
+      <h4>{{ jobs_24h }}</h4>
+    </div>
+    <div class="fun-fact-icon"><i class="icon-material-outline-business-center"></i></div>
+  </div>
+
+  <div class="fun-fact" data-fun-fact-color="#36bd78">
+    <div class="fun-fact-text">
+      <span>Tasks Posted (24H)</span>
+      <h4>{{ tasks_24h }}</h4>
+    </div>
+    <div class="fun-fact-icon"><i class="icon-material-outline-assignment"></i></div>
+  </div>
+
+  <div class="fun-fact" data-fun-fact-color="#b81b7f">
+    <div class="fun-fact-text">
+      <span>New Users (24H)</span>
+      <h4>{{ users_24h }}</h4>
+    </div>
+    <div class="fun-fact-icon"><i class="icon-feather-users"></i></div>
+  </div>
+
+  <div class="fun-fact" data-fun-fact-color="#efa80f">
+    <div class="fun-fact-text">
+      <span>Revenue Today</span>
+      <h4 class="admin-revenue">&#8358;{{ revenue_today|intcomma }}</h4>
+    </div>
+    <div class="fun-fact-icon"><i class="icon-feather-trending-up"></i></div>
+  </div>
+</div>
+
+<!-- Row: main chart + awaiting review -->
+<div class="row">
+  <div class="col-xl-8">
+    <div class="dashboard-box main-box-in-row">
+      <div class="headline">
+        <h3><i class="icon-feather-bar-chart-2"></i> Jobs vs Tasks Posted</h3>
+        <div class="sort-by"><span class="admin-chip">Last 7 days</span></div>
+      </div>
+      <div class="content">
+        <div class="chart admin-chart"><canvas id="jobsTasksChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="dashboard-box child-box-in-row">
+      <div class="headline">
+        <h3><i class="icon-material-outline-assignment-late"></i> Awaiting Review</h3>
+      </div>
+      <div class="content">
+        <ul class="dashboard-box-list">
+          <li>
+            <div class="admin-stat-row">
+              <span><i class="icon-material-outline-business-center"></i> Pending Jobs</span>
+              <strong class="admin-count {% if pending_jobs %}alert{% endif %}">{{ pending_jobs }}</strong>
+            </div>
+          </li>
+          <li>
+            <div class="admin-stat-row">
+              <span><i class="icon-material-outline-mail-outline"></i> Pending Applications</span>
+              <strong class="admin-count {% if pending_applications %}alert{% endif %}">{{ pending_applications }}</strong>
+            </div>
+          </li>
+          <li>
+            <div class="admin-stat-row">
+              <span><i class="icon-material-outline-gavel"></i> Pending Bids</span>
+              <strong class="admin-count {% if pending_bids %}alert{% endif %}">{{ pending_bids }}</strong>
+            </div>
+          </li>
+          <li>
+            <div class="admin-stat-row">
+              <span><i class="icon-material-outline-block"></i> Suspended Users</span>
+              <strong class="admin-count {% if suspended_users %}alert{% endif %}">{{ suspended_users }}</strong>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Row / End -->
+
+<!-- Row: signups + revenue -->
+<div class="row">
+  <div class="col-xl-6">
+    <div class="dashboard-box">
+      <div class="headline">
+        <h3><i class="icon-feather-trending-up"></i> User Signups</h3>
+        <div class="sort-by"><span class="admin-chip">Last 7 days</span></div>
+      </div>
+      <div class="content">
+        <div class="chart admin-chart"><canvas id="usersChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="dashboard-box">
+      <div class="headline">
+        <h3><i class="icon-material-outline-account-balance-wallet"></i> Revenue</h3>
+        <div class="sort-by"><span class="admin-chip">Last 7 days</span></div>
+      </div>
+      <div class="content">
+        <div class="chart admin-chart"><canvas id="revenueChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Row / End -->
+
+<!-- Row: revenue by plan + engagement -->
+<div class="row">
+  <div class="col-xl-5">
+    <div class="dashboard-box">
+      <div class="headline">
+        <h3><i class="icon-material-outline-pie-chart"></i> Revenue by Plan</h3>
+        <div class="sort-by"><span class="admin-chip">Last 30 days</span></div>
+      </div>
+      <div class="content">
+        {% if revenue_by_plan_data %}
+        <div class="chart admin-chart"><canvas id="planPie"></canvas></div>
+        {% else %}
+        <div class="admin-empty">No paid orders in the last 30 days.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    <div class="dashboard-box">
+      <div class="headline">
+        <h3><i class="icon-material-outline-equalizer"></i> Engagement &amp; Billing</h3>
+      </div>
+      <div class="content">
+        <div class="admin-stat-grid">
+          <div class="admin-stat">
+            <h4>{{ avg_applications_per_job }}</h4>
+            <span>Avg Applications / Job</span>
+          </div>
+          <div class="admin-stat">
+            <h4>{{ avg_bids_per_task }}</h4>
+            <span>Avg Bids / Task</span>
+          </div>
+          <div class="admin-stat">
+            <h4>{{ active_subscriptions }}</h4>
+            <span>Active Subscriptions</span>
+          </div>
+          <div class="admin-stat">
+            <h4>{{ payment_success_rate }}%</h4>
+            <span>Payment Success Rate</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Row / End -->
+
+<style>
+  .admin-chart { position: relative; height: 300px; padding: 10px; }
+  .admin-chip { font-size: 13px; color: #888; }
+  .admin-empty { display: flex; align-items: center; justify-content: center; height: 300px; color: #999; font-size: 15px; padding: 20px; text-align: center; }
+
+  .admin-stat-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .admin-stat-row span { color: #707070; }
+  .admin-stat-row span i { color: #2a41e8; margin-right: 6px; vertical-align: middle; }
+  .admin-count { font-size: 17px; color: #2a41e8; }
+  .admin-count.alert { color: #e02d52; }
+
+  .admin-stat-grid { display: flex; flex-wrap: wrap; }
+  .admin-stat { flex: 1 1 0; min-width: 160px; text-align: center; padding: 14px 10px; border-right: 1px solid #e8e8e8; }
+  .admin-stat:last-child { border-right: 0; }
+  .admin-stat h4 { font-size: 28px; color: #2a41e8; margin: 0 0 4px; font-weight: 600; }
+  .admin-stat span { color: #888; font-size: 14px; }
+  @media (max-width: 768px) { .admin-stat { flex-basis: 50%; border-right: 0; } }
+</style>
+
+{{ chart_labels|json_script:"d-labels" }}
+{{ jobs_series|json_script:"d-jobs" }}
+{{ tasks_series|json_script:"d-tasks" }}
+{{ users_series|json_script:"d-users" }}
+{{ revenue_series|json_script:"d-revenue" }}
+{{ revenue_by_plan_labels|json_script:"d-plan-labels" }}
+{{ revenue_by_plan_data|json_script:"d-plan-data" }}
 
 <script>
-  function renderLineChart(canvasId, labels, data) {
-    new Chart(document.getElementById(canvasId), {
-      type: "line",
+window.addEventListener('load', function () {
+  if (typeof Chart === 'undefined') return;
+  var J = function (id) { return JSON.parse(document.getElementById(id).textContent); };
+  var labels = J('d-labels');
+
+  var BLUE = '#2a41e8', GREEN = '#36bd78', MAGENTA = '#b81b7f', AMBER = '#efa80f';
+
+  function line(color, fill) {
+    return {
+      borderColor: color,
+      backgroundColor: fill,
+      borderWidth: 3,
+      tension: 0.35,
+      fill: true,
+      pointRadius: 5,
+      pointHoverRadius: 5,
+      pointHitRadius: 10,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: color,
+      pointBorderWidth: 2,
+    };
+  }
+
+  var baseOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: 10 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#333', titleColor: '#fff', bodyColor: '#fff',
+        titleFont: { size: 13 }, bodyFont: { size: 13 },
+        displayColors: false, padding: 10, intersect: false,
+      },
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { precision: 0, color: '#888' },
+           grid: { color: '#d8d8d8', borderDash: [6, 10] }, border: { display: false } },
+      x: { ticks: { color: '#888' }, grid: { display: false }, border: { display: false } },
+    },
+  };
+
+  // Jobs vs Tasks (two lines, brand blue + green) with legend on
+  var dual = JSON.parse(JSON.stringify(baseOptions));
+  dual.plugins.legend = { display: true, position: 'top', align: 'end',
+    labels: { usePointStyle: true, boxWidth: 8, color: '#888' } };
+
+  new Chart(document.getElementById('jobsTasksChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: labels, datasets: [
+      Object.assign({ label: 'Jobs', data: J('d-jobs') }, line(BLUE, 'rgba(42,65,232,0.08)')),
+      Object.assign({ label: 'Tasks', data: J('d-tasks') }, line(GREEN, 'rgba(54,189,120,0.08)')),
+    ]},
+    options: dual,
+  });
+
+  new Chart(document.getElementById('usersChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: labels, datasets: [
+      Object.assign({ label: 'Signups', data: J('d-users') }, line(MAGENTA, 'rgba(184,27,127,0.08)')),
+    ]},
+    options: baseOptions,
+  });
+
+  new Chart(document.getElementById('revenueChart').getContext('2d'), {
+    type: 'bar',
+    data: { labels: labels, datasets: [{
+      label: 'Revenue (₦)',
+      data: J('d-revenue'),
+      backgroundColor: function (c) {
+        var g = c.chart.ctx.createLinearGradient(0, 0, 0, 300);
+        g.addColorStop(0, AMBER);
+        g.addColorStop(1, 'rgba(239,168,15,0.25)');
+        return g;
+      },
+      hoverBackgroundColor: AMBER,
+      borderRadius: 6,
+      maxBarThickness: 34,
+    }]},
+    options: baseOptions,
+  });
+
+  // Revenue by plan (doughnut) — only when the canvas exists
+  var pieEl = document.getElementById('planPie');
+  if (pieEl) {
+    var palette = [BLUE, GREEN, AMBER, MAGENTA, '#5e6dff', '#19c3c3', '#f0654a'];
+    new Chart(pieEl.getContext('2d'), {
+      type: 'doughnut',
       data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          tension: 0.4,
-          fill: true
-        }]
+        labels: J('d-plan-labels'),
+        datasets: [{ data: J('d-plan-data'), backgroundColor: palette, borderColor: '#fff', borderWidth: 2 }],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
         plugins: {
-          legend: { display: false }
-        }
-      }
+          legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, color: '#888' } },
+          tooltip: {
+            backgroundColor: '#333', titleColor: '#fff', bodyColor: '#fff', padding: 10, displayColors: false,
+            callbacks: { label: function (ctx) { return '₦' + Number(ctx.parsed).toLocaleString(); } },
+          },
+        },
+      },
     });
   }
-
-  renderLineChart("jobsChart", jobsChartData.labels, jobsChartData.data);
-  renderLineChart("tasksChart", tasksChartData.labels, tasksChartData.data);
-  renderLineChart("usersChart", usersChartData.labels, usersChartData.data);
-  renderLineChart("revenueChart", revenueChartData.labels, revenueChartData.data);
+});
 </script>
 
 {% endblock %}

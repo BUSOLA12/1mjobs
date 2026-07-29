@@ -39,18 +39,24 @@ urlpatterns = [
     path('dashboard/bookmarks/', views.dashboard_bookmarks, name='dashboard_bookmarks'),
     path('dashboard/manage-bidders/<int:task_id>/', views.dashboard_manage_bidders, name='dashboard_manage_bidders'),
     path('dashboard/manage-candidates/<int:job_id>/', views.dashboard_manage_candidates, name='dashboard_manage_candidates'),
+    path('dashboard/contracts/', views.dashboard_contracts, name='dashboard_contracts'),
+    path('dashboard/contracts/<int:pk>/', views.dashboard_contract_detail, name='dashboard_contract_detail'),
     path('dashboard/manage-jobs/', views.dashboard_manage_jobs, name='dashboard_manage_jobs'),
     path('dashboard/manage-tasks/', views.dashboard_manage_tasks, name='dashboard_manage_tasks'),
     path('dashboard/messages/', views.dashboard_messages, name='dashboard_messages'),
     path('dashboard/my-active-bids/', views.dashboard_my_active_bids, name='dashboard_my_active_bids'),
+    path('dashboard/my-applications/', views.dashboard_my_applications, name='dashboard_my_applications'),
     path('dashboard/post-job/', views.dashboard_post_a_job, name='dashboard_post_a_job'),
     path('dashboard/post-task/', views.dashboard_post_a_task, name='dashboard_post_a_task'),
     path('dashboard/reviews/', views.dashboard_reviews, name='dashboard_reviews'),
     path('dashboard/settings/', views.dashboard_settings, name='dashboard_settings'),
+    path('dashboard/my-profile/', views.dashboard_my_profile, name='dashboard_my_profile'),
     path('dashboard/edit-job/<int:job_id>/', views.dashboard_edit_job, name='dashboard_edit_job'),
     path('dashboard/edit-task/<int:task_id>/', views.dashboard_edit_task, name='dashboard_edit_task'),
     path('dashboard/edit-task/<int:task_id>/', views.dashboard_edit_task, name='dashboard_edit_task'),
     path('dashboard/post-a-company/', views.dashboard_post_a_company, name='dashboard_post_a_company'),
+    path('dashboard/company/edit-resubmit/', views.company_edit_resubmit, name='company_edit_resubmit'),
+    path('dashboard/verify-identity/', views.verify_identity, name='verify_identity'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-manage-job/', views.admin_manage_job, name='admin_manage_job'),
 
@@ -93,16 +99,18 @@ urlpatterns = [
     # path('pages/icons/', views.pages_icons_cheatsheet, name='pages_icons_cheatsheet'),
     path('invoice/<int:id>/', views.pages_invoice_template, name='invoice_template'),
     path('login/', views.pages_login, name='login'),
+    path('account-suspended/', views.account_suspended, name='account_suspended'),
     path('reset-password/', views.password_reset_request_view, name="password-reset-request"),
     path('reset-password/<uid>/<token>/', views.reset_password_view, name="reset-password"),
     path('order-confirmation/', views.pages_order_confirmation, name='order_confirmation'),
+    path('payment-confirmation/', views.pages_payment_confirmation, name='payment_confirmation'),
     path('pricing-plans/', views.pages_pricing_plans, name='pricing_plans'),
     path('register/', views.pages_register, name='register'),
     # path('pages/ui-elements/', views.pages_user_interface_elements, name='pages_user_interface_elements'),
 
     # Single pages
     path('single/company-profile-openstreetmap/', views.single_company_profile_openstreetmap, name='single_company_profile_openstreetmap'),
-    path('single/company-profile/', views.single_company_profile, name='single_company_profile'),
+    path('single/company-profile/<int:id>/', views.single_company_profile, name='single_company_profile'),
     path('freelancer-profile/<int:id>/', views.single_freelancer_profile, name='single_freelancer_profile'),
     path('job-page-openstreetmap/', views.single_job_page_openstreetmap, name='single_job_page_openstreetmap'),
     path('job-page/<int:job_id>/', views.single_job_page, name='single_job_page'),
@@ -113,5 +121,7 @@ urlpatterns = [
 
     # payments
     path('payments/', views.payments_page, name='payments_page'),
+    path('wallet/', views.wallet_page, name='wallet_page'),
+    path('billing/', views.billing_history_page, name='billing_history'),
 ]
 

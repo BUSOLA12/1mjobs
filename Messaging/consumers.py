@@ -13,6 +13,7 @@ from django.conf import settings
 from rest_framework.test import APIRequestFactory
 from .models import Conversation, Message
 from users.models import UserProfile
+from .models import UserProfile as MessagingUserProfile  # presence lives here (is_online/last_seen)
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -33,12 +34,15 @@ logger = logging.getLogger(__name__)
 class MessagingConsumer(AsyncWebsocketConsumer):
 
    async def connect(self):
-        
-      query_string = self.scope['query_string'].decode()
-      params = dict(x.split("=") for x in query_string.split("&") if "=" in x)
 
+      # Identity comes from the authenticated scope (set by JWTAuthMiddleware
+      # from a validated access token), never from a client-supplied user id.
+      user = self.scope.get("user")
+      if user is None or not user.is_authenticated:
+         await self.close(code=4001)
+         return
 
-      self.user_id = int(params.get("user_id"))
+      self.user_id = user.id
       logger.info(f"user_id: {self.user_id}")
       self.username = f"User{self.user_id}"
 
@@ -55,6 +59,9 @@ class MessagingConsumer(AsyncWebsocketConsumer):
       await self.broadcast_status_change()
 
    async def disconnect(self, close_code):
+      # Rejected (unauthenticated) connections never set an identity.
+      if not getattr(self, "user_id", None):
+         return
       await self.channel_layer.group_discard(
          self.user_group_name,
          self.channel_name
@@ -332,6 +339,14 @@ class MessagingConsumer(AsyncWebsocketConsumer):
          is_read=False
       ).update(is_read=True)
 
+      # Also clear the unread-message notifications for what was just read so the
+      # header badge stays accurate (UnreadNotificationView reads these rows).
+      MessageNotification.objects.filter(
+         conversation_id=conversation_id,
+         message__recipient_id=self.user_id,
+         is_read=False
+      ).update(is_read=True, unread_count=0)
+
 
 
 
@@ -530,12 +545,12 @@ class MessagingConsumer(AsyncWebsocketConsumer):
    @database_sync_to_async
    def update_user_status(self, is_online):
       try:
-         profile, _ = UserProfile.objects.get_or_create(user_id=self.user_id)
+         profile, _ = MessagingUserProfile.objects.get_or_create(user_id=self.user_id)
          profile.is_online = is_online
          profile.last_seen = timezone.now()
          profile.save()
-      except:
-         pass
+      except Exception as e:
+         logger.error(f"update_user_status failed for user {self.user_id}: {e}")
 
    @database_sync_to_async
    def get_user_contacts(self):
@@ -551,6 +566,10 @@ class MessagingConsumer(AsyncWebsocketConsumer):
       try:
          contact_ids = await self.get_user_contacts()
          profile_data = await self.get_user_profile_data()
+         is_invisible = await self.is_user_invisible()
+
+         # If the user has set themselves to Invisible, appear offline to contacts
+         visible_online_status = False if is_invisible else profile_data['is_online']
 
          for contact_id in contact_ids:
                await self.channel_layer.group_send(
@@ -558,7 +577,7 @@ class MessagingConsumer(AsyncWebsocketConsumer):
                   {
                      'type': 'user_status_change',
                      'username': self.username,
-                     'is_online': profile_data['is_online'],
+                     'is_online': visible_online_status,
                      'last_seen': profile_data['last_seen']
                   }
                )
@@ -566,14 +585,23 @@ class MessagingConsumer(AsyncWebsocketConsumer):
          pass
 
    @database_sync_to_async
+   def is_user_invisible(self):
+      try:
+         from users.models import UserProfile as UsersUserProfile
+         profile = UsersUserProfile.objects.get(user_id=self.user_id)
+         return profile.status == 'inactive'
+      except:
+         return False
+
+   @database_sync_to_async
    def get_user_profile_data(self):
       try:
-         profile = UserProfile.objects.get(user_id=self.user_id)
+         profile = MessagingUserProfile.objects.get(user_id=self.user_id)
          return {
                'is_online': profile.is_online,
                'last_seen': profile.last_seen.isoformat() if profile.last_seen else None
          }
-      except:
+      except MessagingUserProfile.DoesNotExist:
          return {'is_online': False, 'last_seen': None}
 
    @database_sync_to_async

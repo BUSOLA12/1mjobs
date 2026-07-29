@@ -1,0 +1,241 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<div id="wrapper">
+
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+
+<div class="dashboard-container">
+
+    {% include 'frontend/partials/Dashboard_sidebar.html' %}
+
+    <div class="dashboard-content-container" data-simplebar="">
+        <div class="dashboard-content-inner">
+
+            <!-- Dashboard Headline -->
+            <div class="dashboard-headline">
+                <h3>Correct &amp; Resubmit Company</h3>
+                <nav id="breadcrumbs" class="dark">
+                    <ul>
+                        <li><a href="#">Home</a></li>
+                        <li><a href="#">Dashboard</a></li>
+                        <li>Correct &amp; Resubmit</li>
+                    </ul>
+                </nav>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="notification {% if message.tags == 'error' %}error{% else %}success{% endif %} closeable margin-bottom-30">
+                        <p>{{ message }}</p>
+                        <a class="close" href="#"></a>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Status banner -->
+            {% if company.verification_status == 'approved' %}
+                <div class="notification success margin-bottom-30">
+                    <p>Your company is fully verified. No action needed.</p>
+                </div>
+            {% elif rejected %}
+                <div class="notification error margin-bottom-30">
+                    <p><strong>The following details need correcting:</strong></p>
+                    <ul style="margin:10px 0 0 18px;">
+                        {% for label, note in rejected %}
+                            <li>{{ label }}{% if note %}: {{ note }}{% endif %}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="notification notice margin-bottom-30">
+                    <p>Your submission is pending review.</p>
+                </div>
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="dashboard-box margin-top-0">
+                            <div class="headline">
+                                <h3><i class="icon-feather-edit"></i> Update Company Details</h3>
+                            </div>
+                            <div class="content with-padding padding-bottom-10">
+                                <div class="row">
+                                    {% for field in form %}
+                                        <div class="col-xl-6">
+                                            <div class="submit-field">
+                                                <h5>{{ field.label }}</h5>
+                                                {% if field.name == 'logo' %}
+                                                    {% if company.logo %}
+                                                        <div class="current-file">
+                                                            Current: <a href="{{ company.logo.url }}" target="_blank" rel="noopener">{{ company.logo.name }}</a>
+                                                        </div>
+                                                        <label class="clear-file">
+                                                            <input type="checkbox" name="logo-clear"> Remove current file
+                                                        </label>
+                                                    {% endif %}
+                                                    <input type="file" name="logo" accept="image/*">
+                                                {% elif field.name == 'documents' %}
+                                                    {% if company.documents %}
+                                                        <div class="current-file">
+                                                            Current: <a href="{{ company.documents.url }}" target="_blank" rel="noopener">{{ company.documents.name }}</a>
+                                                        </div>
+                                                        <label class="clear-file">
+                                                            <input type="checkbox" name="documents-clear"> Remove current file
+                                                        </label>
+                                                    {% endif %}
+                                                    <input type="file" name="documents">
+                                                {% else %}
+                                                    {{ field }}
+                                                {% endif %}
+                                                {% if field.errors %}
+                                                    <small style="color:#e74c3c;">{{ field.errors|striptags }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-12">
+                        <button type="submit" class="button ripple-effect big margin-top-30">
+                            <i class="icon-feather-refresh-cw"></i> Resubmit for Review
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="dashboard-footer-spacer"></div>
+            {% include 'frontend/partials/small_footer.html' %}
+
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<style>
+    .submit-field input,
+    .submit-field textarea,
+    .submit-field select {
+        width: 100%;
+        border: 1px solid #dfdfdf;
+        border-radius: 4px;
+        padding: 10px 12px;
+        background: #fff;
+        font-size: 15px;
+        color: #707070;
+    }
+    /* Django's ClearableFileInput adds a "Clear" checkbox when a file already
+       exists; keep it checkbox-sized instead of a full-width bordered box. */
+    .submit-field input[type="checkbox"] {
+        width: auto;
+        min-height: 0;
+        display: inline-block;
+        padding: 0;
+        margin: 0 6px 0 0;
+        vertical-align: middle;
+    }
+    .submit-field a {
+        color: #2a41e8;
+        word-break: break-all;
+    }
+    .current-file {
+        font-size: 14px;
+        color: #808080;
+        margin-bottom: 8px;
+    }
+    .clear-file {
+        display: inline-flex;
+        align-items: center;
+        font-size: 14px;
+        color: #707070;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    /* Make the Logo / Documents file pickers match the other fields */
+    .submit-field input[type="file"] {
+        display: flex;
+        align-items: center;
+        min-height: 48px;
+        padding: 8px 12px;
+        line-height: 1.5;
+    }
+    /* Space between the refresh icon and the button label */
+    .dashboard-content-inner .button i {
+        margin-right: 8px;
+    }
+    .submit-field input[type="file"]::file-selector-button {
+        margin-right: 14px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background: #2a41e8;
+        color: #fff;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .submit-field input[type="file"]::file-selector-button:hover {
+        background: #1b32d8;
+    }
+    .remove-file-btn {
+        display: none;
+        margin-top: 8px;
+        padding: 4px 12px;
+        border: 1px solid #e0554c;
+        border-radius: 4px;
+        background: #fff;
+        color: #e0554c;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+    .remove-file-btn:hover {
+        background: #e0554c;
+        color: #fff;
+    }
+</style>
+
+<script>
+    // Let users clear a staged Logo / Documents selection before submitting.
+    document.querySelectorAll('.submit-field input[type="file"]').forEach(function (input) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'remove-file-btn';
+        btn.textContent = 'Remove file';
+        input.insertAdjacentElement('afterend', btn);
+
+        input.addEventListener('change', function () {
+            btn.style.display = input.files.length ? 'inline-block' : 'none';
+        });
+        btn.addEventListener('click', function () {
+            input.value = '';
+            btn.style.display = 'none';
+            input.dispatchEvent(new Event('change'));
+        });
+    });
+</script>
+
+</body>
+</html>

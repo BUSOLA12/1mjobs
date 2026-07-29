@@ -2,6 +2,7 @@
 async function loadTaskandBidCount() {
     const bidCont = document.querySelector(".task-bid-won");
     const jobCont = document.querySelector(".job-applied-for");
+    const reviewCont = document.querySelector(".reviews-count");
 
     if (!bidCont || !jobCont) {
         console.warn("Task/Bid count elements not found.");
@@ -19,6 +20,7 @@ async function loadTaskandBidCount() {
 
         bidCont.textContent = data.bid_won || 0;
         jobCont.textContent = data.job_app || 0;
+        if (reviewCont) reviewCont.textContent = data.reviews || 0;
         console.log("After update - textContent:", bidCont.textContent, jobCont.textContent);
 
         // Double-check after delay

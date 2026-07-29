@@ -85,6 +85,13 @@
                             <a href="{% url 'admin-pricing-edit' plan.id %}" class="btn btn-sm btn-outline-secondary">
                                 Edit
                             </a>
+                            <form method="post" action="{% url 'admin-pricing-delete' plan.id %}" class="d-inline"
+                                onsubmit="return confirm('Delete the plan \'{{ plan.name }}\'? This will also remove its features.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Delete
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}

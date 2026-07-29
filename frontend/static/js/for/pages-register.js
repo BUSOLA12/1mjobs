@@ -21,9 +21,7 @@ document.getElementById('register-account-form').addEventListener('submit', asyn
 
     // Check which account type is selected
     const isFreelancer = document.getElementById('freelancer-radio').checked;
-    const role = isFreelancer ? 'freelancer' : 'employer';  // adjust to match backend expectation
-    const submitTokenBtn = document.getElementById('submitTokenBtn');
-    const tokenInput = document.getElementById('tokenInput');
+    const role = isFreelancer ? 'freelancer' : 'employer';
 
     try {
         const response = await fetch('/api/auth/register/', {
@@ -39,44 +37,11 @@ document.getElementById('register-account-form').addEventListener('submit', asyn
         });
 
         if (response.ok) {
-            console.log("Registration successful! confirm email...");
-            showTokenOverlay();
             hideLoading();
-            submitTokenBtn.addEventListener('click', async () => {
-                showLoading();
-                const code = tokenInput.value.trim();
-
-                if (code.length !== 6 || !/^\d+$/.test(code)) {
-                    hideLoading();
-                    appendError("Please enter a valid 6-digit code.");
-                    return;
-                }
-
-                try {
-                    const res = await fetch("/api/auth/verify-email-otp/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, code })
-                    });
-
-                    const data = await res.json();
-
-                    if (res.ok) {
-                        console.log("token verification successful, redirecting to login page...");
-                        appendError("Email verified successfully, redirecting to log in.", "success");
-                        setTimeout(() => {
-                            window.location.href = "/login/";
-                        }, 4000);
-                    } else {
-                        appendError("Invalid code entered");
-                        console.log("Invalid code entered: " + (data.detail || JSON.stringify(data)));
-                    }
-                } catch (err) {
-                    hideLoading();
-                    appendError("An error occurred while verifying the code.");
-                    console.error("An error occurred: " + err.message);
-                }
-            }); 
+            appendError("Registration successful! Redirecting to log in.", "success");
+            setTimeout(() => {
+                window.location.href = "/login/";
+            }, 2000);
         } else {
             hideLoading();
             const errorData = await response.json();

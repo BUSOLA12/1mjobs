@@ -198,12 +198,18 @@ class GetConversationView(APIView):
     def delete(self, request, pk):
         try:
             conv = Conversation.objects.get(pk=pk)
-            conv.delete()
-            return Response({"message": "Conversation deleted successfully"}, status=status.HTTP_200_OK)
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation with such id does not exist"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"error": f"{str(e)}"})
+
+        # Only a participant may delete the conversation.
+        if not conv.participants.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not a participant in this conversation."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        conv.delete()
+        return Response({"message": "Conversation deleted successfully"}, status=status.HTTP_200_OK)
 
 
 
@@ -321,7 +327,12 @@ class MarkAllReadView(APIView):
     permission_classes = [IsAuthenticated]
     
     def put(self, request):
-        notifications = MessageNotification.objects.filter(user=request.user, is_read=False)
+        # Notification rows are stored against the message's sender, so the
+        # unread items belonging to the requester are those where they are the
+        # message recipient (matches UnreadNotificationView's per-user view).
+        notifications = MessageNotification.objects.filter(
+            message__recipient=request.user, is_read=False
+        )
         notifications.update(is_read=True, unread_count=0)
         return Response(
             {"message": "All notifications marked as read."},

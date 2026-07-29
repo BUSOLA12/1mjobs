@@ -1,0 +1,96 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Review KYC: {{ kyc.user.email }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_kyc_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to KYC list</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">{{ kyc.user.get_full_name|default:kyc.user.email }}</h4>
+        {% if kyc.verification_status == 'approved' %}
+            <span class="badge bg-success">Approved</span>
+        {% elif kyc.verification_status == 'rejected' %}
+            <span class="badge bg-danger">Rejected</span>
+        {% else %}
+            <span class="badge bg-secondary">Pending</span>
+        {% endif %}
+    </div>
+
+    <p class="text-muted">
+        {{ kyc.user.email }}
+        {% if kyc.reviewed_at %}&middot; Last reviewed {{ kyc.reviewed_at|date:"Y-m-d H:i" }} by {{ kyc.reviewed_by.email|default:"—" }}{% endif %}
+    </p>
+
+    {% if kyc.notes %}
+        <div class="alert alert-warning"><strong>Last rejection reason:</strong> {{ kyc.notes }}</div>
+    {% endif %}
+
+    <div class="card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1">Email verification</h6>
+                <span class="text-muted">{{ kyc.user.email }}</span>
+            </div>
+            {% if kyc.user.verified_email %}
+                <span class="badge bg-success fs-6">&#10003; Email verified</span>
+            {% else %}
+                <span class="badge bg-danger fs-6">&#10005; Email not verified</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not kyc.user.verified_email %}
+        <div class="alert alert-danger">
+            This user's email is <strong>not verified</strong>. Verify the email before approving the identity documents.
+        </div>
+    {% endif %}
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <p class="mb-3"><strong>ID Type:</strong> {{ kyc.get_id_type_display|default:"—" }}
+               &nbsp;|&nbsp; <strong>ID Number:</strong> {{ kyc.id_number|default:"—" }}</p>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h6>Government ID</h6>
+                    {% if kyc.id_document %}
+                        <a href="{{ kyc.id_document.url }}" target="_blank" rel="noopener">
+                            <img src="{{ kyc.id_document.url }}" class="img-fluid border rounded" alt="ID document" style="max-height:340px;">
+                        </a>
+                        <div><a href="{{ kyc.id_document.url }}" target="_blank" rel="noopener">Open full size</a></div>
+                    {% else %}
+                        <p class="text-muted">No ID uploaded.</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h6>Selfie</h6>
+                    {% if kyc.selfie %}
+                        <a href="{{ kyc.selfie.url }}" target="_blank" rel="noopener">
+                            <img src="{{ kyc.selfie.url }}" class="img-fluid border rounded" alt="Selfie" style="max-height:340px;">
+                        </a>
+                    {% else %}
+                        <p class="text-muted">No selfie uploaded.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <form method="post" action="{% url 'admin_kyc_approve' kyc.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success" {% if not kyc.user.verified_email %}disabled title="Email must be verified before approval"{% endif %}>Approve &amp; verify</button>
+        </form>
+        <button class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectBox">Reject</button>
+    </div>
+
+    <div class="collapse mt-3" id="rejectBox">
+        <form method="post" action="{% url 'admin_kyc_reject' kyc.id %}" class="card card-body">
+            {% csrf_token %}
+            <label class="form-label">Reason for rejection (emailed to the freelancer)</label>
+            <textarea name="reason" rows="3" class="form-control mb-2" required></textarea>
+            <button type="submit" class="btn btn-danger">Confirm rejection &amp; notify</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

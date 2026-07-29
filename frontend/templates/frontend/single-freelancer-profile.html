@@ -74,13 +74,9 @@
 
 				<!-- Pagination -->
 				<div class="clearfix"></div>
-				<div class="pagination-container margin-top-40 margin-bottom-10">
+				<div class="pagination-container margin-top-40 margin-bottom-10" id="reviews-pagination-container" style="display: none;">
 					<nav class="pagination">
-						<ul>
-							<li><a href="#" class="ripple-effect current-page">1</a></li>
-							<li><a href="#" class="ripple-effect">2</a></li>
-							<li class="pagination-arrow"><a href="#" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
-						</ul>
+						<ul id="reviews-pagination"></ul>
 					</nav>
 				</div>
 				<div class="clearfix"></div>
@@ -108,7 +104,7 @@
 				
 				<!-- Profile Overview -->
 				<div class="profile-overview">
-					<div class="overview-item"><strong>$<span id="hourly_rate">0</span></strong><span>Hourly Rate</span></div>
+					<div class="overview-item"><strong>₦<span id="hourly_rate">0</span></strong><span>Hourly Rate</span></div>
 					<div class="overview-item"><strong id="jobs_done">0</strong><span>Jobs Done</span></div>
 					<div class="overview-item"><strong id="rehired">0</strong><span>Rehired</span></div>
 				</div>
@@ -181,7 +177,7 @@
 
 				<!-- Widget -->
 				<div class="sidebar-widget">
-					<h3>Attachments</h3>
+					<h3>CV / Portfolio</h3>
 					<div class="attachments-container">
 						<a href="#" class="attachment-box ripple-effect"><span>Cover Letter</span><i>PDF</i></a>
 						<a href="#" class="attachment-box ripple-effect"><span>Contract</span><i>DOCX</i></a>
@@ -265,6 +261,11 @@
 				<!-- Form -->
 				<form method="post" id="make-an-offer-form">
 
+					<!-- Tie this offer to one of your jobs or tasks (optional) -->
+					<select id="offer-link-select" class="with-border margin-bottom-20" style="width:100%;">
+						<option value="">Not linked to a job or task</option>
+					</select>
+
 					<textarea name="textarea" cols="10" placeholder="Message" class="with-border"></textarea>
 
 					<div class="uploadButton margin-top-25">
@@ -279,43 +280,6 @@
 				<button id="make-an-offer-btn" class="button margin-top-35 full-width button-sliding-icon ripple-effect" type="submit">Make an Offer <i class="icon-material-outline-arrow-right-alt"></i></button>
 
 			</div>
-			{% comment %}
-			<!-- Login -->
-			<div class="popup-tab-content" id="loginn">
-				
-				<!-- Welcome Text -->
-				<div class="welcome-text">
-					<h3>Discuss Your Project With Tom</h3>
-				</div>
-					
-				<!-- Form -->
-				<form method="post" id="make-an-offer-form2">
-
-					<div class="input-with-icon-left">
-						<i class="icon-material-outline-account-circle"></i>
-						<input type="text" class="input-text with-border" name="name2" id="name2" placeholder="First and Last Name" required/>
-					</div>
-
-					<div class="input-with-icon-left">
-						<i class="icon-material-baseline-mail-outline"></i>
-						<input type="text" class="input-text with-border" name="emailaddress2" id="emailaddress2" placeholder="Email Address" required/>
-					</div>
-
-					<textarea name="textarea" cols="10" placeholder="Message" class="with-border"></textarea>
-
-					<div class="uploadButton margin-top-25">
-						<input class="uploadButton-input" type="file" accept="image/*, application/pdf" id="upload-cv" multiple/>
-						<label class="uploadButton-button" for="upload-cv">Add Attachments</label>
-						<span class="uploadButton-file-name">Allowed file types: zip, pdf, png, jpg <br> Max. files size: 50 MB.</span>
-					</div>
-
-				</form>
-				
-				<!-- Button -->
-				<button id="make-an-offer2-btn" class="button full-width button-sliding-icon ripple-effect" type="submit" form="make-an-offer-form">Make an Offer <i class="icon-material-outline-arrow-right-alt"></i></button>
-
-			</div> 
-			{% endcomment %}
 
 		</div>
 	</div>

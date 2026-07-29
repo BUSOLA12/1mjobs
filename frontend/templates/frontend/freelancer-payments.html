@@ -1,0 +1,172 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+	<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+
+<body class="gray" style="display:none" id="mainBody">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+		<!-- Header Container / End -->
+
+
+		<!-- Dashboard Container -->
+		<div class="dashboard-container">
+
+			<!-- Dashboard Sidebar
+	================================================== -->
+			{% include 'frontend/partials/Dashboard_sidebar.html' %}
+			<!-- Dashboard Sidebar / End -->
+
+
+			<!-- Dashboard Content
+	================================================== -->
+			<div class="dashboard-content-container" data-simplebar>
+				<div class="dashboard-content-inner">
+
+					<!-- Dashboard Headline -->
+					<div class="dashboard-headline">
+						<h3>My Earnings</h3>
+
+						<!-- Breadcrumbs -->
+						<nav id="breadcrumbs" class="dark">
+							<ul>
+								<li><a href="{% url 'index' %}">Home</a></li>
+								<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+								<li>Earnings</li>
+							</ul>
+						</nav>
+					</div>
+
+					<!-- Balances -->
+					<div class="row">
+						<div class="col-xl-6 col-md-6">
+							<div class="dashboard-box">
+								<div class="headline">
+									<h3>Available Balance</h3>
+								</div>
+								<div class="content with-padding">
+									<h2 id="available-balance">₦0</h2>
+									<p>Yours to withdraw. Released payments (minus the 10% platform fee) land here.</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-xl-6 col-md-6">
+							<div class="dashboard-box">
+								<div class="headline">
+									<h3>Pending Balance</h3>
+								</div>
+								<div class="content with-padding">
+									<h2 id="pending-balance">₦0</h2>
+									<p>Held in escrow. Becomes available once the employer releases payment.</p>
+								</div>
+							</div>
+						</div>
+
+						<!-- Transactions -->
+						<div class="col-xl-12">
+							<div class="dashboard-box margin-top-0">
+								<div class="headline">
+									<h3><i class="icon-material-outline-account-balance-wallet"></i> Transactions</h3>
+								</div>
+								<div class="content">
+									<ul class="dashboard-box-list" id="transactions-list">
+										<li>Loading...</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+
+					</div>
+
+					<!-- Footer -->
+					<div class="dashboard-footer-spacer"></div>
+					{% include 'frontend/partials/small_footer.html' %}
+					<!-- Footer / End -->
+
+				</div>
+			</div>
+			<!-- Dashboard Content / End -->
+
+		</div>
+		<!-- Dashboard Container / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+
+	<script>
+		function fmtAmount(a) {
+			return new Intl.NumberFormat().format(a || 0);
+		}
+
+		async function loadWallet() {
+			try {
+				const res = await fetchProtected("/api/payments/wallet/");
+				if (!res.ok) return;
+				const w = await res.json();
+				document.getElementById("available-balance").textContent = "₦" + fmtAmount(w.available_balance);
+				document.getElementById("pending-balance").textContent = "₦" + fmtAmount(w.pending_balance);
+			} catch (err) {
+				console.error("Failed to load wallet:", err);
+			}
+		}
+
+		async function loadTransactions() {
+			const list = document.getElementById("transactions-list");
+			try {
+				const res = await fetchProtected("/api/payments/transactions/");
+				if (!res.ok) return;
+				const txns = await res.json();
+				if (!txns.length) {
+					list.innerHTML = "<li>No transactions yet.</li>";
+					return;
+				}
+				const labels = { CREDIT: "Payment received", DEBIT: "Debit", FEE: "Platform fee" };
+				list.innerHTML = txns.map(t => {
+					const when = t.created_at ? new Date(t.created_at).toLocaleString() : "";
+					const sign = t.type === "FEE" || t.type === "DEBIT" ? "-" : "+";
+					const color = t.type === "CREDIT" ? "#28a745" : "#888";
+					return `<li style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">` +
+						`<span>${labels[t.type] || t.type}<br><small style="color:#999;">${when}</small></span>` +
+						`<strong style="color:${color};">${sign}₦${fmtAmount(t.amount)}</strong></li>`;
+				}).join("");
+			} catch (err) {
+				console.error("Failed to load transactions:", err);
+			}
+		}
+
+		document.addEventListener("DOMContentLoaded", () => {
+			loadWallet();
+			loadTransactions();
+		});
+	</script>
+
+</body>
+
+</html>

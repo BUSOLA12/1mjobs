@@ -23,10 +23,10 @@
         <div class="col-md-3">
             <select name="status" class="form-select">
                 <option value="">All Status</option>
-                <option value="pending" {% if status=="pending" %}selected{% endif %}>Pending</option>
-                <option value="paid" {% if status=="paid" %}selected{% endif %}>Paid</option>
-                <option value="failed" {% if status=="failed" %}selected{% endif %}>Failed</option>
-                <option value="refunded" {% if status=="refunded" %}selected{% endif %}>Refunded</option>
+                <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+                <option value="paid" {% if status == "paid" %}selected{% endif %}>Paid</option>
+                <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
+                <option value="refunded" {% if status == "refunded" %}selected{% endif %}>Refunded</option>
             </select>
         </div>
 

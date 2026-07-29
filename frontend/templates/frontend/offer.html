@@ -59,6 +59,7 @@
 			<!-- Offer Dashboard -->
 			<div class="row">
 
+				{% if user.role != 'employer' %}
 				<!-- OFFERS RECEIVED -->
 				<div class="col-xl-6" id="offers-received-section">
 					<div class="dashboard-box margin-top-30">
@@ -78,7 +79,9 @@
 						</div>
 					</div>
 				</div>
+				{% endif %}
 
+				{% if user.role != 'freelancer' %}
 				<!-- OFFERS SENT -->
 				<div class="col-xl-6">
 					<div class="dashboard-box margin-top-30">
@@ -92,6 +95,7 @@
 						</div>
 					</div>
 				</div>
+				{% endif %}
 
 			</div>
 

@@ -560,8 +560,10 @@
 					$(this).append(twoStars);
 				} else if (dataRating >= 1.25) {
 					$(this).append(oneHalfStar);
-				} else if (dataRating < 1.25) {
+				} else if (dataRating >= 0.75) {
 					$(this).append(oneStar);
+				} else {
+					$(this).append(starsOutput('star empty', 'star empty', 'star empty', 'star empty', 'star empty'));
 				}
 
 			});
@@ -930,12 +932,39 @@
 		/*--------------------------------------------------*/
 		$(".keywords-container").each(function () {
 
+			var container = $(this);
 			var keywordInput = $(this).find(".keyword-input");
 			var keywordsList = $(this).find(".keywords-list");
 
 			// adding keyword
 			function addKeyword() {
-				var $newKeyword = $("<span class='keyword'><span class='keyword-remove'></span><span class='keyword-text'>" + keywordInput.val() + "</span></span>");
+				var rawValue = keywordInput.val();
+				var value = rawValue.trim();
+
+				// Optional max limit: only active when data-max-keywords is set on the container
+				var maxKeywords = parseInt(container.attr("data-max-keywords"), 10);
+				if (!isNaN(maxKeywords) && keywordsList.children(".keyword").length >= maxKeywords) {
+					keywordInput.val("");
+					return;
+				}
+
+				// Optional duplicate prevention: only active when data-unique-keywords="true"
+				if (container.attr("data-unique-keywords") === "true") {
+					var exists = false;
+					keywordsList.find(".keyword-text").each(function () {
+						if ($(this).text().trim().toLowerCase() === value.toLowerCase()) {
+							exists = true;
+						}
+					});
+					if (exists) {
+						keywordInput.val("");
+						return;
+					}
+				}
+
+				// XSS-safe: set user text via .text() instead of concatenating into HTML
+				var $newKeyword = $("<span class='keyword'><span class='keyword-remove'></span><span class='keyword-text'></span></span>");
+				$newKeyword.find(".keyword-text").text(rawValue);
 				keywordsList.append($newKeyword).trigger('resizeContainer');
 				keywordInput.val("");
 			}
@@ -1511,11 +1540,13 @@ async function createBookmark(model_type, object_id) {
 			method: "POST",
 			body: JSON.stringify({ model_type, object_id }),
 		});
+		if (!res || !res.ok) return null;
 		const data = await res.json();
 		console.log("Bookmark Created:", data);
 		return data;
 	} catch (err) {
 		console.error("Error Creating Bookmark:", err);
+		return null;
 	}
 }
 
@@ -1525,14 +1556,14 @@ async function deleteBookmark(bookmark_id) {
 		const res = await fetchProtected(`/api/bookmarks/${bookmark_id}/delete/`, {
 			method: "DELETE",
 		});
-		if (res.status === 204) {
+		if (res && (res.status === 204 || res.ok)) {
 			console.log(`Bookmark ${bookmark_id} deleted successfully`);
-		} else {
-			const data = await res.json();
-			console.log("Delete Response:", data);
+			return true;
 		}
+		return false;
 	} catch (err) {
 		console.error("Error Deleting Bookmark:", err);
+		return false;
 	}
 }
 
@@ -1540,10 +1571,80 @@ async function bookmarkHandling(operation, model_type, bookmarkbutton = null) {
 	if (operation === "create") {
 		const profileId = bookmarkbutton.getAttribute(`data-${model_type}-id`);
 		const data = await createBookmark(model_type, profileId);
-		bookmarkbutton.setAttribute("data-bookmark-id", data.id);
-	} else {
-		const bookmarkId = bookmarkbutton.getAttribute("data-bookmark-id");
-		deleteBookmark(bookmarkId);
+		if (data && data.id) {
+			bookmarkbutton.setAttribute("data-bookmark-id", data.id);
+			return true;
+		}
+		return false;
+	}
+	const bookmarkId = bookmarkbutton.getAttribute("data-bookmark-id");
+	if (!bookmarkId) return false;
+	const ok = await deleteBookmark(bookmarkId);
+	if (ok) bookmarkbutton.removeAttribute("data-bookmark-id");
+	return ok;
+}
+
+// Returns { profileId: bookmarkId } for the current user's bookmarked freelancers.
+// Empty object for guests (no error, no request).
+async function getBookmarkedProfileMap() {
+	try {
+		if (!(await isAuthenticated())) return {};
+		const res = await fetchProtected('/api/bookmarks/');
+		if (!res || !res.ok) return {};
+		const data = await res.json();
+		const map = {};
+		(data.userprofiles || []).forEach(b => { map[b.profile_id] = b.id; });
+		return map;
+	} catch (err) {
+		console.error("Error loading bookmarks:", err);
+		return {};
+	}
+}
+
+// Returns { objectId: bookmarkId } for the current user's bookmarks of the given
+// model_type ("job" | "task" | "userprofile"). Empty object for guests.
+async function getBookmarkMap(model_type) {
+	try {
+		if (!(await isAuthenticated())) return {};
+		const res = await fetchProtected('/api/bookmarks/');
+		if (!res || !res.ok) return {};
+		const data = await res.json();
+		const config = {
+			job: { list: data.jobs, key: "job_id" },
+			task: { list: data.tasks, key: "task_id" },
+			userprofile: { list: data.userprofiles, key: "profile_id" },
+		};
+		const cfg = config[model_type];
+		if (!cfg) return {};
+		const map = {};
+		(cfg.list || []).forEach(b => { map[b[cfg.key]] = b.id; });
+		return map;
+	} catch (err) {
+		console.error("Error loading bookmarks:", err);
+		return {};
+	}
+}
+
+// Wires a single-page ".bookmark-button": seeds its initial bookmarked state and
+// toggles create/delete on click. Used by the job/task/freelancer detail pages.
+async function initBookmarkButton(bookmarkButton, model_type, objectId) {
+	if (!bookmarkButton || !objectId) return;
+	bookmarkButton.setAttribute(`data-${model_type}-id`, objectId);
+
+	bookmarkButton.addEventListener("click", async () => {
+		if (!await requireLogin()) return;
+		const isBookmarked = bookmarkButton.classList.contains("bookmarked");
+		bookmarkButton.style.pointerEvents = "none";
+		const ok = await bookmarkHandling(isBookmarked ? "delete" : "create", model_type, bookmarkButton);
+		bookmarkButton.style.pointerEvents = "";
+		if (ok) bookmarkButton.classList.toggle("bookmarked", !isBookmarked);
+	});
+
+	// Seed initial state (only returns data for logged-in users).
+	const map = await getBookmarkMap(model_type);
+	if (map[objectId] != null) {
+		bookmarkButton.classList.add("bookmarked");
+		bookmarkButton.setAttribute("data-bookmark-id", map[objectId]);
 	}
 }
 
@@ -1594,8 +1695,10 @@ function starRating(ratingElem) {
 			$(this).append(twoStars);
 		} else if (dataRating >= 1.25) {
 			$(this).append(oneHalfStar);
-		} else if (dataRating < 1.25) {
+		} else if (dataRating >= 0.75) {
 			$(this).append(oneStar);
+		} else {
+			$(this).append(starsOutput('star empty', 'star empty', 'star empty', 'star empty', 'star empty'));
 		}
 
 	});
@@ -1628,6 +1731,15 @@ function showForRole(role, elementId, displayType = 'block') {
 		}
 	});
 }
+
+// Freelancer-only sidebar links (present on every dashboard page via the shared
+// sidebar partial). No-ops where the element isn't on the page.
+showForRole("freelancer", "verify-identity-element");
+showForRole("freelancer", "my-applications-element");
+// Payments is employer-only; freelancers use the Wallet instead. Both roles keep
+// the Billing & Subscription link.
+showForRole("employer", "payments-nav-element");
+showForRole("freelancer", "wallet-nav-element");
 
 
 // update user status
@@ -1693,8 +1805,9 @@ async function updateUserNavInfo() {
 	// Update avatar images
 	const avatarImages = rightSideNav.querySelectorAll(".user-avatar img");
 	avatarImages.forEach(img => {
-		img.src = userInfo.avatar_url ? userInfo.avatar_url : "/static/images/default-avatar.png";
+		img.src = userInfo.avatar_url || "/static/images/user-avatar-placeholder.png";
 		img.alt = userInfo.full_name || "User";
+		img.onerror = function () { this.src = "/static/images/user-avatar-placeholder.png"; };
 	});
 
 	// Update user name and role
@@ -1720,10 +1833,18 @@ async function updateUserNavInfo() {
 			onlineEl.classList.add("current-status");
 			invisibleEl.classList.remove("current-status");
 			indicatorEl.classList.remove("right");
+			document.querySelectorAll(".user-avatar").forEach(el => {
+				el.classList.remove("status-invisible");
+				el.classList.add("status-online");
+			});
 		} else {
 			onlineEl.classList.remove("current-status");
 			invisibleEl.classList.add("current-status");
 			indicatorEl.classList.add("right");
+			document.querySelectorAll(".user-avatar").forEach(el => {
+				el.classList.remove("status-online");
+				el.classList.add("status-invisible");
+			});
 		}
 	}
 
@@ -1734,7 +1855,95 @@ async function updateUserNavInfo() {
 	}
 	//   change right side display to Block
 	rightSideNav.style.display = "block";
+
+	// Mark the user as online sitewide (not just on the Messages page) so that
+	// presence dots elsewhere (e.g. Manage Candidates) reflect reality.
+	startPresenceSocket();
 };
+
+
+// ---- Sitewide presence WebSocket ----
+// Opens a single connection to the messaging consumer on any authenticated
+// page so Messaging.UserProfile.is_online stays true while the user is active.
+// The Messages page opens its own socket, so we skip it there to avoid a
+// duplicate connection.
+let _presenceSocket = null;
+let _presenceReconnectDelay = 1000;
+const _PRESENCE_MAX_DELAY = 30000;
+
+// Increment (or adjust) the header unread-messages badge (#notification-count)
+// in real time. Clamps at 0 and hides the badge when empty.
+function bumpHeaderMessageCount(delta = 1) {
+	const badge = document.getElementById("notification-count");
+	if (!badge) return;
+	const current = parseInt(badge.textContent, 10) || 0;
+	const next = Math.max(0, current + delta);
+	badge.textContent = next;
+	badge.style.display = next > 0 ? "" : "none";
+}
+
+async function startPresenceSocket() {
+	if (window.location.pathname.startsWith("/dashboard/messages")) return; // page owns its socket
+	if (_presenceSocket &&
+		(_presenceSocket.readyState === WebSocket.OPEN ||
+		 _presenceSocket.readyState === WebSocket.CONNECTING)) {
+		return; // already connected/connecting
+	}
+
+	// Need a valid access token; refresh if necessary.
+	if (!(await isAuthenticated()) || !accessToken) return;
+
+	const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+	const url = `${scheme}://${window.location.host}/ws/messaging/?token=${encodeURIComponent(accessToken)}`;
+
+	try {
+		_presenceSocket = new WebSocket(url);
+	} catch (err) {
+		console.error("Presence socket failed to open:", err);
+		return;
+	}
+
+	_presenceSocket.onopen = () => { _presenceReconnectDelay = 1000; };
+
+	// Keep the header unread-messages badge live on every authenticated page.
+	// The backend pushes a `send_notification` event (Messaging/signals.py) to
+	// the recipient's user group whenever a new Message is created.
+	_presenceSocket.onmessage = (event) => {
+		let data;
+		try { data = JSON.parse(event.data); } catch (e) { return; }
+		if (data.type === "send_notification") {
+			// The notification row is already persisted before this event is
+			// sent, so an authoritative refresh of the dropdown + badge is
+			// race-free. Fall back to a simple bump on pages that only have the
+			// badge (no notification dropdown / renderUnread).
+			if (typeof renderUnread === "function") {
+				renderUnread();
+			} else {
+				bumpHeaderMessageCount(1);
+			}
+		}
+	};
+
+	_presenceSocket.onclose = () => {
+		_presenceSocket = null;
+		// Don't reconnect if we're navigating away.
+		if (document.visibilityState === "hidden") return;
+		setTimeout(startPresenceSocket, _presenceReconnectDelay);
+		_presenceReconnectDelay = Math.min(_presenceReconnectDelay * 2, _PRESENCE_MAX_DELAY);
+	};
+
+	_presenceSocket.onerror = () => {
+		try { _presenceSocket && _presenceSocket.close(); } catch (e) {}
+	};
+}
+
+// Close cleanly on navigation/unload so the consumer marks the user offline.
+window.addEventListener("beforeunload", () => {
+	if (_presenceSocket) {
+		try { _presenceSocket.close(); } catch (e) {}
+		_presenceSocket = null;
+	}
+});
 
 
 // ---- Helper: update user status ----
@@ -1758,10 +1967,18 @@ async function updateUserStatus(newStatus) {
 				indicator.classList.add("right");
 				onlineEl.classList.remove("current-status");
 				invisibleEl.classList.add("current-status");
+				document.querySelectorAll(".user-avatar").forEach(el => {
+					el.classList.remove("status-online");
+					el.classList.add("status-invisible");
+				});
 			} else {
 				indicator.classList.remove("right");
 				onlineEl.classList.add("current-status");
 				invisibleEl.classList.remove("current-status");
+				document.querySelectorAll(".user-avatar").forEach(el => {
+					el.classList.remove("status-invisible");
+					el.classList.add("status-online");
+				});
 			}
 		} else {
 			console.error("Failed to update status");
@@ -1800,6 +2017,15 @@ async function isAuthenticated() {
 		}
 	})();
 	return _authPromise;
+}
+
+// Send guests to login, returning them to this page after they sign in.
+// Returns true when the visitor is authenticated (caller may proceed).
+async function requireLogin() {
+	if (await isAuthenticated()) return true;
+	const here = window.location.pathname + window.location.search;
+	window.location.href = `/login/?redirect=${encodeURIComponent(here)}`;
+	return false;
 }
 
 // Append error message to login form
@@ -1941,7 +2167,7 @@ $(document).on('click', '.mfp-trigger', function (e) {
 
 function disableButton(button, btnText, profileUserId) {
 	// disable the apply button if the user is viewing their own profile
-	if (userInfo.id === profileUserId) {
+	if (userInfo && userInfo.id === profileUserId) {
 		// 1. Add a 'disabled' class for CSS styling
 		button.classList.add('button-disabled');
 

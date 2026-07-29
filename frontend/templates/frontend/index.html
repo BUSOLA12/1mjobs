@@ -264,8 +264,12 @@
 							<p style="margin:0; color:#999;">Plans will be available here soon.</p>
 						</div>
 
+						{% if not user.is_authenticated or user.role != 'employer' %}
 						<!-- Pricing Plans Container Freelancers -->
-						<div class="pricing-plans-container margin-top-50 margin-bottom-50" id="freelancer">
+						<div class="section-headline centered margin-top-25 margin-bottom-0">
+							<h4>For Freelancers</h4>
+						</div>
+						<div class="pricing-plans-container margin-top-60 margin-bottom-50" id="freelancer">
 							<!-- Plan -->
 							<div class="pricing-plan">
 								<h3></h3>
@@ -309,6 +313,58 @@
 								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
 							</div>
 						</div>
+						{% endif %}
+
+						{% if not user.is_authenticated or user.role != 'freelancer' %}
+						<!-- Pricing Plans Container Employers -->
+						<div class="section-headline centered margin-top-25 margin-bottom-0">
+							<h4>For Employers</h4>
+						</div>
+						<div class="pricing-plans-container margin-top-60 margin-bottom-50" id="employer">
+							<!-- Plan -->
+							<div class="pricing-plan">
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+
+							<!-- Plan -->
+							<div class="pricing-plan recommended">
+								<div class="recommended-badge">Recommended</div>
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+
+							<!-- Plan -->
+							<div class="pricing-plan">
+								<h3></h3>
+								<p class="margin-top-10"></p>
+								<div class="pricing-plan-label billed-monthly-label"></div>
+								<div class="pricing-plan-label billed-yearly-label"></div>
+								<div class="pricing-plan-features">
+									<strong></strong>
+									<ul>
+									</ul>
+								</div>
+								<a class="button full-width margin-top-20 buy-now-btn">Buy Now</a>
+							</div>
+						</div>
+						{% endif %}
 
 						{% comment %}
 						<!-- Tabs Container -->
@@ -456,9 +512,9 @@
 											<h3>Standard Plan</h3>
 											<p class="margin-top-10">One time fee for one listing or task highlighted in
 												search results.</p>
-											<div class="pricing-plan-label billed-monthly-label"><strong>$49</strong>/
+											<div class="pricing-plan-label billed-monthly-label"><strong>₦49</strong>/
 												monthly</div>
-											<div class="pricing-plan-label billed-yearly-label"><strong>$529</strong>/
+											<div class="pricing-plan-label billed-yearly-label"><strong>₦529</strong>/
 												yearly</div>
 											<div class="pricing-plan-features">
 												<strong>Features of Standard Plan</strong>

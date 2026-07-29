@@ -60,3 +60,124 @@ class AdminPlanFeatureForm(forms.ModelForm):
             self.add_error("limit", "Non-boolean features must have a limit or be unlimited.")
 
         return cleaned_data
+
+
+# admin_panel/forms.py
+from company.models import Company
+
+
+class AdminCompanyForm(forms.ModelForm):
+    class Meta:
+        model = Company
+        fields = [
+            "created_by",
+            "members",
+            "company_name",
+            "brand_name",
+            "industry",
+            "description",
+            "registration_number",
+            "tin",
+            "established_date",
+            "company_size",
+            "headquarters_address",
+            "primary_phone",
+            "secondary_phone",
+            "email",
+            "website",
+            "facebook",
+            "linkedin",
+            "company_country",
+            "logo",
+            "documents",
+        ]
+
+        widgets = {
+            "created_by": forms.Select(attrs={"class": "form-select"}),
+            "members": forms.Select(attrs={"class": "form-select"}),
+            "company_name": forms.TextInput(attrs={"class": "form-control"}),
+            "brand_name": forms.TextInput(attrs={"class": "form-control"}),
+            "industry": forms.Select(attrs={"class": "form-select"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "registration_number": forms.TextInput(attrs={"class": "form-control"}),
+            "tin": forms.TextInput(attrs={"class": "form-control"}),
+            "established_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "company_size": forms.TextInput(attrs={"class": "form-control"}),
+            "headquarters_address": forms.TextInput(attrs={"class": "form-control"}),
+            "primary_phone": forms.TextInput(attrs={"class": "form-control"}),
+            "secondary_phone": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "website": forms.TextInput(attrs={"class": "form-control"}),
+            "facebook": forms.TextInput(attrs={"class": "form-control"}),
+            "linkedin": forms.TextInput(attrs={"class": "form-control"}),
+            "company_country": forms.TextInput(attrs={"class": "form-control"}),
+            "logo": forms.ClearableFileInput(attrs={"class": "form-control"}),
+            "documents": forms.ClearableFileInput(attrs={"class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # created_by / members are optional links to user accounts.
+        self.fields["created_by"].required = False
+        self.fields["created_by"].label = "Owner account (created by)"
+        self.fields["created_by"].empty_label = "— none —"
+        self.fields["members"].required = False
+        self.fields["members"].label = "Member account"
+        self.fields["members"].empty_label = "— none —"
+
+    def _blank_to_none(self, field_name):
+        """email/website/facebook/linkedin are unique; store blanks as NULL so
+        multiple companies without them don't collide on the unique constraint."""
+        value = self.cleaned_data.get(field_name)
+        if value in ("", None):
+            return None
+        return value
+
+    def clean_email(self):
+        return self._blank_to_none("email")
+
+    def clean_website(self):
+        return self._blank_to_none("website")
+
+    def clean_facebook(self):
+        return self._blank_to_none("facebook")
+
+    def clean_linkedin(self):
+        return self._blank_to_none("linkedin")
+
+
+# admin_panel/forms.py
+from admins.models import AdminProfile
+
+
+class AdminContactForm(forms.ModelForm):
+    """Site-wide contact / social details shown on the public contact page."""
+
+    class Meta:
+        model = AdminProfile
+        fields = [
+            "name",
+            "gmail",
+            "phone",
+            "address",
+            "facebook",
+            "linkedin",
+            "x",
+            "github",
+        ]
+
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
+            "gmail": forms.EmailInput(attrs={"class": "form-control"}),
+            "phone": forms.TextInput(attrs={"class": "form-control"}),
+            "address": forms.TextInput(attrs={"class": "form-control"}),
+            "facebook": forms.URLInput(attrs={"class": "form-control"}),
+            "linkedin": forms.URLInput(attrs={"class": "form-control"}),
+            "x": forms.URLInput(attrs={"class": "form-control"}),
+            "github": forms.URLInput(attrs={"class": "form-control"}),
+        }
+
+        labels = {
+            "gmail": "Contact email",
+            "x": "X (Twitter)",
+        }

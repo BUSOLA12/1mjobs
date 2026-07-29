@@ -75,10 +75,30 @@ async function loadPricingPlans(planType = null) {
 
       plan.features.forEach(feature => {
         const li = document.createElement('li');
-        li.textContent = `${capitalize(feature.feature_name.replace(/_/g, ' '))}: ${feature.limit === null ? 'Unlimited' : feature.limit}`;
+        const label = capitalize(feature.feature_name.replace(/_/g, ' '));
+        // Boolean perks are simply included/not (no count). Numeric perks show
+        // their monthly quota; a null limit on a non-boolean means unlimited.
+        if (feature.is_boolean) {
+          li.textContent = label;
+        } else {
+          li.textContent = `${label}: ${feature.limit === null ? 'Unlimited' : feature.limit}`;
+        }
         featuresList.appendChild(li);
-      });    
+      });
     });
+
+    // Hide any leftover skeleton cards that received no plan. The template ships
+    // three .pricing-plan placeholders per container, but there may be fewer
+    // plans (e.g. a single Pro plan), which would otherwise show empty cards.
+    planElements.forEach((el, i) => {
+      el.style.display = i < plans.length ? "" : "none";
+    });
+
+    // With a single plan the card would stretch across the whole flex row;
+    // constrain the container to a normal card width and centre it.
+    if (containerEl) {
+      containerEl.classList.toggle("single-plan", plans.length === 1);
+    }
 
     return plans;
   } catch (error) {
@@ -93,6 +113,12 @@ function buyItNow(plan1, plan2) {
   buyNowButtons.forEach(button => {
   button.addEventListener("click", async function (e) {
     e.preventDefault();
+
+    // Visitors must log in before buying a plan
+    if (!await isAuthenticated()) {
+      window.location.href = "/login/?redirect=/pricing-plans/";
+      return;
+    }
 
     const planId = this.dataset.planId;
     const user_type = this.dataset.userType;
@@ -142,24 +168,19 @@ function buyItNow(plan1, plan2) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Determine which plans to show based on the logged-in user's role.
-  // Falls back to freelancer plans for unauthenticated visitors.
-  let role = "freelancer";
-  try {
-    const authed = await isAuthenticated();
-    if (authed && userInfo && userInfo.role === "employer") {
-      role = "employer";
-    }
-  } catch (e) {
-    console.warn("Could not resolve user role; defaulting to freelancer plans.", e);
+  // The template renders a #freelancer and/or #employer section depending on
+  // who is viewing: logged-in users get their own role's section, visitors
+  // (and admins) get both. Load plans for whichever sections are present.
+  let freelancerPlans = null;
+  let employerPlans = null;
+
+  if (document.querySelector("#freelancer")) {
+    freelancerPlans = await loadPricingPlans("freelancer");
+  }
+  if (document.querySelector("#employer")) {
+    employerPlans = await loadPricingPlans("employer");
   }
 
-  const plans = await loadPricingPlans(role);
-
-  if (role === "employer") {
-    buyItNow(null, plans);
-  } else {
-    buyItNow(plans, null);
-  }
+  buyItNow(freelancerPlans, employerPlans);
 });
     

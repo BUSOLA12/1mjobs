@@ -50,6 +50,8 @@ class OfferSerializer(serializers.ModelSerializer):
     files = OfferFileSerializer(many=True, read_only=True)
     sender = UserDetailSerializer(read_only=True)
     receiver = UserDetailSerializer(read_only=True)
+    # What the offer is tied to (if anything): {type, id, title} or null.
+    linked_to = serializers.SerializerMethodField()
 
     class Meta:
         model = Offer
@@ -61,9 +63,17 @@ class OfferSerializer(serializers.ModelSerializer):
             "sender_email",
             "message",
             "files",
+            "linked_to",
             "created_at",
             "is_read",
         ]
+
+    def get_linked_to(self, obj):
+        if obj.job_id:
+            return {"type": "job", "id": obj.job_id, "title": obj.job.title}
+        if obj.task_id:
+            return {"type": "task", "id": obj.task_id, "title": obj.task.project_name}
+        return None
 
 class OfferCreateSerializer(serializers.ModelSerializer):
     uploaded_files = serializers.ListField(
@@ -73,7 +83,27 @@ class OfferCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Offer
-        fields = ["receiver", "message", "uploaded_files"]
+        fields = ["receiver", "message", "job", "task", "uploaded_files"]
+        extra_kwargs = {
+            "job": {"required": False, "allow_null": True},
+            "task": {"required": False, "allow_null": True},
+        }
+
+    def validate(self, data):
+        # An offer can be tied to a job OR a task, not both.
+        if data.get("job") and data.get("task"):
+            raise serializers.ValidationError(
+                "An offer can be linked to a job or a task, not both."
+            )
+        # The sender may only link their own job/task.
+        user = self.context["request"].user
+        job = data.get("job")
+        task = data.get("task")
+        if job and job.user_id != user.id:
+            raise serializers.ValidationError({"job": "You can only link your own job."})
+        if task and task.user_id != user.id:
+            raise serializers.ValidationError({"task": "You can only link your own task."})
+        return data
 
     def create(self, validated_data):
         user = self.context['request'].user

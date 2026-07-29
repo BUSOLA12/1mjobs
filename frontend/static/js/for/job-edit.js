@@ -64,6 +64,70 @@ function hideLoading() {
                 });
             });
     
+        // Staged-file management: lets the user review and remove newly added
+        // files before saving. A FileList is read-only, so we mirror the
+        // selection in a DataTransfer and re-assign it to the input on change/remove.
+        const uploadInput = document.querySelector("#upload");
+        const stagedFilesList = document.querySelector("#staged-files");
+        const stagedFiles = new DataTransfer();
+
+        function humanFileSize(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        }
+
+        function renderStagedFiles() {
+            if (!stagedFilesList) return;
+            stagedFilesList.innerHTML = "";
+            Array.from(stagedFiles.files).forEach((file, index) => {
+                const li = document.createElement("li");
+
+                const nameWrap = document.createElement("span");
+                nameWrap.className = "staged-file-name";
+                nameWrap.textContent = file.name; // textContent keeps filenames safe from markup
+                const size = document.createElement("span");
+                size.className = "staged-file-size";
+                size.textContent = `(${humanFileSize(file.size)})`;
+                nameWrap.appendChild(size);
+
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "remove-staged-file";
+                removeBtn.setAttribute("aria-label", "Remove file");
+                removeBtn.textContent = "×";
+                removeBtn.addEventListener("click", () => removeStagedFile(index));
+
+                li.appendChild(nameWrap);
+                li.appendChild(removeBtn);
+                stagedFilesList.appendChild(li);
+            });
+        }
+
+        function removeStagedFile(indexToRemove) {
+            const remaining = Array.from(stagedFiles.files).filter((_, i) => i !== indexToRemove);
+            stagedFiles.items.clear();
+            remaining.forEach(file => stagedFiles.items.add(file));
+            if (uploadInput) uploadInput.files = stagedFiles.files;
+            renderStagedFiles();
+        }
+
+        if (uploadInput) {
+            uploadInput.addEventListener("change", function () {
+                // Accumulate new picks; skip duplicates by name + size
+                const existing = new Set(Array.from(stagedFiles.files).map(f => f.name + ":" + f.size));
+                Array.from(this.files).forEach(file => {
+                    const key = file.name + ":" + file.size;
+                    if (!existing.has(key)) {
+                        stagedFiles.items.add(file);
+                        existing.add(key);
+                    }
+                });
+                this.files = stagedFiles.files;
+                renderStagedFiles();
+            });
+        }
+
         // Handle form submission for updating the job
         document.querySelector("#update-job-btn").addEventListener("click", async function (e) {
             e.preventDefault();

@@ -20,6 +20,11 @@ form.addEventListener("submit", async function (e) {
         return
     }
 
+    const submitBtn = form.querySelector('button[type="submit"]')
+    const originalBtnText = submitBtn.innerHTML
+    submitBtn.disabled = true
+    submitBtn.innerHTML = "Resetting..."
+
     const payload = {
         uidb64: uid,
         token: token,
@@ -40,7 +45,7 @@ form.addEventListener("submit", async function (e) {
 
         if (response.ok) {
             console.log("Password reset successful:", data)
-            appendError(data.details + " Redirecting to login...", "success")
+            appendError(data.detail + " Redirecting to login...", "success")
             // redirect to login after 3 seconds
             setTimeout(() => {
                 window.location.href = "/login"
@@ -49,12 +54,14 @@ form.addEventListener("submit", async function (e) {
         } else {
             appendError("Failed to reset password.")
             console.error("Error:", data)
-
+            submitBtn.disabled = false
+            submitBtn.innerHTML = originalBtnText
         }
 
     } catch (error) {
         console.error("Request failed:", error)
-
+        submitBtn.disabled = false
+        submitBtn.innerHTML = originalBtnText
     }
 
 })

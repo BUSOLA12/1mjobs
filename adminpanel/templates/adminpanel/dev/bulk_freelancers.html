@@ -1,0 +1,112 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block title %}Bulk Add Freelancers{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-1">Bulk Add Freelancers</h4>
+    <p class="text-muted mb-4">
+        Dev utility. Generates fake freelancer accounts (Nigerian names) with high-rated
+        profiles so the public <strong>&ldquo;Highest Rated Freelancers&rdquo;</strong> carousel has
+        data to display. There {{ freelancer_count }} freelancer(s) in the database right now.
+    </p>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header"><strong>Generate Top-Rated Freelancers</strong></div>
+                <div class="card-body">
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">How many? <span class="text-danger">*</span></label>
+                                <input type="number" name="count" class="form-control" value="10" min="1" max="200" required>
+                                <div class="form-text">Max 200 per batch.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Password (all accounts)</label>
+                                <input type="text" name="password" class="form-control" value="password123">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Rating min</label>
+                                <input type="number" step="0.1" min="0" max="5" name="rating_min" class="form-control" value="4.5">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Rating max</label>
+                                <input type="number" step="0.1" min="0" max="5" name="rating_max" class="form-control" value="5.0">
+                                <div class="form-text">Carousel sorts by rating (highest first). Keep these high for "top-rated".</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Job success % min</label>
+                                <input type="number" min="0" max="100" name="job_success_min" class="form-control" value="85">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Job success % max</label>
+                                <input type="number" min="0" max="100" name="job_success_max" class="form-control" value="100">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly rate min (NGN)</label>
+                                <input type="number" min="0" name="hourly_rate_min" class="form-control" value="5000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hourly rate max (NGN)</label>
+                                <input type="number" min="0" name="hourly_rate_max" class="form-control" value="25000">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Number of votes min</label>
+                                <input type="number" min="0" name="rating_count_min" class="form-control" value="10">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Number of votes max</label>
+                                <input type="number" min="0" name="rating_count_max" class="form-control" value="80">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Category (optional)</label>
+                                <select name="category" class="form-select">
+                                    <option value="">-- Random / leave blank --</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">If blank, a random category is assigned to each freelancer.</div>
+                            </div>
+
+                            <div class="col-12 d-flex flex-wrap gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="verified" id="fl_verified" checked>
+                                    <label class="form-check-label" for="fl_verified">Verified badge</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="kyc_verified" id="fl_kyc" checked>
+                                    <label class="form-check-label" for="fl_kyc">KYC verified</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="attach_skills" id="fl_skills" checked>
+                                    <label class="form-check-label" for="fl_skills">Attach random skills</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Create Freelancers</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

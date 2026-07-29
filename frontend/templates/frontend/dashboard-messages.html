@@ -90,7 +90,13 @@
                         <div class="message-content-inner" id="message-list">
                             <!-- Messages will be loaded here -->
                         </div>
-                        
+
+                        <!-- Empty state shown when no conversation is open -->
+                        <div id="conversation-placeholder" style="display:none; text-align:center; padding:60px 25px; color:#888;">
+                            <i class="icon-feather-message-circle" style="font-size:42px; opacity:0.4; display:block; margin-bottom:12px;"></i>
+                            <p class="placeholder-text" style="margin:0; font-size:15px;">Select a conversation to continue chatting.</p>
+                        </div>
+
                         <!-- Typing Indicator -->
                         <div id="typing-indicator" class="message-bubble typing-indicator">
                             <div class="message-bubble-inner">
@@ -171,9 +177,36 @@ async function fetchConversation() {
     }
 }
 
+// Cache of the full conversation list + the active search term so the search box
+// can filter client-side (by recipient name and job/task subject) instantly, and
+// the filter survives list refreshes from real-time updates.
+let allConversations = [];
+let currentSearchQuery = "";
+
+function conversationMatchesQuery(conv, q) {
+    const name = (conv.other_user && conv.other_user.name) ? conv.other_user.name : "";
+    const subject = conv.subject || "";
+    return (name + " " + subject).toLowerCase().includes(q);
+}
+
+function filterConversations(query) {
+    currentSearchQuery = (query || "").trim();
+    const q = currentSearchQuery.toLowerCase();
+    const list = q
+        ? allConversations.filter(c => conversationMatchesQuery(c, q))
+        : allConversations;
+    renderConversations(list);
+}
+
 async function renderConversations(conversations = null) {
     if (!conversations) {
         conversations = await fetchConversation();
+        allConversations = conversations;
+        // Keep the active search applied when the list refreshes live.
+        if (currentSearchQuery) {
+            const q = currentSearchQuery.toLowerCase();
+            conversations = allConversations.filter(c => conversationMatchesQuery(c, q));
+        }
     }
     console.log("Fetched conversations:", conversations);
     const ascendingSorted = [...conversations].sort((a, b) => {
@@ -184,7 +217,12 @@ async function renderConversations(conversations = null) {
     
     console.log("Fetched conversations:", ascendingSorted);
     const conversationsList = document.getElementById('conversations-list');
-    conversationsList.innerHTML = '';
+    // Build all rows first, then swap them in atomically. renderConversations is
+    // called from several places (initial load, socket reconnect, message events)
+    // and each row build awaits a fetch; clearing then appending incrementally
+    // lets concurrent calls interleave and render duplicate rows. Collecting the
+    // rows first and replacing the list in one synchronous step prevents that.
+    const items = [];
 
     for (const conv of ascendingSorted) {
         const user_data = await fetchcurrentuserId(conv.other_user.id);
@@ -247,7 +285,7 @@ async function renderConversations(conversations = null) {
                 ${conv.other_user.name}
             </h5>
 
-            <p style="
+            <p title="This conversation is on ${(conv.subject || 'this job or task').replace(/"/g, '&quot;')}" style="
                 margin: 4px 0;
                 font-size: 12px;
                 color: #520afcff;
@@ -255,6 +293,7 @@ async function renderConversations(conversations = null) {
                 white-space: nowrap;
                 text-overflow: ellipsis;
                 max-width: 220px;
+                cursor: help;
             ">
                 ${conv.subject}
             </p>
@@ -311,7 +350,17 @@ async function renderConversations(conversations = null) {
     </a>
 `;
 
+        items.push(li);
+    }
+
+    conversationsList.innerHTML = '';
+    for (const li of items) {
         conversationsList.appendChild(li);
+    }
+
+    // Refresh the empty-state wording now that we know whether any conversations exist.
+    if (window.messagingApp) {
+        window.messagingApp.updateConversationPlaceholder();
     }
 }
 
@@ -366,6 +415,9 @@ async function initializeApp() {
 
     // Now initialize the messaging app with confirmed user ID
     const messagingApp = new MessagingApp();
+    // Expose so renderConversations can refresh the empty-state wording once the
+    // conversation list has loaded.
+    window.messagingApp = messagingApp;
 }
 
 class MessagingApp {
@@ -390,6 +442,7 @@ class MessagingApp {
    
         
         this.bindEvents();
+        this.updateConversationPlaceholder();
     }
 
     initializeElements() {
@@ -409,7 +462,7 @@ class MessagingApp {
         }
     }
 
-    connectWebSocket() {
+    async connectWebSocket() {
         // Ensure we have a valid user ID before connecting
         if (!this.currentUserId || this.currentUserId === 'null' || this.currentUserId === 'undefined') {
             console.error("Cannot connect WebSocket: No valid user ID available");
@@ -425,15 +478,30 @@ class MessagingApp {
             return;
         }
 
-        const wsUrl = `ws://127.0.0.1:8000/ws/messaging/?user_id=${userIdInt}`;
-        console.log("Connecting to WebSocket:", wsUrl);
-        
+        // The WS handshake is authenticated by a validated access token (the
+        // server derives identity from it), not by a client-supplied user id.
+        if (typeof isAuthenticated === "function") { await isAuthenticated(); }
+        if (typeof accessToken === "undefined" || !accessToken) {
+            console.error("Cannot connect WebSocket: no access token available");
+            this.showError("User authentication failed. Please refresh the page.");
+            return;
+        }
+
+        const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const wsUrl = `${scheme}://${window.location.host}/ws/messaging/?token=${encodeURIComponent(accessToken)}`;
+        console.log("Connecting to WebSocket:", wsUrl.replace(/token=[^&]+/, "token=***"));
+
         this.socket = new WebSocket(wsUrl);
 
         this.socket.onopen = (event) => {
             console.log("✅ Connected to WebSocket");
             this.clearError();
-            
+
+            // Resync the list on (re)connect so anything missed while the socket
+            // was down is picked up. Live updates afterwards are event-driven
+            // (message_sent / refresh_conv), so no polling is needed.
+            renderConversations();
+
             // Join the current conversation
             //this.joinConversation(this.ocurrentConversationId);
 
@@ -536,7 +604,21 @@ class MessagingApp {
             case 'refresh_conv':
                 renderConversations();
                 break;
-                
+
+            case 'send_notification':
+                // A new message arrived. Skip when the user is already viewing
+                // that conversation, since those messages are marked read
+                // immediately by the 'new_message' handler. Otherwise refresh the
+                // dropdown + badge from server truth (notification already saved).
+                if (data.data && data.data.conversation_id != this.currentConversationId) {
+                    if (typeof renderUnread === "function") {
+                        renderUnread();
+                    } else if (typeof bumpHeaderMessageCount === "function") {
+                        bumpHeaderMessageCount(1);
+                    }
+                }
+                break;
+
 
             default:
                 console.log("Unknown message type:", data.type);
@@ -579,38 +661,65 @@ class MessagingApp {
         });
 
         this.deleteConvButton.addEventListener('click', async (e) => {
-            const res = await fetchProtected(`/api/messaging/deleteconversation/${this.idForConversationDelete}/`, {
-                method: "DELETE"
-            });
-            if (res.ok) {
-                const data = await res.json();
-                const liToDelete = this.conversationsList.querySelector(`li[data-conversation-id="${this.idForConversationDelete}"]`);
-                if (liToDelete) {
-                    liToDelete.remove();
+            e.preventDefault();
+
+            // Delete the conversation that's currently open, falling back to the
+            // last row clicked in the list.
+            const convId = this.currentConversationId || this.idForConversationDelete;
+            if (!convId) {
+                alert("Please open a conversation first, then click Delete.");
+                return;
+            }
+
+            if (!confirm("Delete this conversation? This cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const res = await fetchProtected(`/api/messaging/deleteconversation/${convId}/`, {
+                    method: "DELETE"
+                });
+
+                if (res && res.ok) {
+                    // Drop it from the cache and the DOM for instant feedback.
+                    allConversations = allConversations.filter(
+                        c => String(c.conversation_id) !== String(convId)
+                    );
+                    const liToDelete = this.conversationsList.querySelector(`li[data-conversation-id="${convId}"]`);
+                    if (liToDelete) liToDelete.remove();
+
+                    // Clear the open conversation panel.
+                    this.currentConversationId = 0;
+                    this.ocurrentConversationId = null;
+                    this.idForConversationDelete = null;
+                    this.messageList.innerHTML = '';
+                    if (this.currentUserName) this.currentUserName.textContent = '';
+                    this.updateConversationPlaceholder();
+
+                    renderConversations();
                 } else {
-                    alert("conversation to delete not found");
+                    alert("Could not delete the conversation. Please try again.");
                 }
-                alert("Conversation deleted successfully.");
-            } else {
-                alert("The operation was unsuccessfull");
+            } catch (err) {
+                console.error("Delete conversation failed:", err);
+                alert("Could not delete the conversation. Please try again.");
             }
         });
 
+        // Live search: filter conversations by recipient name and job/task
+        // subject as the user types (and on clicking the magnifier).
+        const searchInput = document.getElementById('autocomplete-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                filterConversations(e.target.value);
+            });
+        }
+
         const searchButton = document.querySelector('.icon-material-outline-search');
         if (searchButton) {
-            searchButton.addEventListener('click', async (e) => {
+            searchButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                const searchQuery = document.getElementById('autocomplete-input').value;
-                if (searchQuery) {
-                    const res = await fetchProtected(`/api/messaging/searchconversation/?q=${searchQuery}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        renderConversations(data);
-                        alert("Please view search results");
-                    } else {
-                        alert("An error occured");
-                    }
-                }
+                filterConversations(searchInput ? searchInput.value : '');
             });
         } else {
             console.warn("Search button not found");
@@ -797,6 +906,10 @@ class MessagingApp {
                 conversation_id: this.currentConversationId
             };
             this.socket.send(JSON.stringify(data));
+            // Reflect the read in the header badge/dropdown immediately.
+            if (typeof clearConversationNotifications === "function") {
+                clearConversationNotifications(this.currentConversationId);
+            }
         }
     }
 
@@ -819,6 +932,28 @@ class MessagingApp {
         }
     }
 
+    // Show a prompt in the message panel when no conversation is open. The
+    // wording reflects whether the user has any conversations yet.
+    updateConversationPlaceholder() {
+        const placeholder = document.getElementById('conversation-placeholder');
+        if (!placeholder) return;
+
+        if (this.currentConversationId) {
+            placeholder.style.display = 'none';
+            return;
+        }
+
+        const hasConversations =
+            typeof allConversations !== 'undefined' && allConversations.length > 0;
+        const text = placeholder.querySelector('.placeholder-text');
+        if (text) {
+            text.textContent = hasConversations
+                ? "Select a conversation to continue chatting."
+                : "You have no conversations yet. Message an employer or freelancer to start chatting.";
+        }
+        placeholder.style.display = '';
+    }
+
     switchConversation(newConversationId, currentConversationId) {
         if (currentConversationId) {
             console.log("Got here 2");
@@ -832,6 +967,7 @@ class MessagingApp {
         this.joinConversation(newConversationId);
         this.updateActiveConversation(newConversationId);
         this.messageList.innerHTML = '';
+        this.updateConversationPlaceholder();
         console.log("Got here 55555");
         const messages = this.getAllMessages(this.currentConversationId);
         this.markMessagesAsRead();
@@ -894,10 +1030,9 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 });
 
-// Reload conversation when messages are sent or received
- setInterval(() => {
-    renderConversations();
-}, 10000); // Refresh every 10 seconds 
+// The conversation list updates in real time via WebSocket events
+// (message_sent for the sender, refresh_conv for the recipient) plus a resync on
+// (re)connect, so no interval polling is required.
 </script>
 
 <script>

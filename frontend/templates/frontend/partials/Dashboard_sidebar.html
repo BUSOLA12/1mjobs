@@ -20,18 +20,23 @@
 
 						<ul data-submenu-title="Start">
 							<li class="active"><a href="{% url 'dashboard' %}"><i class="icon-material-outline-dashboard"></i> Dashboard</a></li>
+							<li><a href="{% url 'dashboard_my_profile' %}"><i class="icon-material-outline-account-circle"></i> My Profile</a></li>
+							<li><a href="{% url 'verify_identity' %}" id="verify-identity-element" style="display:none"><i class="icon-material-outline-fingerprint"></i> Verify Identity</a></li>
 							{% comment %} <li><a href="{% url 'dashboard_messages' %}"><i class="icon-material-outline-question-answer"></i> Messages <span class="nav-tag"></span></a></li> {% endcomment %}
 							<li><a href="{% url 'dashboard_messages' %}"><i class="icon-material-outline-question-answer"></i> Messages </a></li>
 							<li><a href="{% url 'dashboard_bookmarks' %}"><i class="icon-material-outline-star-border"></i> Bookmarks</a></li>
 							<li><a href="{% url 'dashboard_reviews' %}"><i class="icon-material-outline-rate-review"></i> Reviews</a></li>
 							<li><a href="{% url 'offer_page' %}"><i class="icon-material-outline-loyalty"></i> Offers</a></li>
-							<li><a href="{% url 'payments_page' %}"><i class="icon-material-outline-payment"></i> Payments</a></li>
-							
+							<li><a href="{% url 'dashboard_contracts' %}"><i class="icon-material-outline-assignment"></i> Contracts</a></li>
+							<li id="payments-nav-element" style="display:none"><a href="{% url 'payments_page' %}"><i class="icon-material-outline-account-balance-wallet"></i> Payments</a></li>
+							<li id="wallet-nav-element" style="display:none"><a href="{% url 'wallet_page' %}"><i class="icon-material-outline-account-balance"></i> Wallet</a></li>
+
 						</ul>
 						
 						<ul data-submenu-title="Organize and Manage">
 							{% comment %} <li><a href="{% url 'dashboard_my_active_bids' %}" style="display:none" id="my-active-bid-element"><i class="icon-material-outline-gavel"></i>My Active Bids <span class="nav-tag"></span></a></li> {% endcomment %}
 							<li><a href="{% url 'dashboard_my_active_bids' %}" style="display:none" id="my-active-bid-element"><i class="icon-material-outline-gavel"></i>My Active Bids </a></li>
+							<li><a href="{% url 'dashboard_my_applications' %}" style="display:none" id="my-applications-element"><i class="icon-material-outline-business-center"></i>My Job Applications </a></li>
 
 							<li><a href="#" id="jobs-id" style="display:none"><i class="icon-material-outline-business-center"></i> Jobs</a>
 								<ul>
@@ -52,6 +57,7 @@
 						</ul>
 
 						<ul data-submenu-title="Account">
+							<li><a href="{% url 'billing_history' %}"><i class="icon-material-outline-receipt"></i> Billing &amp; Subscription</a></li>
 							<li><a href="{% url 'dashboard_settings' %}"><i class="icon-material-outline-settings"></i> Settings</a></li>
 							<li><a href="/login" onclick="logout()"><i class="icon-material-outline-power-settings-new"></i> Logout</a></li>
 						</ul>

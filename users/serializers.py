@@ -8,14 +8,21 @@ from .models import UserProfile, UserFile, Category, Skill, WorkHistory
 User = get_user_model()
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    has_usable_password = serializers.SerializerMethodField()
+
+    def get_has_usable_password(self, obj):
+        return obj.has_usable_password()
+
     class Meta:
         model = User
         fields = [
+            'id',
             'email',
             'first_name',
             'last_name',
             'role',
             'two_step_verification',
+            'has_usable_password',
         ]
         read_only_fields = ['email']
 
@@ -25,7 +32,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserProfile
-        fields = ['user', 'avatar', 'bio', 'skills', 'tagline', 'hourly_rate', 'nationality', 'status']
+        fields = ['id', 'user', 'avatar', 'bio', 'skills', 'tagline', 'hourly_rate', 'nationality', 'address', 'portfolio_url', 'status']
 
     def get_skills(self, obj):
         return ", ".join(skill.name for skill in obj.skills.all())
@@ -43,6 +50,8 @@ class UserProfileEditSerializer(serializers.ModelSerializer):
             'tagline',
             'hourly_rate',
             'nationality',
+            'address',
+            'portfolio_url',
             'status',
             'user',
         ]
@@ -81,8 +90,9 @@ class UserProfileEditSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
 
         instance.save()
+        instance.recompute_onboarding()
         return instance
-    
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -94,6 +104,8 @@ class ProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     skills = serializers.SerializerMethodField(read_only=True)
+    # Filled by the ProfileListView queryset annotation (search_boost perk).
+    is_pro = serializers.BooleanField(read_only=True, default=False)
 
 
     class Meta:
@@ -101,13 +113,13 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = [
         "id", "user_id", "full_name", "tagline", "category", "nationality",
         "hourly_rate", "job_success", "rating", "verified", "bio", "avatar",
-        "skills", "created_at",
+        "skills", "created_at", "is_pro",
         ]
 
         read_only_fields = [
             "id", "user_id", "full_name", "tagline", "category", "nationality",
             "hourly_rate", "job_success", "rating", "verified", "bio", "avatar",
-            "skills", "created_at",
+            "skills", "created_at", "is_pro",
         ]
 
 
@@ -140,6 +152,11 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
     email = serializers.SerializerMethodField(read_only=True)
     category = CategorySerializer(read_only=True)
     skills = serializers.SerializerMethodField(read_only=True)
+    # Employer-facing activity metrics (shown in place of the freelancer-only
+    # Hourly Rate / Job Success stats on the profile page).
+    jobs_posted = serializers.SerializerMethodField(read_only=True)
+    hires = serializers.SerializerMethodField(read_only=True)
+    is_pro = serializers.SerializerMethodField(read_only=True)
 
 
     class Meta:
@@ -147,7 +164,8 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
         fields = [
         "id", "user_id", "full_name", "email", "tagline", "category", "nationality",
         "hourly_rate", "job_success", "rating", "verified", "bio", "avatar",
-        "skills", "files", "created_at",
+        "skills", "files", "portfolio_url", "created_at", "jobs_posted", "hires",
+        "is_pro",
         ]
 
         read_only_fields = fields
@@ -168,6 +186,31 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
             request.build_absolute_uri(user_file.file.url)
             for user_file in obj.file.all()
         ]
+
+    def get_jobs_posted(self, obj):
+        # Total Jobs + Tasks this user has posted (relevant for employers).
+        from django.apps import apps
+        Job = apps.get_model('ManageJobsTasks', 'Job')
+        Task = apps.get_model('ManageJobsTasks', 'Task')
+        return (Job.objects.filter(user=obj.user).count()
+                + Task.objects.filter(user=obj.user).count())
+
+    def get_hires(self, obj):
+        # Freelancers engaged on this user's postings: accepted/completed job
+        # applications plus accepted task bids.
+        from django.apps import apps
+        JobApplication = apps.get_model('ManageJobsTasks', 'JobApplication')
+        TaskBidding = apps.get_model('ManageJobsTasks', 'TaskBidding')
+        return (JobApplication.objects.filter(
+                    job__user=obj.user, status__in=['accepted', 'completed']
+                ).count()
+                + TaskBidding.objects.filter(
+                    task__user=obj.user, status='accepted'
+                ).count())
+
+    def get_is_pro(self, obj):
+        from pricing.features import FEATURED_PROFILE, has_feature
+        return has_feature(obj.user, FEATURED_PROFILE)
 
 # class UserFileSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -192,9 +235,20 @@ class AvatarUploadSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    is_pro = serializers.SerializerMethodField()
+    priority_support = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'first_name', 'last_name', 'role']
+        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'is_pro', 'priority_support']
+
+    def get_is_pro(self, obj):
+        from pricing.subscription_engine import get_active_subscription
+        return get_active_subscription(obj) is not None
+
+    def get_priority_support(self, obj):
+        from pricing.features import PRIORITY_SUPPORT, has_feature
+        return has_feature(obj, PRIORITY_SUPPORT)
 
 class WorkHistorySerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,0 +1,38 @@
+# Fly config (not needed in image)
+fly.toml
+
+# Virtualenvs
+env/
+venv/
+.venv/
+ENV/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Local data that must NOT ship in the image (lives on the Fly volume instead)
+*.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+dump.rdb
+
+# Logs
+logs/
+*.log
+
+# Secrets
+.env
+.env.*
+
+# Local installers / large files
+*.msi
+
+# Git & editor
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp

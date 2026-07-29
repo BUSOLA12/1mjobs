@@ -96,42 +96,18 @@
 					<div class="margin-top-55"></div>
 
 					<!-- Range Slider -->
-					<input class="range-slider" type="text" value="" data-slider-currency="$" data-slider-min="150000" data-slider-max="500000" data-slider-step="1000" data-slider-value="[150000,500000]"/>
+					<input class="range-slider" type="text" value="" data-slider-currency="₦" data-slider-min="150000" data-slider-max="2000000" data-slider-step="1000" data-slider-value="[150000,2000000]"/>
+					<div id="salaryValue" class="salary-slider-value" style="text-align:center; font-weight:600; margin-top:15px; color:#333;"></div>
 				</div>
 
 				<!-- Tags -->
 				<div class="sidebar-widget">
 					<h3>Tags</h3>
 
+					<input type="text" id="tagSearch" class="tag-search-input" placeholder="Search tags..."
+						style="width:100%; margin-bottom:12px; padding:8px 12px; border:1px solid #e0e0e0; border-radius:6px;"/>
 					<div class="tags-container">
-						<div class="tag">
-							<input type="checkbox" id="tag1"/>
-							<label for="tag1">front-end dev</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag2"/>
-							<label for="tag2">angular</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag3"/>
-							<label for="tag3">react</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag4"/>
-							<label for="tag4">vue js</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag5"/>
-							<label for="tag5">web apps</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag6"/>
-							<label for="tag6">design</label>
-						</div>
-						<div class="tag">
-							<input type="checkbox" id="tag7"/>
-							<label for="tag7">wordpress</label>
-						</div>
+						<!-- populated dynamically from the /api/jobs/list response (data.tags) -->
 					</div>
 					<div class="clearfix"></div>
 				</div>
@@ -157,10 +133,6 @@
 			<h3 class="page-title">Search Results</h3>
 
 			<div class="notify-box margin-top-15">
-				<div class="switch-container">
-					<label class="switch"><input type="checkbox"><span class="switch-button"></span><span class="switch-text">Turn on email alerts for this search</span></label>
-				</div>
-
 				<div class="sort-by">
 					<span>Sort by:</span>
 					<select class="selectpicker hide-tick">
@@ -218,8 +190,8 @@
 			<div class="filter-button-tooltip">Click to expand sidebar with filters!</div>
 		</div>
 		
-		<!-- Map -->
-	    <div id="map" data-map-zoom="12"  data-map-scroll="true" data-background-image="{% static 'images/blog-06a.jpg' %}"></div>
+		<!-- 1mjobs "Job Journey" animated hero mounts here (three.js) -->
+	    <div id="talent-network" style="position:absolute; inset:0; width:100%; height:100%; overflow:hidden; background:#0B1020;"></div>
 	</div>
 	<!-- Full Page Map / End -->
 
@@ -251,17 +223,7 @@ $('#snackbar-user-status label').click(function() {
 </script>
 
 
-<!-- Leaflet // Docs: https://leafletjs.com/ -->
-<script src="js/leaflet.min.js"></script>
-
-<!-- Leaflet Maps Scripts (locations are stored in leaflet-hireo.js) -->
-<script src="js/leaflet-markercluster.min.js"></script>
-<script src="js/leaflet-gesture-handling.min.js"></script>
-<script src="js/leaflet-hireo.js"></script>
-
-<!-- Leaflet Geocoder + Search Autocomplete // Docs: https://github.com/perliedman/leaflet-control-geocoder -->
-<script src="js/leaflet-autocomplete.js"></script>
-<script src="js/leaflet-control-geocoder.js"></script>
+<!-- Leaflet map scripts removed: the map panel now hosts the Job Journey animation. -->
 
 <style>
 /* Loading Overlay */
@@ -391,6 +353,12 @@ async function fetchjobs(query = "", page = 1) {
         currentPage = page;
         totalPages = Math.ceil((data.count || 0) / pageSize);
 
+        // Tags come back on every list response; render the sidebar once.
+        if (data.tags && !window.__tagsRendered) {
+            renderTags(data.tags);
+            window.__tagsRendered = true;
+        }
+
         const jobs = data.results || [];
 
         if (jobs.length === 0) {
@@ -402,30 +370,51 @@ async function fetchjobs(query = "", page = 1) {
 
         container.innerHTML = "";
 
-        jobs.forEach(job => {
-            const jobHtml = `
-            <a href="/job-page/${job.id}/" class="job-listing">
-                <div class="job-listing-details">
-                    <div class="job-listing-company-logo">
-                        <img src="${job.company_info !== null ? job.company_info.logo_url : ''}" alt="">
-                    </div>
-                    <div class="job-listing-description">
-                        <h4 class="job-listing-company">Web79</h4>
-                        <h3 class="job-listing-title">${job.title || ''}</h3>
-                    </div>
-                </div>
-                <div class="job-listing-footer">
-                    <ul>
-                        <li><i class="icon-material-outline-location-on"></i> ${job.location || ''}</li>
-                        <li><i class="icon-material-outline-business-center"></i> ${job.job_type || ''}</li>
-                        <li><i class="icon-material-outline-account-balance-wallet"></i> $${job.salary_min || ''}-$${job.salary_max || ''}</li>
-                        <li><i class="icon-material-outline-access-time"></i> ${job.updated_at ? new Date(job.updated_at).toDateString() : ''}</li>
-                    </ul>
-                </div>
-            </a>
-            `;
-            container.insertAdjacentHTML("beforeend", jobHtml);
-        });
+jobs.forEach(job => {
+             const logoUrl = (job.company_info && job.company_info.logo_url) ? job.company_info.logo_url : '';
+             const logoContent = logoUrl
+                 ? `<img src="${logoUrl}" alt="">`
+                 : `<div class="job-listing-company-logo-placeholder"><i class="icon-material-outline-business"></i></div>`;
+             const companyName = (job.company_info && job.company_info.company_name) ? job.company_info.company_name : 'Company';
+             const verifiedBadge = (job.company_info && job.company_info.verified) ? `<span class="verified-badge" title="Verified Employer" data-tippy-placement="top"></span>` : '';
+             const proBadge = (job.company_info && job.company_info.is_pro) ? `<span class="pro-badge" title="Premium Employer">PRO</span>` : '';
+             const featuredRibbon = job.is_featured ? `<span class="featured-ribbon">Featured</span>` : '';
+             const er = job.employer_rating;
+             let ratingHtml;
+             if (er && er.count) {
+                 let stars = '';
+                 for (let i = 1; i <= 5; i++) {
+                     stars += er.avg >= i ? '<span class="star"></span>'
+                            : (er.avg >= i - 0.5 ? '<span class="star half"></span>' : '<span class="star empty"></span>');
+                 }
+                 ratingHtml = `<div class="star-rating" data-rating="${er.avg}">${stars}</div> <span class="rating-counter">${er.avg.toFixed(1)} (${er.count})</span>`;
+             } else {
+                 ratingHtml = `<span class="rating-counter text-muted">No ratings yet</span>`;
+             }
+             const jobHtml = `
+             <a href="/job-page/${job.id}/" class="job-listing">
+                 <div class="job-listing-details">
+                     <div class="job-listing-company-logo">
+                         ${logoContent}
+                     </div>
+                     <div class="job-listing-description">
+                         <h4 class="job-listing-company">${companyName} ${verifiedBadge} ${proBadge}</h4>
+                         <h3 class="job-listing-title">${featuredRibbon}${job.title || ''}</h3>
+                         <div class="job-listing-rating">${ratingHtml}</div>
+                     </div>
+                 </div>
+                 <div class="job-listing-footer">
+                     <ul>
+                         <li><i class="icon-material-outline-location-on"></i> ${job.location || ''}</li>
+                         <li><i class="icon-material-outline-business-center"></i> ${job.job_type || ''}</li>
+                         <li><i class="icon-material-outline-account-balance-wallet"></i> ₦${job.salary_min || ''}-₦${job.salary_max || ''}</li>
+                         <li><i class="icon-material-outline-access-time"></i> ${job.updated_at ? new Date(job.updated_at).toDateString() : ''}</li>
+                     </ul>
+                 </div>
+             </a>
+             `;
+             container.insertAdjacentHTML("beforeend", jobHtml);
+         });
 
         updatePaginationControls();
         hideLoading();
@@ -578,6 +567,95 @@ function updatePaginationControls() {
 
 document.querySelector(".sidebar-search-button-container button").addEventListener("click", applyFilters);
 document.addEventListener('DOMContentLoaded', getAndApplyFilters);
+
+// Re-fetch when the sort dropdown changes, preserving the current filters.
+// This is a bootstrap-select ("selectpicker") widget. When bootstrap-select is
+// active we bind its "changed.bs.select" event; otherwise we fall back to the
+// native "change" event. We bind only one to avoid a double fetch, since the
+// widget fires both.
+function applySort() {
+    const sortSelect = document.querySelector(".sort-by select");
+    const params = new URLSearchParams(lastQuery); // keep active search/filters
+    params.set("sort", sortSelect.value);          // e.g. "Newest" (backend lowercases)
+    fetchjobs(params, 1);                          // reset to first page
+}
+
+const sortSelectEl = document.querySelector(".sort-by select");
+if (window.jQuery && jQuery.fn.selectpicker) {
+    jQuery(sortSelectEl).on("changed.bs.select", applySort);
+} else {
+    sortSelectEl.addEventListener("change", applySort);
+}
+</script>
+
+<!-- Dynamic tags: rendered from the /api/jobs/list response (data.tags), with a client-side search filter -->
+<script>
+function renderTags(tags) {
+    const container = document.querySelector(".tags-container");
+    if (!container) return;
+    container.innerHTML = "";
+    tags.forEach((t, i) => {
+        const id = "tag" + i;
+        const div = document.createElement("div");
+        div.className = "tag";
+        // t is { tag: "react", count: 12 }
+        div.innerHTML =
+            `<input type="checkbox" id="${id}">` +
+            `<label for="${id}">${t.tag}</label>`;
+        container.appendChild(div);
+    });
+}
+
+// Filter the visible tags as the user types (does not touch checked state).
+(function () {
+    const searchInput = document.getElementById("tagSearch");
+    if (!searchInput) return;
+    searchInput.addEventListener("input", function () {
+        const q = this.value.trim().toLowerCase();
+        document.querySelectorAll(".tags-container .tag").forEach(tag => {
+            const label = tag.querySelector("label").textContent.toLowerCase();
+            tag.style.display = label.includes(q) ? "" : "none";
+        });
+    });
+})();
+</script>
+
+<!-- Always-visible salary range label (the plugin's hover tooltip is clipped by the sidebar) -->
+<script>
+(function () {
+    var sliderEl = document.querySelector('.range-slider');
+    var label = document.getElementById('salaryValue');
+    if (!sliderEl || !label) return;
+
+    function fmt(v) { return '₦' + Number(v).toLocaleString(); }
+    function render(min, max) { label.textContent = fmt(min) + ' - ' + fmt(max); }
+
+    // Initial value read straight from the data attribute (no plugin dependency).
+    try {
+        var init = JSON.parse(sliderEl.getAttribute('data-slider-value'));
+        render(init[0], init[1]);
+    } catch (e) {}
+
+    // Live update while dragging. bootstrap-slider fires "slide" with an array
+    // value, and "change" with { oldValue, newValue }.
+    if (window.jQuery) {
+        jQuery(sliderEl).on('slide change', function (ev) {
+            var v = ev.value;
+            if (v && v.newValue) v = v.newValue;
+            if (Array.isArray(v)) render(v[0], v[1]);
+        });
+    }
+})();
+</script>
+
+<!-- 1mjobs "Job Journey" animated hero (three.js, flat 2D vector illustration) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="{% static 'js/for/job-journey.js' %}"></script>
+<script>
+  (function () {
+    var panel = document.getElementById('talent-network');
+    if (panel && window.JobJourney) window.JobJourney.mount(panel);
+  })();
 </script>
 
 

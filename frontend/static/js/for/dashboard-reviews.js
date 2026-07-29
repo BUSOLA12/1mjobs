@@ -234,7 +234,7 @@ function openReviewPopup(item, operation='create') {
     if (operation === 'create'){
       const popup = document.getElementById('small-dialog-2');
       const welcomeText = popup.querySelector('.welcome-text span');
-      welcomeText.innerHTML = `Rate <a href="/single/freelancer-profile/${item.other_user_id}/">${item.other_user_name}</a> for the project <a href="${item.object_type == 'job' ? `/single/job-page/${item.object_id}/` : `/single/task-page/${item.object_id}/`}">${item.title}</a>`;
+      welcomeText.innerHTML = `Rate <a href="/freelancer-profile/${item.other_user_id}/">${item.other_user_name}</a> for the project <a href="${item.object_type == 'job' ? `/job-page/${item.object_id}/` : `/task-page/${item.object_id}/`}">${item.title}</a>`;
        
       const form = popup.querySelector('#leave-review-form');
       // Attach event listener to the form submit button
@@ -245,7 +245,7 @@ function openReviewPopup(item, operation='create') {
     } else {
       const popup = document.getElementById('small-dialog-1');
       const welcomeText = popup.querySelector('.welcome-text span');
-      welcomeText.innerHTML = `Rate <a href="/single/freelancer-profile/${item.reviewee.id}/">${item.reviewee.name}</a> for the project <a href="${item.object_type == 'job' ? `/single/job-page/${item.object_id}/` : `/single/task-page/${item.object_id}/`}">${item.object_title}</a>`;
+      welcomeText.innerHTML = `Rate <a href="/freelancer-profile/${item.reviewee.id}/">${item.reviewee.name}</a> for the project <a href="${item.object_type == 'job' ? `/job-page/${item.object_id}/` : `/task-page/${item.object_id}/`}">${item.object_title}</a>`;
       
       const form = popup.querySelector('#change-review-form');
       form.innerHTML = `

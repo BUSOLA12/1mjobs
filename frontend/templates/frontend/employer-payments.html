@@ -6,7 +6,7 @@
 
 	<!-- Basic Page Needs
 ================================================== -->
-	<title>1mjobs</title>
+	<title>1mjobs | Payments</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -15,6 +15,7 @@
 	{% include 'frontend/partials/css_links.html' %}
 	<script src="{% static 'js/protectpage.js' %}"></script>
 
+	<link rel="stylesheet" href="{% static 'css/wallet-ui.css' %}">
 
 </head>
 
@@ -45,7 +46,7 @@
 
 					<!-- Dashboard Headline -->
 					<div class="dashboard-headline">
-						<h3>Payment Overview</h3>
+						<h3>Payments</h3>
 
 						<!-- Breadcrumbs -->
 						<nav id="breadcrumbs" class="dark">
@@ -56,74 +57,85 @@
 							</ul>
 						</nav>
 					</div>
-					<!-- Employer Payment Dashboard -->
-					<div class="row">
 
-						<!-- Summary Cards -->
-						<div class="col-xl-4 col-md-4">
-							<div class="dashboard-box">
-								<div class="headline">
-									<h3>Total Pending Payments</h3>
+					<div class="wallet">
+
+						<!-- Escrow pipeline: money moves left → right as jobs progress -->
+						<section class="wallet-pipeline" aria-label="Escrow pipeline">
+							<div class="wallet-stage wallet-stage--await">
+								<div class="wallet-stage__top">
+									<span class="wallet-stage__dot"></span>
+									<span class="wallet-stage__label">Awaiting payment</span>
 								</div>
-								<div class="content with-padding">
-									<h2 id="total-pending-amount">₦0</h2>
-								</div>
+								<div class="wallet-stage__amt num"><span class="sym">₦</span><span id="await-amount">0</span></div>
+								<div class="wallet-stage__count" id="await-count">—</div>
 							</div>
+
+							<div class="wallet-connector" aria-hidden="true"><i class="icon-material-outline-arrow-right-alt"></i></div>
+
+							<div class="wallet-stage wallet-stage--escrow">
+								<div class="wallet-stage__top">
+									<span class="wallet-stage__dot"></span>
+									<span class="wallet-stage__label">In escrow</span>
+								</div>
+								<div class="wallet-stage__amt num"><span class="sym">₦</span><span id="escrow-amount">0</span></div>
+								<div class="wallet-stage__count" id="escrow-count">—</div>
+							</div>
+
+							<div class="wallet-connector" aria-hidden="true"><i class="icon-material-outline-arrow-right-alt"></i></div>
+
+							<div class="wallet-stage wallet-stage--done">
+								<div class="wallet-stage__top">
+									<span class="wallet-stage__dot"></span>
+									<span class="wallet-stage__label">Completed</span>
+								</div>
+								<div class="wallet-stage__amt num"><span class="sym">₦</span><span id="done-amount">0</span></div>
+								<div class="wallet-stage__count" id="done-count">—</div>
+							</div>
+						</section>
+
+						<!-- Notification area (release results / errors) -->
+						<div id="payment-notification-area"></div>
+
+						<!-- Filters -->
+						<div class="wallet-tabs" id="payment-filters" role="tablist">
+							<button class="wallet-tab is-active" data-filter="all" role="tab">All <span class="cnt" data-count="all">0</span></button>
+							<button class="wallet-tab" data-filter="await" role="tab">Awaiting payment <span class="cnt" data-count="await">0</span></button>
+							<button class="wallet-tab" data-filter="escrow" role="tab">In escrow <span class="cnt" data-count="escrow">0</span></button>
+							<button class="wallet-tab" data-filter="done" role="tab">Completed <span class="cnt" data-count="done">0</span></button>
 						</div>
 
-						<div class="col-xl-4 col-md-4">
-							<div class="dashboard-box">
-								<div class="headline">
-									<h3>In Escrow</h3>
+						<!-- Payment ledger -->
+						<section class="wallet-panel" aria-label="Job payments">
+							<div class="wallet-panel__head">
+								<h4><i class="icon-material-outline-account-balance-wallet"></i> Job payments</h4>
+								<span class="wallet-count" id="pay-count" hidden></span>
+							</div>
+							<div id="payments-card-container">
+								<!-- loading skeleton -->
+								<div class="pay-item">
+									<span class="wallet-avatar" style="background:#eef0f5;"></span>
+									<span><span class="wallet-skel" style="display:block;width:45%;"></span>
+										<span class="wallet-skel" style="display:block;width:28%;margin-top:9px;height:10px;"></span></span>
+									<span class="wallet-skel" style="width:110px;height:34px;border-radius:10px;"></span>
 								</div>
-								<div class="content with-padding">
-									<h2 id="total-escrow-amount">₦0</h2>
+								<div class="pay-item">
+									<span class="wallet-avatar" style="background:#eef0f5;"></span>
+									<span><span class="wallet-skel" style="display:block;width:38%;"></span>
+										<span class="wallet-skel" style="display:block;width:24%;margin-top:9px;height:10px;"></span></span>
+									<span class="wallet-skel" style="width:110px;height:34px;border-radius:10px;"></span>
 								</div>
 							</div>
-						</div>
 
-						<div class="col-xl-4 col-md-4">
-							<div class="dashboard-box">
-								<div class="headline">
-									<h3>Completed Payments</h3>
-								</div>
-								<div class="content with-padding">
-									<h2 id="total-completed-amount">₦0</h2>
-								</div>
+							<!-- Empty state -->
+							<div id="empty-state" class="wallet-empty" style="display:none;">
+								<div class="wallet-empty__icon"><i class="icon-material-outline-account-balance-wallet"></i></div>
+								<h5>No payments yet</h5>
+								<p>When you hire a freelancer and fund the job, the payment shows up here.</p>
 							</div>
-						</div>
+						</section>
 
-						<!-- Employer Payment Cards -->
-						<div class="container">
-							<div class="row">
-
-								<!-- Section Title -->
-								<div class="col-xl-12">
-									<div class="section-headline margin-top-30">
-										<h3>Job Payments</h3>
-									</div>
-								</div>
-
-								<!-- Cards Container -->
-								<div id="payments-card-container" class="row">
-									<!-- Cards will be injected here -->
-								</div>
-
-								<!-- Empty State -->
-								<div id="empty-state" style="display:none; text-align:center; padding:50px;">
-									<h4>No payments available</h4>
-									<p>You currently have no payment activity.</p>
-								</div>
-
-								<!-- Notification Area -->
-								<div class="col-xl-12">
-									<div id="payment-notification-area"></div>
-								</div>
-
-							</div>
-						</div>
-
-					</div>
+					</div><!-- /.wallet -->
 
 					<!-- Footer -->
 					<div class="dashboard-footer-spacer"></div>
@@ -140,62 +152,7 @@
 	</div>
 	<!-- Wrapper / End -->
 
-	<!-- <div class="loading-overlay active" id="loadingOverlay">
-		<div class="loading-popup">
-			<div class="loading-spinner"></div>
-			<h3>Loading Payments</h3>
-			<p>Please wait...</p>
-		</div>
-	</div> -->
-
-
-
-
-	<!-- Apply for a job popup
-================================================== -->
-	<div id="small-dialog" class="zoom-anim-dialog mfp-hide dialog-with-tabs">
-
-		<!--Tabs -->
-		<div class="sign-in-form">
-
-			<ul class="popup-tabs-nav">
-				<li><a href="#tab">Add Note</a></li>
-			</ul>
-
-			<div class="popup-tabs-container">
-
-				<!-- Tab -->
-				<div class="popup-tab-content" id="tab">
-
-					<!-- Welcome Text -->
-					<div class="welcome-text">
-						<h3>Do Not Forget 😎</h3>
-					</div>
-
-					<!-- Form -->
-					<form method="post" id="add-note">
-
-						<select class="selectpicker with-border default margin-bottom-20" data-size="7"
-							title="Priority">
-							<option>Low Priority</option>
-							<option>Medium Priority</option>
-							<option>High Priority</option>
-						</select>
-
-						<textarea name="textarea" cols="10" placeholder="Note" class="with-border"></textarea>
-
-					</form>
-
-					<!-- Button -->
-					<button class="button full-width button-sliding-icon ripple-effect" type="submit"
-						form="add-note">Add Note <i class="icon-material-outline-arrow-right-alt"></i></button>
-
-				</div>
-
-			</div>
-		</div>
-	</div>
-	<!-- Apply for a job popup / End -->
+	<div class="wallet"><div class="wallet-toast" id="wallet-toast" role="status" aria-live="polite"></div></div>
 
 
 	<!-- Scripts
@@ -205,31 +162,12 @@
 	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
 	<script src="{% static 'js/for/employer-payments.js' %}"></script>
 
-	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
 	<script>
-		// Snackbar for user status switcher
-		$('#snackbar-user-status label').click(function () {
-			Snackbar.show({
-				text: 'Your status has been changed!',
-				pos: 'bottom-center',
-				showAction: false,
-				actionText: "Dismiss",
-				duration: 3000,
-				textColor: '#fff',
-				backgroundColor: '#383838'
-			});
-		}); 
-	</script>
-	<script>
-		//in other pages 
-		showForRole("freelancer", "my-active-bid-element");
-
-		//in other pages 
+		// Freelancer-only / employer-only sidebar links resolve via showForRole in custom.js.
 		empList = ["jobs-id", "tasks-id"];
 		for (const id of empList) {
 			showForRole("employer", id);
 		}
-
 	</script>
 
 </body>

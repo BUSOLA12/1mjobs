@@ -14,7 +14,7 @@ class UserProfile(models.Model):
     ], default='freelancer')
 
     def __str__(self):
-        return f"{self.user.get_full_name() or self.user.username} - {self.user_type}"
+        return f"{self.user.get_full_name or self.user.username} - {self.user_type}"
 
 
 class Conversation(models.Model):

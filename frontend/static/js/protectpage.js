@@ -25,13 +25,13 @@ async function fetchWithRetry(url, options = {}, retries = 3, delay = 1000) {
 }
 
 // Check if user is authenticated
-let _authPromise = null;
+let _protectPageAuthPromise = null;
 async function isAuthenticated(retries = 3) {
     if (typeof accessToken !== "undefined" && accessToken && typeof isTokenExpired === "function" && !isTokenExpired(accessToken)) {
         return true;
     }
-    if (_authPromise) return _authPromise;
-    _authPromise = (async () => {
+    if (_protectPageAuthPromise) return _protectPageAuthPromise;
+    _protectPageAuthPromise = (async () => {
         try {
             const res = await fetchWithRetry('/api/auth/token/refresh/', {
                 method: 'POST',
@@ -47,10 +47,10 @@ async function isAuthenticated(retries = 3) {
             console.error("Authentication check failed:", err);
             return false;
         } finally {
-            _authPromise = null;
+            _protectPageAuthPromise = null;
         }
     })();
-    return _authPromise;
+    return _protectPageAuthPromise;
 }
 
 // Protect the page

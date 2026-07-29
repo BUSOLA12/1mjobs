@@ -16,12 +16,14 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'jobwebsite.settings')
 django_asgi_app = get_asgi_application()
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
 import Messaging.routing  # Import AFTER Django is set up
+from Messaging.middleware import JWTAuthMiddleware  # Import AFTER Django is set up
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": URLRouter(
-        Messaging.routing.websocket_urlpatterns
+    "websocket": JWTAuthMiddleware(
+        URLRouter(
+            Messaging.routing.websocket_urlpatterns
+        )
     ),
 })

@@ -2,7 +2,7 @@ from notifications.utils import create_notification
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from .models import Job, Task, JobApplication
+from .models import Job, Task, JobApplication, TaskBidding
 
 User = get_user_model()
 
@@ -33,5 +33,16 @@ def use_create_notification_Job_Application(sender, instance, created, **kwargs)
             title='Job application notification',
             message=f'{instance.user.first_name} applied for the job ({instance.job.title}).',
             recipient=instance.job.user,
+            related_object=instance
+        )
+
+
+@receiver(post_save, sender=TaskBidding)
+def use_create_notification_Task_Bidding(sender, instance, created, **kwargs):
+    if created:
+        create_notification(
+            title='New bid notification',
+            message=f'{instance.freelancer.first_name} placed a bid of ₦{instance.bid_amount} on your task ({instance.task.project_name}).',
+            recipient=instance.task.user,
             related_object=instance
         )

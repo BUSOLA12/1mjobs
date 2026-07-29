@@ -1,0 +1,210 @@
+{% extends "adminpanel/base.html" %}
+{% load static %}
+
+{% block title %}Bulk Add Jobs &amp; Tasks{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+    <h4 class="mb-1">Bulk Add Jobs &amp; Tasks</h4>
+    <p class="text-muted mb-4">
+        Dev utility. Enter one job title / project name per line &mdash; each line becomes a
+        separate record, and the fields below it are applied to the whole batch.
+    </p>
+
+    <div class="row g-4">
+
+        <!-- ===================== BULK JOBS (linked to a Company) ===================== -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><strong>Bulk Jobs</strong> &mdash; linked to a company</div>
+                <div class="card-body">
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="job">
+
+                        <div class="mb-3">
+                            <label class="form-label">Company <span class="text-danger">*</span></label>
+                            <select name="company" class="form-select" required>
+                                <option value="">-- Select a company --</option>
+                                {% for company in companies %}
+                                    <option value="{{ company.id }}">{{ company.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Jobs are attached to this company's owner account.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Job titles (one per line) <span class="text-danger">*</span></label>
+                            <textarea name="titles" class="form-control" rows="5"
+                                      placeholder="Senior Backend Engineer&#10;Product Designer&#10;Data Analyst" required></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Job type <span class="text-danger">*</span></label>
+                                <select name="job_type" class="form-select" required>
+                                    {% for value, label in job_types %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category <span class="text-danger">*</span></label>
+                                <select name="category" class="form-select" required>
+                                    {% for value, label in job_categories %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location <span class="text-danger">*</span></label>
+                                <input type="text" name="location" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    {% for value, label in job_statuses %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Country</label>
+                                <input type="text" name="country" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">City</label>
+                                <input type="text" name="city" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Salary min</label>
+                                <input type="number" step="0.01" min="0" name="salary_min" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Salary max</label>
+                                <input type="number" step="0.01" min="0" name="salary_max" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Tags (comma-separated)</label>
+                                <input type="text" name="tags" class="form-control" placeholder="python, django, remote">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" class="form-control" rows="3" required></textarea>
+                            </div>
+                            <div class="col-12 d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="approved" id="job_approved">
+                                    <label class="form-check-label" for="job_approved">Approved</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_featured" id="job_featured">
+                                    <label class="form-check-label" for="job_featured">Featured</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Create Jobs</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== BULK TASKS (linked to an Employer) ===================== -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><strong>Bulk Tasks</strong> &mdash; linked to an employer</div>
+                <div class="card-body">
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="task">
+
+                        <div class="mb-3">
+                            <label class="form-label">Employer <span class="text-danger">*</span></label>
+                            <select name="employer" class="form-select" required>
+                                <option value="">-- Select an employer --</option>
+                                {% for employer in employers %}
+                                    <option value="{{ employer.id }}">{{ employer.email }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Project names (one per line) <span class="text-danger">*</span></label>
+                            <textarea name="project_names" class="form-control" rows="5"
+                                      placeholder="Landing page redesign&#10;Logo &amp; brand kit&#10;API integration" required></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Category <span class="text-danger">*</span></label>
+                                <select name="category" class="form-select" required>
+                                    {% for value, label in task_categories %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Project type <span class="text-danger">*</span></label>
+                                <select name="project_type" class="form-select" required>
+                                    {% for value, label in project_types %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Budget min <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0" name="budget_min" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Budget max <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0" name="budget_max" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    {% for value, label in task_statuses %}
+                                        <option value="{{ value }}"{% if value == 'active' %} selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="location" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Required skills (comma-separated) <span class="text-danger">*</span></label>
+                                <input type="text" name="skills" class="form-control" placeholder="figma, ui, branding" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Description</label>
+                                <textarea name="description" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_featured" id="task_featured">
+                                    <label class="form-check-label" for="task_featured">Featured</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Create Tasks</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

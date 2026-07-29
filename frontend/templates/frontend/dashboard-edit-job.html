@@ -162,13 +162,13 @@
 											<div class="col-xl-6">
 												<div class="input-with-icon">
 													<input class="with-border" type="text" placeholder="Min">
-													<i class="currency">USD</i>
+													<i class="currency">NGN</i>
 												</div>
 											</div>
 											<div class="col-xl-6">
 												<div class="input-with-icon">
 													<input class="with-border" type="text" placeholder="Max">
-													<i class="currency">USD</i>
+													<i class="currency">NGN</i>
 												</div>
 											</div>
 										</div>
@@ -214,6 +214,7 @@
 											<label class="uploadButton-button ripple-effect" for="upload">Upload Files</label>
 											<span class="uploadButton-file-name">Images or documents that might be helpful in describing your job</span>
 										</div>
+										<ul class="staged-files-list" id="staged-files"></ul>
 									</div>
 								</div>
 
@@ -303,6 +304,48 @@
     margin: 0;
     color: #666;
     font-size: 14px;
+}
+
+/* Staged file list (before saving) */
+.staged-files-list {
+    list-style: none;
+    margin: 15px 0 0;
+    padding: 0;
+}
+.staged-files-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f4f5f7;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+.staged-files-list .staged-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+}
+.staged-files-list .staged-file-size {
+    color: #888;
+    margin-left: 6px;
+    font-size: 13px;
+}
+.staged-files-list .remove-staged-file {
+    border: none;
+    background: transparent;
+    color: #e4202f;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+.staged-files-list .remove-staged-file:hover {
+    color: #b3121f;
 }
 </style>
 

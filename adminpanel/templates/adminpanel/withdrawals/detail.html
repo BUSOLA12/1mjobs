@@ -1,0 +1,91 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Withdrawal #{{ w.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <a href="{% url 'admin_withdrawal_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to withdrawals</a>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Withdrawal #{{ w.id }}</h4>
+        {% if w.status == 'paid' %}
+            <span class="badge bg-success fs-6">Paid</span>
+        {% elif w.status == 'rejected' %}
+            <span class="badge bg-danger fs-6">Rejected</span>
+        {% elif w.status == 'approved' %}
+            <span class="badge bg-info fs-6">Approved</span>
+        {% else %}
+            <span class="badge bg-warning text-dark fs-6">Requested</span>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Freelancer</h6>
+                    <p class="mb-1"><strong>{{ w.user.get_full_name|default:w.user.email }}</strong></p>
+                    <p class="mb-3 text-muted">{{ w.user.email }}</p>
+
+                    <h6 class="text-muted">Amount requested</h6>
+                    <p class="fs-4 mb-3">NGN {{ w.amount }}</p>
+
+                    <h6 class="text-muted">Wallet available balance</h6>
+                    {% if wallet %}
+                        <p class="mb-0 {% if wallet.available_balance < w.amount %}text-danger{% else %}text-success{% endif %}">
+                            NGN {{ wallet.available_balance }}
+                            {% if wallet.available_balance < w.amount %}<br><small>Insufficient to pay this request.</small>{% endif %}
+                        </p>
+                    {% else %}
+                        <p class="text-muted mb-0">No wallet found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted">Bank details (verify before paying)</h6>
+                    <table class="table table-sm mb-0">
+                        <tr><th style="width:45%;">Account name</th><td>{{ w.account_name|default:"—" }}</td></tr>
+                        <tr><th>Account number</th><td>{{ w.account_number|default:"—" }}</td></tr>
+                        <tr><th>Bank</th><td>{{ w.bank_name|default:"—" }}</td></tr>
+                        <tr><th>Requested</th><td>{{ w.created_at|date:"Y-m-d H:i" }}</td></tr>
+                        {% if w.processed_at %}<tr><th>Processed</th><td>{{ w.processed_at|date:"Y-m-d H:i" }}</td></tr>{% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if w.admin_note %}
+        <div class="alert alert-warning"><strong>Admin note:</strong> {{ w.admin_note }}</div>
+    {% endif %}
+
+    {% if w.status == 'requested' or w.status == 'approved' %}
+        <div class="d-flex gap-2 mt-2">
+            <form method="post" action="{% url 'admin_withdrawal_mark_paid' w.id %}"
+                  onsubmit="return confirm('Confirm you have paid this freelancer? This debits their wallet.');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success"
+                    {% if not wallet or wallet.available_balance < w.amount %}disabled title="Insufficient wallet balance"{% endif %}>
+                    Mark as paid (debit wallet)
+                </button>
+            </form>
+            <button class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectBox">Reject</button>
+        </div>
+
+        <div class="collapse mt-3" id="rejectBox">
+            <form method="post" action="{% url 'admin_withdrawal_reject' w.id %}" class="card card-body">
+                {% csrf_token %}
+                <label class="form-label">Reason for rejection (sent to the freelancer)</label>
+                <textarea name="reason" rows="3" class="form-control mb-2" required></textarea>
+                <button type="submit" class="btn btn-danger">Confirm rejection &amp; notify</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="alert alert-secondary">This withdrawal is {{ w.get_status_display }}; no further action.</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -40,6 +40,9 @@ jobwebsite/settings(server).py
 # Redis dump
 dump.rdb
 
+# Local installers / large binaries
+*.msi
+
 # Secrets / env
 .env
 .env.*

@@ -43,7 +43,7 @@ function renderItem(notificationData) {
 
 
     li.innerHTML = `
-        <a href="/dashboard/dashboard-messages/?conv_id=${convId}&sender_id=${senderId}">
+        <a href="/dashboard/messages/?conv_id=${convId}&sender_id=${senderId}">
             <span class="notification-avatar status-online"><img src="{% static 'images/user-avatar-small-03.jpg' %}" alt=""></span>
             <div class="notification-text">
                 <strong>${notificationData.sender}</strong>
@@ -84,6 +84,31 @@ function timeAgo(dateString) {
 }
 
 
+// Count only real notifications, ignoring the empty-state placeholder.
+function unreadItemCount() {
+    return messageList
+        ? messageList.querySelectorAll('li:not(.notifications-empty)').length
+        : 0;
+}
+
+// Show a placeholder when the dropdown has no messages, remove it otherwise.
+function refreshEmptyState() {
+    if (!messageList) return;
+    let empty = messageList.querySelector('.notifications-empty');
+    if (unreadItemCount() === 0) {
+        if (!empty) {
+            empty = document.createElement('li');
+            empty.className = 'notifications-empty';
+            empty.innerHTML =
+                '<div class="notification-text" style="text-align:center;' +
+                'padding:28px 15px;color:#888;">No new messages</div>';
+            messageList.appendChild(empty);
+        }
+    } else if (empty) {
+        empty.remove();
+    }
+}
+
 async function renderUnread() {
     const data = await loadUnread();
     const nl = data.notifications; 
@@ -104,10 +129,11 @@ async function renderUnread() {
 
         const convId = n.conversation_id;
         const senderId = n.sender_id;
+        li.dataset.conversationId = convId;
         
 
         li.innerHTML = `
-        <a href="/dashboard/dashboard-messages/?conv_id=${convId}&sender_id=${senderId}">
+        <a href="/dashboard/messages/?conv_id=${convId}&sender_id=${senderId}">
             <span class="notification-avatar status-online"><img src=${n.user_avatar} alt=""></span>
             <div class="notification-text">
                 <strong>${n.sender}</strong> <br>
@@ -119,13 +145,6 @@ async function renderUnread() {
 
         if (senderId !== userId && userId === n.recipient) {
             messageList.prepend(li);
-        }
-        
-
-        const notificationCount = messageList.children.length;
-        const notCount = document.getElementById("notification-count");
-        if (notCount) {
-            notCount.textContent = notificationCount;
         }
         // Handle mark-as-read click
         // li.querySelector('.mark-read').addEventListener('click', async function (e) {
@@ -142,11 +161,36 @@ async function renderUnread() {
         //     }
         // });
     }
+
+    const notCount = document.getElementById("notification-count");
+    if (notCount) {
+        const count = unreadItemCount();
+        notCount.textContent = count;
+        notCount.style.display = count > 0 ? "" : "none";
+    }
+    refreshEmptyState();
+}
+
+// Remove the dropdown notification items for a conversation that's just been
+// read and re-sync the header badge to the remaining count. Keeps the badge and
+// the dropdown list consistent (the badge is derived from the list length).
+function clearConversationNotifications(conversationId) {
+    if (!messageList) return;
+    messageList
+        .querySelectorAll(`li[data-conversation-id="${conversationId}"]`)
+        .forEach(li => li.remove());
+    const count = unreadItemCount();
+    const notCount = document.getElementById("notification-count");
+    if (notCount) {
+        notCount.textContent = count;
+        notCount.style.display = count > 0 ? "" : "none";
+    }
+    refreshEmptyState();
 }
 
 const markAllReadBtn = document.querySelector('#mark-all-read');
 
-if (markAllReadBtn && userInfo) {
+if (markAllReadBtn) {
     markAllReadBtn.addEventListener('click', async function (e) {
         e.preventDefault();
         console.log("Mark all as read clicked");

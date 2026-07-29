@@ -56,10 +56,11 @@ class Job(models.Model):
     location = models.CharField(max_length=255)
     status = models.CharField(max_length=20, choices=JOB_STATUS, default='pending')
     city = models.CharField(max_length=100, null=True, blank=True)
-    salary_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    salary_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    salary_min = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
+    salary_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     tags = models.TextField(
-        help_text="Required skills (comma-separated, max 5 skills)"
+        blank=True,
+        help_text="Optional tags (comma-separated, max 10 tags)"
     )
     description = models.TextField()
     image = models.ImageField(upload_to="job_images/", null=True, blank=True)
@@ -92,6 +93,15 @@ class Job(models.Model):
         return self.title
 
 
+class JobFile(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="job_files")
+    file = models.FileField(upload_to="job_uploads/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"File for {self.job.title}"
+
+
 # jobs/models.py (excerpt - JobApplication change)
 from django.db import models
 from django.conf import settings
@@ -108,7 +118,13 @@ class JobApplication(models.Model):
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='application', default=1)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='job_applicant')
     name = models.CharField(max_length=255)
+    # Platform-internal only. Set server-side from the applicant's account; the
+    # employer never sees it (kept private so the platform mediates contact).
     email = models.EmailField()
+    # The freelancer's typed pitch and their proposed price for the job.
+    proposal = models.TextField(default="")
+    bid_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
+    # Optional CV / resume upload.
     files = models.FileField(upload_to="applications/", null=True, blank=True)
     status = models.CharField(max_length=20, choices=APPLICATION_STATUS, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -188,6 +204,7 @@ class Task(models.Model):
         blank=True,
         help_text="Optional project files"
     )
+    approved = models.BooleanField(default=False)
 
 
     class Meta:
@@ -247,6 +264,10 @@ class TaskBidding(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["task", "freelancer"], name="unique_bid_per_freelancer_per_task"),
+        ]
 
     def __str__(self):
         return f"Bid by {self.freelancer} on {self.task} - {self.status}"

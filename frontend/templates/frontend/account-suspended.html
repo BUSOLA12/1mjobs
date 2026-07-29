@@ -1,0 +1,110 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+
+</head>
+<body>
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+
+<!-- Titlebar
+================================================== -->
+<div id="titlebar" class="gradient">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+
+				<h2 id="status-title">Account Restricted</h2>
+
+				<!-- Breadcrumbs -->
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li>Account Restricted</li>
+					</ul>
+				</nav>
+
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Page Content
+================================================== -->
+<div class="container">
+	<div class="row">
+		<div class="col-xl-6 offset-xl-3">
+
+			<div class="login-register-page">
+
+				<!-- Reason -->
+				<div class="notification error" id="reason-box" style="margin-bottom:25px;">
+					<p><strong id="status-line"></strong></p>
+					<p id="reason-text"></p>
+					<p id="until-text" style="display:none;"></p>
+				</div>
+
+				<!-- Welcome Text -->
+				<div class="welcome-text">
+					<h3>Submit an Appeal</h3>
+					<span>Tell us why you believe this decision should be reviewed.</span>
+				</div>
+
+				<div id="appeal-error"></div>
+				<div id="appeal-success" class="notification success" style="display:none;"></div>
+
+				<!-- Form -->
+				<form method="post" id="appeal-form">
+					<div id="appeal-password-wrap">
+						<input type="password" class="input-text" id="appeal-password"
+							placeholder="Confirm your password" required/>
+					</div>
+					<textarea class="with-border" id="appeal-message" rows="5"
+						placeholder="Explain why your account should be reinstated..." required></textarea>
+					<button class="button full-width button-sliding-icon ripple-effect margin-top-10" type="submit" id="appeal-submit-btn">
+						<span id="appeal-submit-text">Submit Appeal</span> <i class="icon-material-outline-arrow-right-alt"></i>
+					</button>
+				</form>
+
+				<!-- Passwordless (Google) accounts request a link instead -->
+				<div id="google-appeal" class="margin-top-20" style="display:none;">
+					<p class="margin-bottom-5">Signed up with Google and have no password?</p>
+					<a href="#" id="request-link-btn">Email me an appeal link</a>
+					<div id="request-link-msg" class="margin-top-10"></div>
+				</div>
+
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<!-- Spacer -->
+<div class="margin-top-70"></div>
+
+</div>
+<!-- Wrapper / End -->
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/account-suspended.js' %}"></script>
+
+</body>
+</html>

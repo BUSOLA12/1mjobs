@@ -76,18 +76,27 @@
 				<div class="fun-fact" data-fun-fact-color="#efa80f">
 					<div class="fun-fact-text">
 						<span>Reviews</span>
-						<h4>28</h4>
+						<h4 class="reviews-count">0</h4>
 					</div>
 					<div class="fun-fact-icon"><i class="icon-material-outline-rate-review"></i></div>
 				</div>
 
 				<!-- Last one has to be hidden below 1600px, sorry :( -->
-				<div class="fun-fact" data-fun-fact-color="#2a41e6">
+				<!-- Freelancer: profile views this month -->
+				<div class="fun-fact" data-fun-fact-color="#2a41e6" id="fl-month-views" style="display:none">
 					<div class="fun-fact-text">
 						<span>This Month Views</span>
-						<h4>987</h4>
+						<h4 id="month-views-count" class="month-views-count">0</h4>
 					</div>
 					<div class="fun-fact-icon"><i class="icon-feather-trending-up"></i></div>
+				</div>
+				<!-- Employer: submissions received this month (follows Jobs/Tasks tab) -->
+				<div class="fun-fact" data-fun-fact-color="#2a41e6" id="emp-submissions" style="display:none">
+					<div class="fun-fact-text">
+						<span id="emp-tile-label">Applications This Month</span>
+						<h4 id="emp-submissions-count" class="emp-submissions-count">0</h4>
+					</div>
+					<div class="fun-fact-icon"><i class="icon-feather-inbox"></i></div>
 				</div>
 			</div>
 			
@@ -95,15 +104,15 @@
 			<div class="row">
 
 				<div class="col-xl-8">
-					<!-- Dashboard Box -->
-					<div class="dashboard-box main-box-in-row">
+					<!-- Freelancer: Profile Views chart -->
+					<div class="dashboard-box main-box-in-row" id="fl-views-card" style="display:none">
 						<div class="headline">
 							<h3><i class="icon-feather-bar-chart-2"></i> Your Profile Views</h3>
 							<div class="sort-by">
-								<select class="selectpicker hide-tick">
-									<option>Last 6 Months</option>
-									<option>This Year</option>
-									<option>This Month</option>
+								<select class="selectpicker hide-tick" id="views-range">
+									<option value="6m">Last 6 Months</option>
+									<option value="year">This Year</option>
+									<option value="month">This Month</option>
 								</select>
 							</div>
 						</div>
@@ -114,7 +123,31 @@
 							</div>
 						</div>
 					</div>
-					<!-- Dashboard Box / End -->
+					<!-- Freelancer Dashboard Box / End -->
+
+					<!-- Employer: Submissions chart (Jobs/Tasks tab) -->
+					<div class="dashboard-box" id="emp-subs-card" style="display:none">
+						<div class="headline">
+							<h3><i class="icon-feather-bar-chart-2"></i> Submissions per Month</h3>
+							<div class="sort-by">
+								<!-- Jobs/Tasks toggle -->
+								<button type="button" class="emp-tab-btn active" data-emp-type="jobs">Jobs</button>
+								<button type="button" class="emp-tab-btn" data-emp-type="tasks">Tasks</button>
+								<select class="selectpicker hide-tick" id="emp-range">
+									<option value="6m">Last 6 Months</option>
+									<option value="year">This Year</option>
+									<option value="month">This Month</option>
+								</select>
+							</div>
+						</div>
+						<div class="content">
+							<!-- Chart -->
+							<div class="chart">
+								<canvas id="emp-chart" width="100" height="45"></canvas>
+							</div>
+						</div>
+					</div>
+					<!-- Employer Dashboard Box / End -->
 				</div>
 				<div class="col-xl-4">
 
@@ -171,6 +204,36 @@
 			</div>
 			<!-- Row / End -->
 
+			<!-- Row: Pro-only panels -->
+			<div class="row">
+				<!-- Freelancer Pro: Who viewed my profile -->
+				<div class="col-xl-6" id="fl-viewers-card" style="display:none">
+					<div class="dashboard-box">
+						<div class="headline">
+							<h3><i class="icon-feather-eye"></i> Who Viewed Your Profile <span class="pro-badge">PRO</span></h3>
+						</div>
+						<div class="content">
+							<ul class="dashboard-box-list" id="fl-viewers-list">
+								<li>Loading...</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+
+				<!-- Employer Pro: Hiring analytics -->
+				<div class="col-xl-6" id="emp-analytics-card" style="display:none">
+					<div class="dashboard-box">
+						<div class="headline">
+							<h3><i class="icon-feather-pie-chart"></i> Hiring Analytics <span class="pro-badge">PRO</span></h3>
+						</div>
+						<div class="content with-padding" id="emp-analytics-content">
+							<p>Loading...</p>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Row / End -->
+
 			<!-- Row -->
 			<div class="row">
 
@@ -184,7 +247,7 @@
 							</button>
 						</div>
 						<div class="content">
-							<ul class="dashboard-box-list notifications">
+							<ul class="dashboard-box-list notifications" style="max-height: 420px; overflow-y: auto;">
 								<!--Notifications List-->
 								
 								
@@ -302,7 +365,7 @@ $('#snackbar-user-status label').click(function() {
 </script>
 
 <!-- Chart.js // documentation: http://www.chartjs.org/docs/latest/ -->
-<script src="js/chart.min.js"></script>
+<script src="{% static 'js/chart.min.js' %}"></script>
 <script>
 	Chart.defaults.global.defaultFontFamily = "Nunito";
 	Chart.defaults.global.defaultFontColor = '#888';
@@ -377,20 +440,204 @@ $('#snackbar-user-status label').click(function() {
 
 </script>
 
+<style>
+.emp-tab-btn { background: transparent; border: none; font-size: 13px; color: #888; padding: 4px 10px; cursor: pointer; border-radius: 4px; margin-right: 4px; vertical-align: middle; }
+.emp-tab-btn.active { background: #2a41e8; color: #fff; }
+/* Nudge the Jobs/Tasks toggle + range dropdown up to align with the heading */
+#emp-subs-card .sort-by { margin-top: -14px; }
+</style>
+
+<!-- Dashboard stats: freelancer profile views OR employer submissions -->
+<script>
+// ---- Freelancer: profile views (fed by /api/users/profile/stats/) ----
+async function loadProfileStats(period = "6m") {
+	try {
+		const res = await fetchProtected(`/api/users/profile/stats/?range=${period}`);
+		if (!res || !res.ok) return;
+		const stats = await res.json();
+
+		const tile = document.getElementById("month-views-count");
+		if (tile) tile.textContent = stats.month_views;
+
+		if (typeof chart !== "undefined") {
+			chart.data.labels = stats.labels;
+			chart.data.datasets[0].data = stats.data;
+			chart.update();
+		}
+	} catch (err) {
+		console.error("Failed to load profile stats:", err);
+	}
+}
+
+// ---- Employer: submissions per month, Jobs/Tasks (fed by /api/users/employer/stats/) ----
+var empChart;
+(function initEmpChart() {
+	var el = document.getElementById("emp-chart");
+	if (!el || typeof Chart === "undefined") return;
+	empChart = new Chart(el.getContext("2d"), {
+		type: "line",
+		data: { labels: [], datasets: [{
+			label: "Submissions",
+			backgroundColor: "rgba(42,65,232,0.08)",
+			borderColor: "#2a41e8", borderWidth: "3", data: [],
+			pointRadius: 5, pointHoverRadius: 5, pointHitRadius: 10,
+			pointBackgroundColor: "#fff", pointHoverBackgroundColor: "#fff", pointBorderWidth: "2",
+		}]},
+		options: {
+			layout: { padding: 10 },
+			legend: { display: false }, title: { display: false },
+			scales: {
+				yAxes: [{ ticks: { beginAtZero: true, precision: 0 }, gridLines: { borderDash: [6, 10], color: "#d8d8d8", lineWidth: 1 } }],
+				xAxes: [{ gridLines: { display: false } }],
+			},
+			tooltips: { backgroundColor: "#333", titleFontSize: 13, titleFontColor: "#fff", bodyFontColor: "#fff", bodyFontSize: 13, displayColors: false, xPadding: 10, yPadding: 10, intersect: false },
+		},
+	});
+})();
+
+let empType = "jobs";
+async function loadEmployerStats(type, period) {
+	type = type || empType;
+	period = period || ($("#emp-range").val() || "6m");
+	empType = type;
+	try {
+		const res = await fetchProtected(`/api/users/employer/stats/?type=${type}&range=${period}`);
+		if (!res || !res.ok) return;
+		const stats = await res.json();
+
+		const tile = document.getElementById("emp-submissions-count");
+		if (tile) tile.textContent = stats.month_count;
+		const label = document.getElementById("emp-tile-label");
+		if (label) label.textContent = (type === "tasks") ? "Bids This Month" : "Applications This Month";
+
+		if (empChart) {
+			empChart.data.labels = stats.labels;
+			empChart.data.datasets[0].data = stats.data;
+			empChart.update();
+		}
+	} catch (err) {
+		console.error("Failed to load employer stats:", err);
+	}
+}
+
+// ---- Freelancer Pro: who viewed my profile (fed by /api/users/profile/viewers/) ----
+function proUpgradeCta(message) {
+	return `<div class="pro-upgrade-cta"><span class="pro-badge">PRO</span>` +
+		`<p>${message}</p>` +
+		`<a href="/pricing-plans/" class="button ripple-effect">Upgrade to Pro</a></div>`;
+}
+
+async function loadProfileViewers() {
+	const list = document.getElementById("fl-viewers-list");
+	if (!list) return;
+	try {
+		const res = await fetchProtected("/api/users/profile/viewers/");
+		if (res.status === 403) {
+			list.outerHTML = proUpgradeCta("See exactly who viewed your profile with Pro.");
+			return;
+		}
+		if (!res.ok) return;
+		const data = await res.json();
+		if (!data.viewers || data.viewers.length === 0) {
+			list.innerHTML = "<li>No profile views yet.</li>";
+			return;
+		}
+		const PLACEHOLDER = "/static/images/user-avatar-placeholder.png";
+		list.innerHTML = data.viewers.map(v => {
+			const when = v.viewed_at ? new Date(v.viewed_at).toLocaleDateString() : "";
+			const avatar = v.avatar || PLACEHOLDER;
+			const role = v.role ? ` <span style="color:#888;">(${v.role})</span>` : "";
+			const link = v.viewer_id ? `/freelancer-profile/${v.viewer_id}` : "#";
+			return `<li style="display:flex;align-items:center;gap:10px;padding:8px 0;">` +
+				`<img src="${avatar}" onerror="this.src='${PLACEHOLDER}'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">` +
+				`<span style="flex:1;"><a href="${link}">${v.name}</a>${role}</span>` +
+				`<span style="color:#999;font-size:13px;">${when}</span></li>`;
+		}).join("");
+	} catch (err) {
+		console.error("Failed to load profile viewers:", err);
+	}
+}
+
+// ---- Employer Pro: hiring analytics (fed by /api/users/employer/analytics/) ----
+async function loadEmployerAnalytics() {
+	const box = document.getElementById("emp-analytics-content");
+	if (!box) return;
+	try {
+		const res = await fetchProtected("/api/users/employer/analytics/");
+		if (res.status === 403) {
+			box.innerHTML = proUpgradeCta("Unlock per-job breakdowns and your hiring funnel with Pro.");
+			return;
+		}
+		if (!res.ok) return;
+		const d = await res.json();
+		const f = d.funnel || {};
+		const topJobs = (d.top_jobs || []).map(j =>
+			`<li style="display:flex;justify-content:space-between;padding:6px 0;"><span>${j.job__title || "Untitled"}</span><strong>${j.total}</strong></li>`
+		).join("") || "<li>No applications yet.</li>";
+		box.innerHTML =
+			`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;">` +
+			`<div><h3 style="margin:0;">${f.applications || 0}</h3><span style="color:#888;">Applications</span></div>` +
+			`<div><h3 style="margin:0;">${f.accepted || 0}</h3><span style="color:#888;">Accepted</span></div>` +
+			`<div><h3 style="margin:0;">${f.bids || 0}</h3><span style="color:#888;">Bids</span></div>` +
+			`<div><h3 style="margin:0;">${f.bids_accepted || 0}</h3><span style="color:#888;">Bids Accepted</span></div>` +
+			`</div>` +
+			`<h5>Top jobs by applications</h5><ul style="list-style:none;padding:0;margin:0;">${topJobs}</ul>`;
+	} catch (err) {
+		console.error("Failed to load employer analytics:", err);
+	}
+}
+
+// ---- Wiring ----
+document.addEventListener("DOMContentLoaded", () => {
+	// selectpicker (bootstrap-select) fires both events depending on version.
+	$("#views-range").on("changed.bs.select change", function () {
+		loadProfileStats($(this).val());
+	});
+	$("#emp-range").on("changed.bs.select change", function () {
+		loadEmployerStats(empType, $(this).val());
+	});
+	$(".emp-tab-btn").on("click", function () {
+		$(".emp-tab-btn").removeClass("active");
+		$(this).addClass("active");
+		loadEmployerStats($(this).data("emp-type"));
+	});
+});
+
+// Run only the loader matching the user's role. userInfo (from auth.js) is ready on "data-ready".
+let statsInited = false;
+function initDashboardStats() {
+	if (statsInited) return;
+	if (typeof userInfo === "undefined" || !userInfo || !userInfo.role) return;
+	statsInited = true;
+	if (userInfo.role === "employer") {
+		loadEmployerStats("jobs");
+		loadEmployerAnalytics();
+	} else if (userInfo.role === "freelancer") {
+		loadProfileStats();
+		loadProfileViewers();
+	}
+}
+if (typeof userInfo !== "undefined" && userInfo && userInfo.role) {
+	initDashboardStats();
+} else {
+	document.addEventListener("data-ready", initDashboardStats);
+}
+</script>
+
 <script>
 
 	
 	//Just here
-	flElementIdList = ["task-bid-won", "job-applied-for"];
+	flElementIdList = ["task-bid-won", "job-applied-for", "fl-month-views", "fl-views-card", "fl-viewers-card"];
 	for (const id of flElementIdList) {
 		showForRole("freelancer", id);
 	}
 
-	//in other pages 
+	//in other pages
 	showForRole("freelancer", "my-active-bid-element");
 
-    //in other pages 
-	empList = ["jobs-id", "tasks-id"];
+    //in other pages
+	empList = ["jobs-id", "tasks-id", "emp-submissions", "emp-subs-card", "emp-analytics-card"];
 	for (const id of empList) {
 		showForRole("employer", id);
 	}

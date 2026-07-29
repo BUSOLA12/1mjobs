@@ -74,6 +74,7 @@ def admin_job_detail(request, job_id):
             job.status = "accepted"
             job.is_active = True
             job.save()
+            log_admin_action(request.user, job, "Approved Job")
             messages.success(request, "Job approved successfully.")
 
         elif action == "reject":
@@ -81,17 +82,20 @@ def admin_job_detail(request, job_id):
             job.approved = False
             job.is_active = False
             job.save()
+            log_admin_action(request.user, job, "Rejected Job")
             messages.warning(request, "Job rejected.")
 
         elif action == "deactivate":
             job.is_active = False
             job.save()
+            log_admin_action(request.user, job, "Deactivated Job")
             messages.info(request, "Job deactivated.")
 
         elif action == "extend":
             job.expiration_date += timedelta(days=30)
             job.is_active = True
             job.save()
+            log_admin_action(request.user, job, "Extended Job Expiration by 30 days")
             messages.success(request, "Job expiration extended by 30 days.")
 
         return redirect("admin_job_detail", job_id=job.id)
@@ -125,6 +129,7 @@ def admin_job_application_detail(request, pk):
         if new_status:
             application.status = new_status
             application.save()
+            log_admin_action(request.user, application, f"Updated Job Application Status to {new_status}")
 
     return render(request, 'adminpanel/jobs/application_detail.html', {
         'application': application,
@@ -155,6 +160,25 @@ from django.views.decorators.http import require_POST
 @staff_member_required
 def admin_task_detail(request, task_id):
     task = get_object_or_404(Task, id=task_id)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        if action == "approve":
+            task.approved = True
+            task.status = "active"
+            task.save(update_fields=["approved", "status"])
+            log_admin_action(request.user, task, "Approved Task")
+            messages.success(request, "Task approved and is now live.")
+
+        elif action == "reject":
+            task.approved = False
+            task.status = "cancelled"
+            task.save(update_fields=["approved", "status"])
+            log_admin_action(request.user, task, "Rejected Task")
+            messages.warning(request, "Task rejected. It stays hidden from the public list.")
+
+        return redirect("admin_task_detail", task_id=task.id)
 
     return render(request, 'adminpanel/tasks/detail.html', {
         'task': task,

@@ -31,6 +31,34 @@ COMPANY_INDUSTRIES = [
     ('science_and_technology', 'Science and Technology'),
 ]
 
+VERIFICATION_STATUS = [
+    ('pending', 'Pending Review'),
+    ('approved', 'Approved'),
+    ('rejected', 'Rejected'),
+]
+
+# The set of fields an admin verifies one by one. (name, label)
+VERIFIABLE_FIELDS = [
+    ('company_name', 'Company Name'),
+    ('brand_name', 'Brand / Trading Name'),
+    ('industry', 'Industry'),
+    ('description', 'Description'),
+    ('registration_number', 'Registration / RC Number'),
+    ('tin', 'Tax ID (TIN)'),
+    ('established_date', 'Date Established'),
+    ('company_size', 'Company Size'),
+    ('headquarters_address', 'Headquarters Address'),
+    ('primary_phone', 'Primary Phone'),
+    ('secondary_phone', 'Secondary Phone'),
+    ('email', 'Official Email'),
+    ('website', 'Website'),
+    ('facebook', 'Facebook'),
+    ('linkedin', 'LinkedIn'),
+    ('company_country', 'Company Country'),
+    ('logo', 'Logo'),
+    ('documents', 'Documents'),
+]
+
 class Company(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -49,18 +77,45 @@ class Company(models.Model):
     headquarters_address = models.CharField(max_length=250, blank=True, null=True)
     primary_phone = models.CharField(max_length=50, blank=True)
     secondary_phone = models.CharField(max_length=50, blank=True)
-    email = models.CharField(max_length=250, blank=True, unique=True)
-    website = models.CharField(max_length=250, blank=True, unique=True)
-    facebook = models.CharField(max_length=250, blank=True, unique=True)
-    linkedin = models.CharField(max_length=250, blank=True, unique=True)
+    email = models.CharField(max_length=250, blank=True, null=True, unique=True)
+    website = models.CharField(max_length=250, blank=True, null=True, unique=True)
+    facebook = models.CharField(max_length=250, blank=True, null=True, unique=True)
+    linkedin = models.CharField(max_length=250, blank=True, null=True, unique=True)
     logo = models.ImageField(upload_to='company_logo/', blank=True, null=True)
     documents = models.FileField(upload_to='company_documents/', blank=True, null=True)
     company_country = models.CharField(max_length=150, blank=True, null=True)
     members = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='members', blank=True, null=True)
+    verified = models.BooleanField(default=False)
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS, default='pending')
+    # {"registration_number": {"status": "rejected", "note": "doesn't match CAC"}, ...}
+    field_reviews = models.JSONField(default=dict, blank=True)
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviewed_companies'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.company_name
+
+    def get_field_status(self, name):
+        return (self.field_reviews or {}).get(name, {}).get('status', 'pending')
+
+    def get_field_note(self, name):
+        return (self.field_reviews or {}).get(name, {}).get('note', '')
+
+    def recompute_verification(self):
+        statuses = [self.get_field_status(f) for f, _ in VERIFIABLE_FIELDS]
+        if any(s == 'rejected' for s in statuses):
+            self.verification_status = 'rejected'
+            self.verified = False
+        elif statuses and all(s == 'approved' for s in statuses):
+            self.verification_status = 'approved'
+            self.verified = True
+        else:
+            self.verification_status = 'pending'
+            self.verified = False
 
 

@@ -352,14 +352,23 @@ class AdminPlanCreateView(CreateView):
     model = Plan
     form_class = AdminPlanForm
     template_name = "adminpanel/pricing_management/create.html"
-    success_url = reverse_lazy("admin-pricing-detail")
 
     def form_valid(self, form):
         plan = form.save()
         log_admin_action(self.request.user, plan, f"Created {plan}")
         return super().form_valid(form)
 
+    def get_success_url(self):
+        return reverse("admin-pricing-detail", kwargs={"pk": self.object.id})
 
+
+class AdminPlanDeleteView(View):
+    def post(self, request, pk):
+        plan = get_object_or_404(Plan, id=pk)
+        plan.delete()
+
+        log_admin_action(request.user, plan, f"Deleted {plan}")
+        return redirect("admin-pricing-list")
 
 
 # admin_panel/views.py
@@ -547,7 +556,9 @@ def admin_action_logs(request):
         logs = logs.filter(
             Q(action__icontains=query) |
             Q(admin__email__icontains=query) |
-            Q(target_user__email__icontains=query)
+            Q(target_user__email__icontains=query) |
+            Q(target_repr__icontains=query) |
+            Q(target_type__icontains=query)
         )
 
     paginator = Paginator(logs, 20)
@@ -647,6 +658,59 @@ def change_job_status(request, job_id, action):
         
     job.save()
     
+    log_admin_action(request.user, job, f"{action.title()}d Job")
+
     # Redirect back to the page the user was on (preserving the tab they were on)
     previous_status = request.GET.get('from_status', 'pending')
     return redirect(f'/site-admin/admin-jobs/?status={previous_status}')
+
+
+# ------------------
+# FREELANCER VERIFICATION
+# ------------------
+
+from django.conf import settings
+from django.core.mail import send_mail
+from django.views.decorators.http import require_POST
+from users.models import CustomUser
+
+
+@staff_member_required
+@require_POST
+def admin_verify_user(request, pk):
+    user = get_object_or_404(CustomUser, pk=pk)
+    profile = getattr(user, "user_profile", None)
+    if not profile:
+        messages.error(request, "This user has no freelancer profile to verify.")
+        return redirect("admin_user_detail", user_id=pk)
+
+    profile.verified = True
+    profile.kyc_verified = True
+    profile.save(update_fields=["verified", "kyc_verified"])
+    log_admin_action(request.user, user, "verify_user", f"Verified freelancer '{user.email}'.")
+
+    if user.email:
+        send_mail(
+            "Your 1mjobs account is verified",
+            "Hello,\n\nYour freelancer account has been verified. A verified badge "
+            "now appears on your profile.\n\nThank you,\nOne Million Jobs",
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            fail_silently=True,
+        )
+    messages.success(request, f"{user.email} is now verified.")
+    return redirect("admin_user_detail", user_id=pk)
+
+
+@staff_member_required
+@require_POST
+def admin_unverify_user(request, pk):
+    user = get_object_or_404(CustomUser, pk=pk)
+    profile = getattr(user, "user_profile", None)
+    if profile:
+        profile.verified = False
+        profile.kyc_verified = False
+        profile.save(update_fields=["verified", "kyc_verified"])
+    log_admin_action(request.user, user, "unverify_user", f"Removed verification from '{user.email}'.")
+    messages.success(request, f"Verification removed from {user.email}.")
+    return redirect("admin_user_detail", user_id=pk)

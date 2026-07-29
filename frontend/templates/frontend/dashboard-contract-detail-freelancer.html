@@ -1,0 +1,604 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+</head>
+<body class="gray" style="display:none" id="mainBody">
+
+<div id="wrapper">
+
+{% include 'frontend/partials/headers.html' %}
+<div class="clearfix"></div>
+
+<div class="dashboard-container">
+
+	{% include 'frontend/partials/Dashboard_sidebar.html' %}
+
+	<div class="dashboard-content-container" data-simplebar>
+		<div class="dashboard-content-inner">
+
+			<div class="dashboard-headline">
+				<h3>Contract</h3>
+				<nav id="breadcrumbs" class="dark">
+					<ul>
+						<li><a href="/dashboard/">Home</a></li>
+						<li><a href="/dashboard/contracts/">Contracts</a></li>
+						<li id="crumb-title">Contract</li>
+					</ul>
+				</nav>
+			</div>
+
+			<div class="row">
+				<!-- Main -->
+				<div class="col-xl-8 col-lg-8">
+					<div class="dashboard-box margin-top-0">
+						<div class="headline">
+							<h3><i class="icon-material-outline-assignment"></i> <span id="contract-job-title">Contract</span></h3>
+						</div>
+						<div class="content with-padding" id="contract-summary">
+							<p>Loading...</p>
+						</div>
+					</div>
+
+					<!-- Files from the client -->
+					<div class="dashboard-box">
+						<div class="headline">
+							<h3><i class="icon-material-outline-insert-drive-file"></i> Files from the Client</h3>
+						</div>
+						<div class="content with-padding">
+							<p style="color:#777;margin-top:0;">Download the brief and any files the client shared for this contract.</p>
+							<ul class="contract-doc-list" id="doc-list" style="list-style:none;padding:0;margin:0;"></ul>
+						</div>
+					</div>
+
+					<!-- Submit work (one-shot) / Assignments (recurring) -->
+					<div class="dashboard-box">
+						<div class="headline">
+							<h3 id="submit-heading"><i class="icon-material-outline-cloud-upload"></i> Submit Your Work</h3>
+						</div>
+						<div class="content with-padding" id="submit-box">
+							<p style="color:#999;margin:0;">Once escrow is funded you will be able to submit your completed work here for the client to review.</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Sidebar: earnings / escrow status -->
+				<div class="col-xl-4 col-lg-4">
+					<div class="dashboard-box margin-top-0">
+						<div class="headline">
+							<h3><i class="icon-material-outline-account-balance-wallet"></i> Payment</h3>
+						</div>
+						<div class="content with-padding" id="escrow-box">
+							<p>Loading...</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="dashboard-footer-spacer"></div>
+			{% include 'frontend/partials/small_footer.html' %}
+
+		</div>
+	</div>
+
+</div>
+</div>
+
+<style>
+.loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; opacity:0; visibility:hidden; transition: opacity .3s ease, visibility .3s ease; }
+.loading-overlay.active { opacity:1; visibility:visible; }
+.loading-popup { background:#fff; padding:40px; border-radius:10px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); max-width:300px; }
+.loading-spinner { width:50px; height:50px; border:4px solid #f3f3f3; border-top:4px solid #2a41e8; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
+@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+.contract-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; text-transform:capitalize; }
+.cs-awaiting_funding { background:#fff3cd; color:#8a6d3b; }
+.cs-funded { background:#e6f4ff; color:#1264a3; }
+.cs-submitted, .cs-in_review { background:#e8eefc; color:#3b53c4; }
+.cs-revision_requested { background:#fde2e1; color:#a12622; }
+.cs-completed { background:#e6f7ec; color:#1e7e46; }
+.cs-disputed { background:#fde2e1; color:#a12622; }
+.cs-cancelled { background:#eceff1; color:#607d8b; }
+.cs-active { background:#e6f7ec; color:#1e7e46; }
+.cs-grace { background:#fff3cd; color:#8a6d3b; }
+.cs-pending_termination { background:#fde2e1; color:#a12622; }
+.cs-terminated { background:#eceff1; color:#607d8b; }
+.cs-ended { background:#eceff1; color:#607d8b; }
+.cs-released { background:#e6f7ec; color:#1e7e46; }
+.cs-missed { background:#fde2e1; color:#a12622; }
+.cs-open { background:#eef0f5; color:#555; }
+.cs-changes_requested { background:#fde2e1; color:#a12622; }
+.cs-accepted { background:#e6f7ec; color:#1e7e46; }
+.summary-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0f0; }
+.summary-row:last-child { border-bottom:none; }
+.summary-row .k { color:#777; }
+.summary-row .v { font-weight:600; }
+.contract-doc-list li { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px; }
+.dp-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:flex-start; z-index:10000; overflow-y:auto; padding:60px 15px; }
+.dp-overlay.active { display:flex; }
+.dp-modal { background:#fff; border-radius:10px; max-width:520px; width:100%; padding:26px 28px; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
+.dp-modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.dp-modal-head h3 { margin:0; font-size:20px; }
+.dp-close { font-size:26px; line-height:1; color:#888; text-decoration:none; }
+.dp-label { display:block; font-weight:600; margin:12px 0 6px; }
+</style>
+
+<!-- Dispute modal -->
+<div id="dispute-overlay" class="dp-overlay">
+	<div class="dp-modal">
+		<div class="dp-modal-head">
+			<h3>Dispute this request</h3>
+			<a href="#" id="dp-close" class="dp-close">&times;</a>
+		</div>
+		<p style="color:#777;margin-top:0;">Explain why you disagree with the client's request. Our team will review it and the escrow stays held until it's resolved.</p>
+		<form id="dp-form" onsubmit="return false;">
+			<label class="dp-label">Reason</label>
+			<textarea id="dp-reason" class="with-border" rows="4" placeholder="Describe the issue..." required></textarea>
+			<label class="dp-label">Attach evidence (optional)</label>
+			<div class="uploadButton">
+				<input class="uploadButton-input" type="file" id="dp-file" accept="image/*, application/pdf, .doc, .docx" multiple>
+				<label class="uploadButton-button ripple-effect" for="dp-file">Select Files</label>
+				<span class="uploadButton-file-name" id="dp-file-name">Optional evidence (max 10 MB each).</span>
+			</div>
+			<button type="submit" id="dp-submit" class="button red ripple-effect margin-top-20" style="width:100%;">Open Dispute</button>
+		</form>
+	</div>
+</div>
+
+<!-- Assignment submit modal (recurring) -->
+<div id="as-overlay" class="dp-overlay">
+	<div class="dp-modal">
+		<div class="dp-modal-head"><h3>Submit work: <span id="as-title"></span></h3><a href="#" id="as-close" class="dp-close">&times;</a></div>
+		<form onsubmit="return false;">
+			<label class="dp-label">Message (optional)</label>
+			<textarea id="as-message" class="with-border" rows="4" placeholder="Notes about your delivery"></textarea>
+			<label class="dp-label">Files</label>
+			<div class="uploadButton">
+				<input class="uploadButton-input" type="file" id="as-file" multiple>
+				<label class="uploadButton-button ripple-effect" for="as-file">Select Files</label>
+				<span class="uploadButton-file-name" id="as-file-name">Attach your deliverables (max 10 MB each).</span>
+			</div>
+			<button type="submit" id="as-submit" class="button ripple-effect margin-top-20" style="width:100%;">Submit Work</button>
+		</form>
+	</div>
+</div>
+
+<!-- Generic note modal (terminate) -->
+<div id="note-overlay" class="dp-overlay">
+	<div class="dp-modal">
+		<div class="dp-modal-head"><h3 id="note-title">Note</h3><a href="#" id="note-close" class="dp-close">&times;</a></div>
+		<form onsubmit="return false;">
+			<label class="dp-label" id="note-label">Note</label>
+			<textarea id="note-text" class="with-border" rows="4"></textarea>
+			<button type="submit" id="note-submit" class="button red ripple-effect margin-top-20" style="width:100%;">Submit</button>
+		</form>
+	</div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+	<div class="loading-popup"><div class="loading-spinner"></div><h3 id="my-pop-up">Loading Contract</h3><p>Please wait...</p></div>
+</div>
+
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+
+<script>
+function showLoading(message = null) {
+	document.getElementById('loadingOverlay').classList.add('active');
+	if (message !== null) document.getElementById('my-pop-up').textContent = message;
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+const contractId = window.location.pathname.split("/").filter(Boolean).pop();
+let CONTRACT = null;
+
+function fmtDate(iso) {
+	if (!iso) return "Not set";
+	return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// ---------------- Recurring (long-term Job) freelancer view ----------------
+function renderRecurringFreelancer() {
+	const c = CONTRACT;
+	document.getElementById("submit-heading").innerHTML = '<i class="icon-material-outline-cloud-upload"></i> Assignments';
+
+	const pendingT = (c.termination_requests || []).find(t => t.status === "pending");
+	let summary = `
+		<div class="summary-row"><span class="k">Status</span><span class="v"><span class="contract-status cs-${c.status}">${c.status.replace(/_/g, " ")}</span></span></div>
+		<div class="summary-row"><span class="k">Client</span><span class="v">${c.employer_name}</span></div>
+		<div class="summary-row"><span class="k">You earn</span><span class="v">NGN ${c.monthly_rate || c.amount}/month</span></div>
+		<div class="summary-row"><span class="k">Paid on</span><span class="v">Day ${c.payment_day} (${c.cadence || "monthly"})</span></div>
+		${c.meeting_terms ? `<div style="margin-top:12px;"><span class="k">Meeting terms</span><p style="white-space:pre-wrap;margin-top:6px;">${c.meeting_terms}</p></div>` : ""}`;
+	if (c.termination_offered_at && c.status === "grace" && !pendingT) {
+		summary += `<div style="margin-top:14px;padding:12px;border:1px solid #f5c6cb;background:#fdecea;border-radius:8px;">The client's payment is overdue. You are not expected to work unpaid.</div>`;
+	}
+	if (pendingT) {
+		summary += `<div style="margin-top:14px;padding:12px;border:1px solid #f5c6cb;background:#fdecea;border-radius:8px;">Termination requested. Awaiting admin review.</div>`;
+	} else if (c.status === "terminated") {
+		summary += `<div style="margin-top:14px;color:#607d8b;">This contract has been terminated.</div>`;
+	} else if (["active", "grace"].includes(c.status)) {
+		summary += `<button id="terminate-btn" class="button red ripple-effect margin-top-20">Request Termination</button>`;
+	}
+	document.getElementById("contract-summary").innerHTML = summary;
+	const tb = document.getElementById("terminate-btn");
+	if (tb) tb.addEventListener("click", () => openNoteModal(
+		"Request termination", "Reason for ending this contract", "Request termination",
+		(reason) => postJSON(`/api/contracts/${contractId}/terminate/`, { reason }, "Requesting termination")));
+
+	renderFreelancerBilling();
+	renderFreelancerAssignments();
+	renderDocuments();
+}
+
+function periodStatusNote(p) {
+	switch (p.status) {
+		case "awaiting_funding": return "Waiting for the client to fund escrow.";
+		case "funded": return "Funds secured in escrow. You can work this period.";
+		case "in_review": return `In review until ${fmtDate(p.review_window_end)}, then released to you.`;
+		case "released": return "Released to your wallet.";
+		case "missed": return "The client missed funding this period.";
+		default: return p.status;
+	}
+}
+
+function renderFreelancerBilling() {
+	const c = CONTRACT;
+	const periods = (c.periods || []).slice().sort((a, b) => a.period_number - b.period_number);
+	const current = periods.find(p => ["awaiting_funding", "funded", "in_review"].includes(p.status));
+	let html = "";
+	if (current) {
+		html += `<div style="margin-bottom:8px;"><strong>Current: period ${current.period_number}</strong> &middot; NGN ${current.amount}</div>
+			<p style="color:#555;">${periodStatusNote(current)}</p>`;
+	} else {
+		html += `<p style="color:#888;">No active period.</p>`;
+	}
+	html += `<h5 style="margin-top:20px;">Payment history</h5><ul style="list-style:none;padding:0;margin:0;">`;
+	for (const p of periods) {
+		html += `<li style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0;">
+			<span>#${p.period_number} &middot; NGN ${p.amount}</span>
+			<span class="contract-status cs-${p.status}">${p.status.replace(/_/g, " ")}</span></li>`;
+	}
+	html += `</ul>`;
+	document.getElementById("escrow-box").innerHTML = html;
+}
+
+let currentAssignmentId = null;
+
+function renderFreelancerAssignments() {
+	const c = CONTRACT;
+	const box = document.getElementById("submit-box");
+	const assignments = c.assignments || [];
+	let html = "";
+	if (!assignments.length) html += `<p style="color:#999;margin:0;">No assignments yet. The client will add work here.</p>`;
+	for (const a of assignments) {
+		const brief = (a.files || []).map((f, i) => `<a href="${f.file_url}" target="_blank" class="button dark ripple-effect" download>Brief ${i + 1}</a>`).join(" ");
+		let subs = "";
+		for (const s of (a.submissions || [])) {
+			const fl = (s.files || []).map((f, i) => `<a href="${f.file_url}" target="_blank">File ${i + 1}</a>`).join(" &middot; ");
+			subs += `<div style="margin-top:6px;padding:8px;background:#f7f9fc;border-radius:6px;"><div style="color:#555;">v${s.version} &middot; ${new Date(s.submitted_at).toLocaleString()}</div>${s.message ? `<p style="white-space:pre-wrap;margin:4px 0;">${s.message}</p>` : ""}${fl}</div>`;
+		}
+		const canSubmit = a.status !== "accepted";
+		html += `<div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;">
+			<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${a.title}</strong><span class="contract-status cs-${a.status}">${a.status.replace(/_/g, " ")}</span></div>
+			${a.description ? `<p style="white-space:pre-wrap;margin:6px 0;">${a.description}</p>` : ""}
+			${brief ? `<div style="margin:4px 0;">${brief}</div>` : ""}
+			${a.review_note ? `<div style="margin:6px 0;padding:8px;background:#fdecea;border:1px solid #f5c6cb;border-radius:6px;">Changes requested: ${a.review_note}</div>` : ""}
+			${subs}
+			${canSubmit ? `<div style="margin-top:10px;"><button class="assign-submit button ripple-effect" data-aid="${a.id}" data-title="${a.title}">Submit work</button></div>` : ""}
+		</div>`;
+	}
+	box.innerHTML = html;
+	box.querySelectorAll(".assign-submit").forEach(b => b.addEventListener("click", () => openAssignmentSubmit(b.dataset.aid, b.dataset.title)));
+}
+
+function openAssignmentSubmit(aid, title) {
+	currentAssignmentId = aid;
+	document.getElementById("as-title").textContent = title || "";
+	document.getElementById("as-message").value = "";
+	document.getElementById("as-file").value = "";
+	document.getElementById("as-file-name").textContent = "Attach your deliverables (max 10 MB each).";
+	document.getElementById("as-overlay").classList.add("active");
+}
+function closeAssignmentSubmit() { document.getElementById("as-overlay").classList.remove("active"); currentAssignmentId = null; }
+async function submitAssignmentWork() {
+	if (!currentAssignmentId) return;
+	const msg = document.getElementById("as-message").value.trim();
+	const files = document.getElementById("as-file").files;
+	if (!msg && !files.length) { Snackbar.show({ text: "Add a message or at least one file.", pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#e74c3c" }); return; }
+	const fd = new FormData();
+	fd.append("message", msg);
+	for (const f of files) fd.append("file", f);
+	showLoading("Submitting Work");
+	try {
+		const res = await fetchProtected(`/api/contracts/assignments/${currentAssignmentId}/submit/`, { method: "POST", body: fd });
+		const data = await res.json().catch(() => ({}));
+		hideLoading();
+		if (!res.ok) throw new Error(data.message || "Submit failed");
+		closeAssignmentSubmit();
+		Snackbar.show({ text: "Work submitted", pos: "bottom-center", showAction: false, duration: 2500, textColor: "#fff", backgroundColor: "#09f859ff" });
+		await loadContract();
+	} catch (e) {
+		hideLoading();
+		Snackbar.show({ text: e.message || "Error", pos: "bottom-center", showAction: false, duration: 3500, textColor: "#fff", backgroundColor: "#e74c3c" });
+	}
+}
+
+async function postJSON(url, body, loadingMsg) {
+	showLoading(loadingMsg || "Working");
+	try {
+		const res = await fetchProtected(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+		const data = await res.json().catch(() => ({}));
+		hideLoading();
+		if (!res.ok) throw new Error(data.message || "Action failed");
+		Snackbar.show({ text: data.message || "Done", pos: "bottom-center", showAction: false, duration: 2500, textColor: "#fff", backgroundColor: "#09f859ff" });
+		await loadContract();
+	} catch (e) {
+		hideLoading();
+		Snackbar.show({ text: e.message || "Error", pos: "bottom-center", showAction: false, duration: 3500, textColor: "#fff", backgroundColor: "#e74c3c" });
+	}
+}
+
+// Generic note modal (terminate)
+let noteCallback = null;
+function openNoteModal(title, label, submitLabel, cb) {
+	document.getElementById("note-title").textContent = title;
+	document.getElementById("note-label").textContent = label;
+	document.getElementById("note-submit").textContent = submitLabel;
+	document.getElementById("note-text").value = "";
+	noteCallback = cb;
+	document.getElementById("note-overlay").classList.add("active");
+}
+function closeNoteModal() { document.getElementById("note-overlay").classList.remove("active"); noteCallback = null; }
+
+async function loadContract() {
+	showLoading("Loading Contract");
+	try {
+		const res = await fetchProtected(`/api/contracts/${contractId}/`);
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			document.getElementById("contract-summary").innerHTML = `<p>${err.message || "Could not load contract."}</p>`;
+			hideLoading();
+			return;
+		}
+		CONTRACT = await res.json();
+		renderContract();
+	} catch (e) {
+		console.error("Error loading contract:", e);
+		document.getElementById("contract-summary").innerHTML = `<p>Error loading contract.</p>`;
+	}
+	hideLoading();
+}
+
+function renderContract() {
+	const c = CONTRACT;
+	document.getElementById("contract-job-title").textContent = c.job_title || "Contract";
+	document.getElementById("crumb-title").textContent = c.job_title || "Contract";
+
+	if (c.is_recurring) { renderRecurringFreelancer(); return; }
+
+	document.getElementById("contract-summary").innerHTML = `
+		<div class="summary-row"><span class="k">Status</span><span class="v"><span class="contract-status cs-${c.status}">${c.status.replace(/_/g, " ")}</span></span></div>
+		<div class="summary-row"><span class="k">Client</span><span class="v">${c.employer_name}</span></div>
+		<div class="summary-row"><span class="k">You earn</span><span class="v">NGN ${c.amount}</span></div>
+		<div class="summary-row"><span class="k">Delivery time</span><span class="v">${c.delivery_days} day(s)</span></div>
+		<div class="summary-row"><span class="k">Deadline</span><span class="v">${fmtDate(c.deadline)}</span></div>
+		${c.terms ? `<div style="margin-top:14px;"><span class="k">Terms / note</span><p style="white-space:pre-wrap;margin-top:6px;">${c.terms}</p></div>` : ""}
+	`;
+
+	// Read-only escrow status for the freelancer (no funding action).
+	const p = c.payment || {};
+	const escrowBox = document.getElementById("escrow-box");
+	let html;
+	if (p.status === "ESCROWED") {
+		html = `<p style="color:#1e7e46;"><i class="icon-material-outline-check-circle"></i> <strong>Funds secured in escrow</strong></p>
+			<div class="summary-row"><span class="k">Held for you</span><span class="v">NGN ${c.amount}</span></div>
+			<p style="font-size:13px;color:#555;margin-top:14px;">You can start the work. Payment is released to your wallet after the client approves.</p>`;
+	} else if (p.status === "RELEASED") {
+		html = `<p style="color:#1e7e46;"><i class="icon-material-outline-check-circle"></i> <strong>Payment released</strong></p>
+			<div class="summary-row"><span class="k">Amount</span><span class="v">NGN ${c.amount}</span></div>
+			<p style="font-size:13px;color:#555;margin-top:14px;">The funds are in your wallet.</p>`;
+	} else {
+		html = `<p><strong>Awaiting funding from the client</strong></p>
+			<div class="summary-row"><span class="k">Contract value</span><span class="v">NGN ${c.amount}</span></div>
+			<p style="font-size:13px;color:#888;margin-top:14px;">Please wait for the client to fund escrow before starting the work.</p>`;
+	}
+	escrowBox.innerHTML = html;
+
+	renderDocuments();
+	renderSubmitBox();
+}
+
+function renderSubmitBox() {
+	const c = CONTRACT;
+	const box = document.getElementById("submit-box");
+	const subs = c.submissions || [];
+	let html = "";
+
+	if (subs.length) {
+		html += `<div style="margin-bottom:16px;"><strong>Your submissions</strong>`;
+		for (const s of subs) {
+			const links = (s.files || []).map((f, i) => `<a href="${f.file_url}" target="_blank">File ${i + 1}</a>`).join(" &middot; ");
+			html += `<div style="border:1px solid #eee;border-radius:8px;padding:10px 12px;margin-top:8px;">
+				<div style="color:#555;">v${s.version} &middot; ${new Date(s.submitted_at).toLocaleString()}</div>
+				${s.message ? `<p style="white-space:pre-wrap;margin:6px 0;">${s.message}</p>` : ""}
+				${links ? `<div>${links}</div>` : ""}
+			</div>`;
+		}
+		html += `</div>`;
+	}
+
+	if (c.status === "awaiting_funding") {
+		html += `<p style="color:#888;margin:0;">You can submit your work once the client funds escrow.</p>`;
+	} else if (c.status === "submitted" || c.status === "in_review") {
+		html += `<p style="color:#3b53c4;margin:0;"><i class="icon-material-outline-schedule"></i> Submitted. Waiting for the client to review.</p>`;
+	} else if (c.status === "completed") {
+		const byDispute = (c.disputes || []).some(d => d.status === "resolved_released");
+		html += byDispute
+			? `<p style="color:#1e7e46;margin:0;"><i class="icon-material-outline-check-circle"></i> Dispute resolved in your favour. Payment has been released to your wallet.</p>`
+			: `<p style="color:#1e7e46;margin:0;"><i class="icon-material-outline-check-circle"></i> Contract complete. Payment has been released to your wallet.</p>`;
+	} else if (c.status === "disputed") {
+		html += `<p style="color:#a12622;margin:0;">A dispute is open on this contract. Our team will review it and the escrow stays held until it's resolved.</p>`;
+	} else if (c.status === "cancelled") {
+		const refunded = (c.disputes || []).some(d => d.status === "resolved_refunded");
+		html += refunded
+			? `<p style="color:#607d8b;margin:0;">This contract was cancelled after a dispute review, and the escrow was refunded to the client.</p>`
+			: `<p style="color:#607d8b;margin:0;">This contract was cancelled.</p>`;
+	}
+
+	if (c.status === "funded" || c.status === "revision_requested") {
+		if (c.status === "revision_requested") {
+			const crDocs = (c.documents || []).filter(d => d.label === "Change request");
+			const crLinks = crDocs.map((d, i) =>
+				`<a href="${d.file_url}" target="_blank" download class="button dark ripple-effect" style="margin:8px 8px 0 0;"><i class="icon-feather-download"></i> Attachment ${i + 1}</a>`
+			).join("");
+			html += `<div style="background:#fdecea;border:1px solid #f5c6cb;border-radius:8px;padding:12px;margin-bottom:12px;">
+				<strong>The client requested a change.</strong>
+				${c.review_note ? `<p style="white-space:pre-wrap;margin:6px 0 0;">${c.review_note}</p>` : ""}
+				${crLinks ? `<div style="margin-top:6px;">${crLinks}</div>` : ""}
+			</div>`;
+		}
+		html += `
+			<textarea id="submit-message" class="with-border" rows="4" placeholder="Describe what you're delivering (optional)"></textarea>
+			<div class="uploadButton margin-top-10">
+				<input class="uploadButton-input" type="file" id="submit-file" multiple>
+				<label class="uploadButton-button ripple-effect" for="submit-file">Select Files</label>
+				<span class="uploadButton-file-name" id="submit-file-name">Attach your deliverables (max 10 MB each).</span>
+			</div>
+			<div style="margin-top:14px;display:flex;gap:10px;">
+				<button type="button" id="submit-work-btn" class="button ripple-effect">Submit Work</button>
+				${c.status === "revision_requested" ? `<button type="button" id="dispute-btn" class="button red ripple-effect">Dispute this request</button>` : ""}
+			</div>`;
+	}
+
+	box.innerHTML = html;
+
+	const sfile = document.getElementById("submit-file");
+	if (sfile) sfile.addEventListener("change", (e) => {
+		const n = e.target.files.length;
+		document.getElementById("submit-file-name").textContent =
+			n === 0 ? "Attach your deliverables (max 10 MB each)." : (n === 1 ? e.target.files[0].name : `${n} files selected`);
+	});
+	const sbtn = document.getElementById("submit-work-btn");
+	if (sbtn) sbtn.addEventListener("click", submitWork);
+	const dbtn = document.getElementById("dispute-btn");
+	if (dbtn) dbtn.addEventListener("click", openDispute);
+}
+
+async function submitWork() {
+	const msg = document.getElementById("submit-message").value.trim();
+	const files = document.getElementById("submit-file").files;
+	if (!msg && !files.length) {
+		Snackbar.show({ text: "Add a message or at least one file.", pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#e74c3c" });
+		return;
+	}
+	showLoading("Submitting Work");
+	const fd = new FormData();
+	fd.append("message", msg);
+	for (const f of files) fd.append("file", f);
+	try {
+		const res = await fetchProtected(`/api/contracts/${contractId}/submit/`, { method: "POST", body: fd });
+		const data = await res.json().catch(() => ({}));
+		hideLoading();
+		if (!res.ok) throw new Error(data.message || "Submit failed");
+		Snackbar.show({ text: "Work submitted for review", pos: "bottom-center", showAction: false, duration: 2500, textColor: "#fff", backgroundColor: "#09f859ff" });
+		await loadContract();
+	} catch (e) {
+		hideLoading();
+		Snackbar.show({ text: e.message || "Submit error", pos: "bottom-center", showAction: false, duration: 3500, textColor: "#fff", backgroundColor: "#e74c3c" });
+	}
+}
+
+function openDispute() {
+	document.getElementById("dp-reason").value = "";
+	document.getElementById("dp-file").value = "";
+	document.getElementById("dp-file-name").textContent = "Optional evidence (max 10 MB each).";
+	document.getElementById("dispute-overlay").classList.add("active");
+}
+function closeDisputeModal() {
+	document.getElementById("dispute-overlay").classList.remove("active");
+}
+async function submitDispute() {
+	const reason = document.getElementById("dp-reason").value.trim();
+	if (!reason) {
+		Snackbar.show({ text: "Describe the issue you're disputing.", pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#e74c3c" });
+		return;
+	}
+	const files = document.getElementById("dp-file").files;
+	const fd = new FormData();
+	fd.append("reason", reason);
+	for (const f of files) fd.append("file", f);
+
+	showLoading("Opening Dispute");
+	try {
+		const res = await fetchProtected(`/api/contracts/${contractId}/dispute/`, { method: "POST", body: fd });
+		const data = await res.json().catch(() => ({}));
+		hideLoading();
+		if (!res.ok) throw new Error(data.message || "Could not open dispute");
+		closeDisputeModal();
+		Snackbar.show({ text: "Dispute opened", pos: "bottom-center", showAction: false, duration: 2500, textColor: "#fff", backgroundColor: "#09f859ff" });
+		await loadContract();
+	} catch (e) {
+		hideLoading();
+		Snackbar.show({ text: e.message || "Dispute error", pos: "bottom-center", showAction: false, duration: 3500, textColor: "#fff", backgroundColor: "#e74c3c" });
+	}
+}
+
+function renderDocuments() {
+	const list = document.getElementById("doc-list");
+	const docs = CONTRACT.documents || [];
+	if (docs.length === 0) {
+		list.innerHTML = `<li style="border:none;color:#888;">No files from the client yet.</li>`;
+		return;
+	}
+	list.innerHTML = "";
+	for (const d of docs) {
+		list.insertAdjacentHTML("beforeend", `
+			<li>
+				<span><i class="icon-feather-file-text"></i> ${d.label || "Document"} <small style="color:#999;">by ${d.uploaded_by_name}</small></span>
+				<a href="${d.file_url}" target="_blank" class="button dark ripple-effect" download><i class="icon-feather-download"></i> Download</a>
+			</li>`);
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	loadContract();
+
+	// Dispute modal wiring
+	document.getElementById("dp-close").addEventListener("click", (e) => { e.preventDefault(); closeDisputeModal(); });
+	document.getElementById("dispute-overlay").addEventListener("click", (e) => { if (e.target.id === "dispute-overlay") closeDisputeModal(); });
+	document.getElementById("dp-submit").addEventListener("click", (e) => { e.preventDefault(); submitDispute(); });
+	document.getElementById("dp-file").addEventListener("change", (e) => {
+		const n = e.target.files.length;
+		document.getElementById("dp-file-name").textContent = n === 0 ? "Optional evidence (max 10 MB each)." : (n === 1 ? e.target.files[0].name : `${n} files selected`);
+	});
+
+	// Assignment submit modal wiring (recurring)
+	document.getElementById("as-close").addEventListener("click", (e) => { e.preventDefault(); closeAssignmentSubmit(); });
+	document.getElementById("as-overlay").addEventListener("click", (e) => { if (e.target.id === "as-overlay") closeAssignmentSubmit(); });
+	document.getElementById("as-submit").addEventListener("click", (e) => { e.preventDefault(); submitAssignmentWork(); });
+	document.getElementById("as-file").addEventListener("change", (e) => {
+		const n = e.target.files.length;
+		document.getElementById("as-file-name").textContent = n === 0 ? "Attach your deliverables (max 10 MB each)." : (n === 1 ? e.target.files[0].name : `${n} files selected`);
+	});
+
+	// Generic note modal wiring (terminate)
+	document.getElementById("note-close").addEventListener("click", (e) => { e.preventDefault(); closeNoteModal(); });
+	document.getElementById("note-overlay").addEventListener("click", (e) => { if (e.target.id === "note-overlay") closeNoteModal(); });
+	document.getElementById("note-submit").addEventListener("click", (e) => {
+		e.preventDefault();
+		const text = document.getElementById("note-text").value.trim();
+		if (!text) { Snackbar.show({ text: "Please enter a reason.", pos: "bottom-center", showAction: false, duration: 3000, textColor: "#fff", backgroundColor: "#e74c3c" }); return; }
+		const cb = noteCallback;
+		closeNoteModal();
+		if (cb) cb(text);
+	});
+});
+</script>
+
+</body>
+</html>

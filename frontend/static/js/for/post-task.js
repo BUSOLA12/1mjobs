@@ -124,7 +124,7 @@ document.querySelector(".button.ripple-effect.big").addEventListener("click", as
     });
 
     console.log(result);
-    window.location.href = `/single/task-page/${result.data.id}/`;
+    window.location.href = `/task-page/${result.data.id}/`;
 
   } catch (error) {
     hideLoading();

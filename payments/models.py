@@ -19,10 +19,28 @@ class Payment(models.Model):
     employer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payments_made")
     freelancer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payments_received")
 
-    # Link to your Job/Task model
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="payments")
+    # A payment belongs to EITHER a Task (legacy bid-based flow) OR a Contract
+    # (the job/candidate hiring flow). Both are nullable so each path can use the
+    # one that applies.
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="payments", null=True, blank=True)
+    contract = models.ForeignKey(
+        "contracts.Contract", on_delete=models.CASCADE, related_name="payments",
+        null=True, blank=True,
+    )
+    # For recurring (Job) contracts, the specific billing period this escrow
+    # payment funds. Null for one-shot (Task) contract payments.
+    period = models.ForeignKey(
+        "contracts.BillingPeriod", on_delete=models.CASCADE, related_name="payments",
+        null=True, blank=True,
+    )
 
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+
+    # Filled at release time. The escrowed `amount` splits into:
+    #   net_amount (to the freelancer) + commission_amount (platform) + vat_amount (tax).
+    commission_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="NOT_INITIATED")
 
@@ -30,11 +48,17 @@ class Payment(models.Model):
 
     payment_url = models.URLField(null=True, blank=True)
 
+    # African Money collection id, set at initiation, used for server-side verify
+    collection_id = models.CharField(max_length=100, blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.task.title} - {self.amount} - {self.status}"
+        subject = self.task.title if self.task_id else (
+            self.contract.job.title if self.contract_id else "Payment"
+        )
+        return f"{subject} - {self.amount} - {self.status}"
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
@@ -51,6 +75,8 @@ class Transaction(models.Model):
     TRANSACTION_TYPE = (
         ('CREDIT', 'Credit'),
         ('DEBIT', 'Debit'),
+        ('FEE', 'Platform Fee'),
+        ('VAT', 'VAT'),
     )
 
     STATUS = (
@@ -81,6 +107,41 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f"{self.account_name} - {self.bank_name}"
+
+
+class Withdrawal(models.Model):
+    """A freelancer's request to cash out available wallet funds. Processed
+    manually by an admin: on 'paid' the wallet available_balance is debited and
+    a DEBIT transaction is written. The admin verifies the bank details first."""
+
+    STATUS_CHOICES = [
+        ("requested", "Requested"),
+        ("approved", "Approved"),
+        ("paid", "Paid"),
+        ("rejected", "Rejected"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="withdrawals")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    bank_account = models.ForeignKey(
+        BankAccount, on_delete=models.SET_NULL, null=True, blank=True, related_name="withdrawals"
+    )
+    # Snapshot of the bank details at request time (kept even if BankAccount changes).
+    account_name = models.CharField(max_length=100, blank=True)
+    account_number = models.CharField(max_length=20, blank=True)
+    bank_name = models.CharField(max_length=100, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="requested")
+    admin_note = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Withdrawal {self.amount} by {self.user.email} ({self.status})"
 
 
 from django.db import models

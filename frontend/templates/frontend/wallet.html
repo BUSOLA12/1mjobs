@@ -1,0 +1,360 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+
+<head>
+
+	<!-- Basic Page Needs
+================================================== -->
+	<title>1mjobs | Wallet</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+================================================== -->
+	{% include 'frontend/partials/css_links.html' %}
+	<script src="{% static 'js/protectpage.js' %}"></script>
+
+	<link rel="stylesheet" href="{% static 'css/wallet-ui.css' %}">
+
+</head>
+
+<body class="gray" style="display:none" id="mainBody">
+
+	<!-- Wrapper -->
+	<div id="wrapper">
+
+		<!-- Header Container
+================================================== -->
+		{% include 'frontend/partials/headers.html' %}
+		<!-- Header Container / End -->
+
+
+		<!-- Dashboard Container -->
+		<div class="dashboard-container">
+
+			<!-- Dashboard Sidebar
+	================================================== -->
+			{% include 'frontend/partials/Dashboard_sidebar.html' %}
+			<!-- Dashboard Sidebar / End -->
+
+
+			<!-- Dashboard Content
+	================================================== -->
+			<div class="dashboard-content-container" data-simplebar>
+				<div class="dashboard-content-inner">
+
+					<!-- Dashboard Headline -->
+					<div class="dashboard-headline">
+						<h3>My Wallet</h3>
+
+						<!-- Breadcrumbs -->
+						<nav id="breadcrumbs" class="dark">
+							<ul>
+								<li><a href="{% url 'index' %}">Home</a></li>
+								<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+								<li>Wallet</li>
+							</ul>
+						</nav>
+					</div>
+
+					<div class="wallet">
+
+						<!-- Top: balance card + stat tiles -->
+						<div class="wallet-top">
+
+							<!-- Signature balance card -->
+							<section class="wallet-card" aria-label="Available balance">
+								<i class="wallet-card__mark icon-material-outline-account-balance-wallet" aria-hidden="true"></i>
+								<div class="wallet-card__head">
+									<span class="wallet-card__brand">1M · Wallet</span>
+									<span class="wallet-card__chip" aria-hidden="true"></span>
+								</div>
+
+								<div class="wallet-card__label">Available balance</div>
+								<div class="wallet-card__amount num">
+									<span class="sym">₦</span><span id="available-balance">0</span>
+								</div>
+								<p class="wallet-card__note">Yours to withdraw. Released payments land here after the 10% platform fee.</p>
+
+								<div class="wallet-card__foot">
+									<span class="wallet-card__masked">•••• •••• live</span>
+									<button type="button" class="wallet-btn wallet-btn--solid" id="withdraw-btn">
+										<i class="icon-feather-arrow-up-right"></i> Withdraw
+									</button>
+									<button type="button" class="wallet-btn wallet-btn--ghost" id="addbank-btn">
+										<i class="icon-feather-credit-card"></i> Add bank
+									</button>
+								</div>
+							</section>
+
+							<!-- In escrow -->
+							<div class="wallet-tile">
+								<div class="wallet-tile__top">
+									<span class="wallet-tile__icon wallet-tile__icon--amber"><i class="icon-material-outline-history"></i></span>
+									<span class="wallet-tile__label">In escrow</span>
+								</div>
+								<div class="wallet-tile__value num"><span class="sym">₦</span><span id="pending-balance">0</span></div>
+								<p class="wallet-tile__sub">Held safely until the employer releases payment for your work.</p>
+							</div>
+
+							<!-- Total -->
+							<div class="wallet-tile">
+								<div class="wallet-tile__top">
+									<span class="wallet-tile__icon wallet-tile__icon--brand"><i class="icon-feather-trending-up"></i></span>
+									<span class="wallet-tile__label">Total balance</span>
+								</div>
+								<div class="wallet-tile__value num"><span class="sym">₦</span><span id="total-balance">0</span></div>
+								<p class="wallet-tile__sub">Available and escrowed funds combined across your wallet.</p>
+							</div>
+
+						</div>
+
+						<!-- Transaction history -->
+						<section class="wallet-panel" aria-label="Transaction history">
+							<div class="wallet-panel__head">
+								<h4><i class="icon-material-outline-account-balance-wallet"></i> Transaction history</h4>
+								<span class="wallet-count" id="txn-count" hidden></span>
+							</div>
+							<div id="transactions-list">
+								<!-- loading skeleton -->
+								<div class="wallet-row">
+									<span class="wallet-row__icon" style="background:#eef0f5;"></span>
+									<span><span class="wallet-skel" style="display:block;width:45%;"></span>
+										<span class="wallet-skel" style="display:block;width:25%;margin-top:8px;height:10px;"></span></span>
+									<span class="wallet-skel" style="width:70px;height:16px;"></span>
+								</div>
+								<div class="wallet-row">
+									<span class="wallet-row__icon" style="background:#eef0f5;"></span>
+									<span><span class="wallet-skel" style="display:block;width:38%;"></span>
+										<span class="wallet-skel" style="display:block;width:22%;margin-top:8px;height:10px;"></span></span>
+									<span class="wallet-skel" style="width:70px;height:16px;"></span>
+								</div>
+							</div>
+						</section>
+
+					</div><!-- /.wallet -->
+
+					<!-- Footer -->
+					<div class="dashboard-footer-spacer"></div>
+					{% include 'frontend/partials/small_footer.html' %}
+					<!-- Footer / End -->
+
+				</div>
+			</div>
+			<!-- Dashboard Content / End -->
+
+		</div>
+		<!-- Dashboard Container / End -->
+
+	</div>
+	<!-- Wrapper / End -->
+
+	<div class="wallet-toast" id="wallet-toast" role="status" aria-live="polite"></div>
+
+	<!-- Withdrawal modal -->
+	<div id="wd-overlay" class="wd-overlay">
+		<div class="wd-modal">
+			<div class="wd-modal-head">
+				<h3>Request a withdrawal</h3>
+				<a href="#" id="wd-close" class="wd-close">&times;</a>
+			</div>
+			<p style="color:#777;margin-top:0;">Available to withdraw: <strong>₦<span id="wd-available">0</span></strong>. Payouts are processed manually by our team after verifying your bank details.</p>
+			<form id="wd-form" onsubmit="return false;">
+				<label class="wd-label">Amount (NGN)</label>
+				<input type="number" min="1" step="0.01" id="wd-amount" class="input-text with-border" placeholder="Amount to withdraw" required>
+				<label class="wd-label">Account name</label>
+				<input type="text" id="wd-account-name" class="input-text with-border" placeholder="Account holder name" required>
+				<label class="wd-label">Account number</label>
+				<input type="text" id="wd-account-number" class="input-text with-border" placeholder="10-digit account number" required>
+				<label class="wd-label">Bank name</label>
+				<input type="text" id="wd-bank-name" class="input-text with-border" placeholder="e.g. GTBank" required>
+				<button type="submit" id="wd-submit" class="button ripple-effect margin-top-20" style="width:100%;">Request Withdrawal</button>
+			</form>
+		</div>
+	</div>
+
+	<style>
+	.wd-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:flex-start; z-index:10000; overflow-y:auto; padding:60px 15px; }
+	.wd-overlay.active { display:flex; }
+	.wd-modal { background:#fff; border-radius:10px; max-width:480px; width:100%; padding:26px 28px; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
+	.wd-modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+	.wd-modal-head h3 { margin:0; font-size:20px; }
+	.wd-close { font-size:26px; line-height:1; color:#888; text-decoration:none; }
+	.wd-label { display:block; font-weight:600; margin:12px 0 6px; }
+	</style>
+
+
+	<!-- Scripts
+================================================== -->
+	{% include 'frontend/partials/scripts.html' %}
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+
+	<script>
+		function fmtAmount(a) {
+			return new Intl.NumberFormat("en-NG").format(Number(a) || 0);
+		}
+
+		function showToast(msg) {
+			const t = document.getElementById("wallet-toast");
+			t.textContent = msg;
+			t.classList.add("show");
+			clearTimeout(t._timer);
+			t._timer = setTimeout(() => t.classList.remove("show"), 3200);
+		}
+
+		let AVAILABLE = 0;
+
+		async function loadWallet() {
+			try {
+				const res = await fetchProtected("/api/payments/wallet/");
+				if (!res.ok) return;
+				const w = await res.json();
+				const available = Number(w.available_balance) || 0;
+				AVAILABLE = available;
+				const pending = Number(w.pending_balance) || 0;
+				document.getElementById("available-balance").textContent = fmtAmount(available);
+				document.getElementById("pending-balance").textContent = fmtAmount(pending);
+				document.getElementById("total-balance").textContent = fmtAmount(available + pending);
+			} catch (err) {
+				console.error("Failed to load wallet:", err);
+			}
+		}
+
+		// Outflows leave the wallet (fee/debit); everything else is money in.
+		function isOutflow(type) {
+			return type === "FEE" || type === "DEBIT" || type === "WITHDRAWAL";
+		}
+
+		function pillFor(status) {
+			const s = String(status || "").toLowerCase();
+			if (/(success|complete|released|paid|done)/.test(s)) return ["ok", "Completed"];
+			if (/(pending|processing|escrow|hold)/.test(s)) return ["pending", "Pending"];
+			if (/(fail|error|declin|cancel|reject)/.test(s)) return ["fail", status];
+			return ["neutral", status || "—"];
+		}
+
+		async function loadTransactions() {
+			const list = document.getElementById("transactions-list");
+			const count = document.getElementById("txn-count");
+			try {
+				const res = await fetchProtected("/api/payments/transactions/");
+				if (!res.ok) { list.innerHTML = ""; return; }
+				const txns = await res.json();
+
+				if (!txns.length) {
+					list.innerHTML =
+						'<div class="wallet-empty">' +
+							'<div class="wallet-empty__icon"><i class="icon-material-outline-account-balance-wallet"></i></div>' +
+							'<h5>No transactions yet</h5>' +
+							'<p>Your earnings and fees will show up here once you get paid for a job.</p>' +
+						'</div>';
+					return;
+				}
+
+				count.textContent = txns.length + (txns.length === 1 ? " entry" : " entries");
+				count.hidden = false;
+
+				const labels = { CREDIT: "Payment received", DEBIT: "Withdrawal", FEE: "Platform fee", WITHDRAWAL: "Withdrawal" };
+
+				list.innerHTML = txns.map(t => {
+					const out = isOutflow(t.type);
+					const when = t.created_at ? new Date(t.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "";
+					const [pillClass, pillText] = pillFor(t.status);
+					const label = labels[t.type] || (t.type || "Transaction");
+					const ref = t.reference ? `<span>${t.reference}</span>` : "";
+					const icon = out ? "icon-feather-arrow-up-right" : "icon-feather-arrow-down-left";
+					const sign = out ? "−" : "+";
+
+					return (
+						'<div class="wallet-row">' +
+							`<span class="wallet-row__icon wallet-row__icon--${out ? "out" : "in"}"><i class="${icon}"></i></span>` +
+							'<span>' +
+								`<div class="wallet-row__label">${label}</div>` +
+								`<div class="wallet-row__meta"><span class="wallet-pill wallet-pill--${pillClass}">${pillText}</span>${ref}</div>` +
+							'</span>' +
+							'<span>' +
+								`<div class="wallet-row__amt wallet-row__amt--${out ? "out" : "in"} num">${sign}₦${fmtAmount(t.amount)}</div>` +
+								`<div class="wallet-row__date">${when}</div>` +
+							'</span>' +
+						'</div>'
+					);
+				}).join("");
+			} catch (err) {
+				console.error("Failed to load transactions:", err);
+				list.innerHTML = "";
+			}
+		}
+
+		document.addEventListener("DOMContentLoaded", () => {
+			loadWallet();
+			loadTransactions();
+
+			document.getElementById("withdraw-btn").addEventListener("click", openWithdrawModal);
+			document.getElementById("addbank-btn").addEventListener("click", openWithdrawModal);
+			document.getElementById("wd-close").addEventListener("click", (e) => { e.preventDefault(); closeWithdrawModal(); });
+			document.getElementById("wd-overlay").addEventListener("click", (e) => { if (e.target.id === "wd-overlay") closeWithdrawModal(); });
+			document.getElementById("wd-submit").addEventListener("click", submitWithdrawal);
+		});
+
+		function openWithdrawModal() {
+			if (AVAILABLE <= 0) {
+				showToast("You have no available balance to withdraw yet.");
+				return;
+			}
+			document.getElementById("wd-available").textContent = fmtAmount(AVAILABLE);
+			document.getElementById("wd-amount").value = "";
+			document.getElementById("wd-account-name").value = "";
+			document.getElementById("wd-account-number").value = "";
+			document.getElementById("wd-bank-name").value = "";
+			document.getElementById("wd-overlay").classList.add("active");
+		}
+		function closeWithdrawModal() {
+			document.getElementById("wd-overlay").classList.remove("active");
+		}
+
+		async function submitWithdrawal() {
+			const amount = document.getElementById("wd-amount").value;
+			const account_name = document.getElementById("wd-account-name").value.trim();
+			const account_number = document.getElementById("wd-account-number").value.trim();
+			const bank_name = document.getElementById("wd-bank-name").value.trim();
+
+			if (!amount || Number(amount) <= 0 || !account_name || !account_number || !bank_name) {
+				showToast("Fill in the amount and all bank details.");
+				return;
+			}
+			if (Number(amount) > AVAILABLE) {
+				showToast("Amount exceeds your available balance.");
+				return;
+			}
+
+			const btn = document.getElementById("wd-submit");
+			btn.disabled = true;
+			try {
+				const res = await fetchProtected("/api/payments/withdrawals/", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ amount, account_name, account_number, bank_name }),
+				});
+				const data = await res.json().catch(() => ({}));
+				btn.disabled = false;
+				if (!res.ok) {
+					showToast(data.error || "Could not request withdrawal.");
+					return;
+				}
+				closeWithdrawModal();
+				showToast("Withdrawal requested. Our team will process it shortly.");
+				loadWallet();
+				loadTransactions();
+			} catch (e) {
+				btn.disabled = false;
+				console.error("Withdrawal error:", e);
+				showToast("Error requesting withdrawal.");
+			}
+		}
+	</script>
+
+</body>
+
+</html>

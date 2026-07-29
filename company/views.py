@@ -10,9 +10,13 @@ from .models import Company
 # Create your views here.
 
 class CreateCompanyAPIView(APIView):
-    permission_classes = [AllowAny]
     parser_classes = [MultiPartParser, FormParser]
 
+    def get_permissions(self):
+        # Creating a company requires a logged-in user; viewing stays public.
+        if self.request.method == 'POST':
+            return [IsAuthenticated()]
+        return [AllowAny()]
 
     def post(self, request):
         if Company.objects.filter(created_by=request.user).exists():

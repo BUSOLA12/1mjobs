@@ -1,3 +1,74 @@
+/* Hide Bootstrap 5 duplicate caret on language switcher */
+.language-switcher.bootstrap-select .dropdown-toggle::after {
+    display: none !important;
+}
+
+/* Footer Logo & Layout */
+.footer-rows-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    height: auto !important;
+    padding: 20px 0 !important;
+}
+
+.footer-rows-left {
+    position: static !important;
+    top: auto !important;
+    transform: none !important;
+    float: none !important;
+}
+
+.footer-rows-right {
+    position: static !important;
+    top: auto !important;
+    transform: none !important;
+    float: none !important;
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.footer-rows-left .footer-row {
+    height: auto !important;
+    float: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+.footer-rows-right .footer-row {
+    height: auto !important;
+    float: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border: none !important;
+    padding: 0 20px !important;
+}
+
+.footer-row-inner {
+    position: static !important;
+    top: auto !important;
+    transform: none !important;
+}
+
+.footer-row-inner.footer-logo {
+    position: static !important;
+    top: auto !important;
+    transform: none !important;
+    height: auto !important;
+}
+
+.footer-row-inner.footer-logo img,
+.footer-top-section .footer-logo img {
+    height: 160px !important;
+    width: auto !important;
+    max-width: 320px !important;
+    display: block !important;
+    margin: 0 !important;
+}
+
 /* Page Error Container */
 .page-error-container {
     position: fixed;
@@ -126,3 +197,250 @@
     border-bottom: #f3f3f3 4px solid;
     font-size: larger;
 }
+
+/* Empty State — boxed list sections (Work History, Employment History) */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: left;
+}
+
+.empty-state-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #f0f3ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    color: #2a41e8;
+}
+
+.empty-state-icon svg {
+    width: 30px;
+    height: 30px;
+    stroke: #2a41e8;
+}
+
+.empty-state h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 8px;
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: #888;
+    margin: 0 0 18px;
+    max-width: 280px;
+    line-height: 1.5;
+}
+
+.empty-state .button {
+    font-size: 13px;
+    padding: 8px 20px;
+    height: auto;
+    line-height: 1.4;
+}
+
+/* About Me empty state */
+.about-empty-state {
+    background: #f9f9f9;
+    border: 2px dashed #e0e0e0;
+    border-radius: 6px;
+    padding: 36px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.about-empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #eef0fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+}
+
+.about-empty-state-icon svg {
+    width: 30px;
+    height: 30px;
+    stroke: #2a41e8;
+}
+
+.about-empty-state h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #555;
+    margin: 0 0 6px;
+}
+
+.about-empty-state p {
+    font-size: 13px;
+    color: #999;
+    margin: 0 0 16px;
+}
+
+/* Sidebar empty states (Skills, Attachments) */
+.sidebar-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 6px;
+    text-align: center;
+}
+
+.sidebar-empty-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #f0f3ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.sidebar-empty-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: #2a41e8;
+}
+
+.sidebar-empty-state span {
+    font-size: 13px;
+    color: #aaa;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sidebar-empty-state a {
+    font-size: 12px;
+    color: #2a41e8;
+}
+
+/* Profile banner avatar empty state */
+.profile-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-right: 35px;
+    flex-shrink: 0;
+}
+
+.profile-avatar-wrapper .header-image.freelancer-avatar {
+    margin-right: 0;
+}
+
+.profile-avatar-wrapper.avatar-empty .header-image.freelancer-avatar {
+    border: 3px dashed rgba(255, 255, 255, 0.5);
+    opacity: 0.75;
+}
+
+.avatar-edit-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #2a41e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.avatar-edit-badge:hover {
+    background: #1a31d8;
+}
+
+.avatar-edit-badge svg {
+    stroke: #fff;
+    width: 14px;
+    height: 14px;
+}
+
+/* Profile banner name empty state */
+.name-placeholder {
+    color: rgba(255, 255, 255, 0.55);
+    font-style: italic;
+    font-weight: 400;
+}
+
+.single-page-header .header-details h3 .name-placeholder {
+    color: rgba(51, 51, 51, 0.45);
+}
+
+.name-edit-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(42, 65, 232, 0.1);
+    margin-left: 8px;
+    vertical-align: middle;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.name-edit-link:hover {
+    background: rgba(42, 65, 232, 0.2);
+}
+
+.name-edit-link svg {
+    stroke: #2a41e8;
+    width: 13px;
+    height: 13px;
+}
+
+/* Pro subscriber badge (freelancer directory, job cards, employer badge) */
+.pro-badge {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 6px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: linear-gradient(135deg, #f0a020, #e6820f);
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Featured job ribbon on listing cards */
+.featured-ribbon {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: #2a41e8;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Pro-only upgrade prompt shown in place of a gated panel */
+.pro-upgrade-cta {
+    text-align: center;
+    padding: 28px 20px;
+    border: 1px dashed #d0d0d0;
+    border-radius: 8px;
+    color: #666;
+}
+.pro-upgrade-cta .pro-badge { margin: 0 0 10px; }

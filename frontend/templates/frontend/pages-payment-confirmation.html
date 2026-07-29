@@ -1,0 +1,77 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+
+<!-- Basic Page Needs
+================================================== -->
+<title>1mjobs</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<!-- CSS
+================================================== -->
+{% include 'frontend/partials/css_links.html' %}
+<script src="{% static 'js/protectpage.js' %}"></script>
+
+</head>
+<body style="display:none" id="mainBody">
+
+<!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header Container
+================================================== -->
+{% include 'frontend/partials/headers.html' %}
+<!-- Header Container / End -->
+
+
+<!-- Content
+================================================== -->
+<div id="titlebar" class="gradient"> </div>
+
+<!-- Container -->
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">
+
+			<div class="order-confirmation-page" style="display: none;">
+				<div class="breathing-icon"><i class="icon-feather-check"></i></div>
+				<h2 class="margin-top-30">Payment secured in escrow</h2>
+				<p>The funds are now held safely. Release them from your dashboard once the work is completed.</p>
+				<a href="/dashboard/" class="button ripple-effect margin-top-30" style="display:inline-block;white-space:nowrap;">Go to Dashboard <i class="icon-material-outline-arrow-right-alt"></i></a>
+			</div>
+
+		</div>
+	</div>
+</div>
+<!-- Container / End -->
+
+
+<!-- Footer
+================================================== -->
+{% include 'frontend/partials/footer.html' %}
+<!-- Footer / End -->
+
+</div>
+<!-- Wrapper / End -->
+
+<div class="loading-overlay active" id="loadingOverlay">
+    <div class="loading-popup">
+        <div class="loading-spinner"></div>
+        <h3>Confirming payment</h3>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+
+<!-- Scripts
+================================================== -->
+{% include 'frontend/partials/scripts.html' %}
+<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
+<script src="{% static 'js/for/pages-payment-confirmation.js' %}"></script>
+
+
+</body>
+</html>

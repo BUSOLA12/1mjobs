@@ -176,7 +176,7 @@
   }
 
   // Render a single card using the HTML structure you provided
-  function renderProfiles(profiles = []) {
+  async function renderProfiles(profiles = []) {
     container.innerHTML = ""; // clear
 
     if (!profiles.length) {
@@ -189,16 +189,21 @@
       card.className = "freelancer";
 
       // Map API fields to UI fields with safe fallbacks
-      const name = profile.full_name || profile.name || (profile.user && (profile.user.first_name || profile.user.username)) || "Unknown";
-      const title = profile.tagline || profile.skill || profile.role || "N/A";
-      const avatar = profile.avatar || profile.avatar_url || "images/user-avatar-placeholder.png";
+      const name = profile.full_name || profile.name || (profile.user && (profile.user.first_name || profile.user.username)) || "Unnamed freelancer";
+      const title = profile.tagline || profile.skill || profile.role || "";
+      const PLACEHOLDER_AVATAR = "/static/images/user-avatar-placeholder.png";
+      const avatar = profile.avatar || profile.avatar_url || PLACEHOLDER_AVATAR;
       const isVerified = profile.verified || profile.is_verified || false;
-      const rating = (profile.rating !== undefined && profile.rating !== null) ? profile.rating : null;
-      const location = profile.nationality || (profile.user && profile.user.location) || "N/A";
-      const rate = profile.hourly_rate !== undefined && profile.hourly_rate !== null ? profile.hourly_rate : null;
-      const jobSuccess = profile.job_success !== undefined && profile.job_success !== null ? profile.job_success : null;
-      const countryCode = profile.country_code || (profile.country && profile.country.toLowerCase && profile.country.toLowerCase()) || null;
-      const flagImg = countryCode ? `images/flags/${countryCode.toLowerCase()}.svg` : "";
+      const isPro = profile.is_pro || false;
+      const rating = (profile.rating !== undefined && profile.rating !== null) ? parseFloat(profile.rating) : null;
+      const location = profile.nationality || (profile.user && profile.user.location) || null;
+      const rateNum = parseFloat(profile.hourly_rate);
+      const rate = (!isNaN(rateNum) && rateNum > 0) ? rateNum : null;
+      const jsNum = parseFloat(profile.job_success);
+      const jobSuccess = (!isNaN(jsNum) && jsNum > 0) ? jsNum : null;
+      const empty = '<span style="color:#b0b0b0;font-weight:400;">Not provided</span>';
+      const countryName = profile.nationality || profile.country || (profile.user && profile.user.location) || null;
+      const flagImg = countryName && typeof getFlagUrl === "function" ? getFlagUrl(countryName) : null;
 
       card.innerHTML = `
         <div class="freelancer-overview">
@@ -206,19 +211,20 @@
             <span class="bookmark-icon" data-userprofile-id="${profile.id}"></span>
             <div class="freelancer-avatar">
               ${isVerified ? '<div class="verified-badge"></div>' : ''}
-              <a href="/freelancer-profile/${profile.id}"><img src="${avatar}" alt=""></a>
+              <a href="/freelancer-profile/${profile.id}"><img src="${avatar}" alt="" onerror="this.onerror=null;this.src='${PLACEHOLDER_AVATAR}';"></a>
             </div>
             <div class="freelancer-name">
               <h4>
                 <a href="/freelancer-profile/${profile.id}">
                   ${escapeHtml(name)}
-                  ${flagImg ? `<img class="flag" src="${flagImg}" alt="${countryCode}" title="${countryCode.toUpperCase()}" data-tippy-placement="top">` : ''}
+                  ${isPro ? '<span class="pro-badge" title="Pro member">PRO</span>' : ''}
+                  ${flagImg ? `<img class="flag" src="${flagImg}" alt="${countryName}" title="${countryName}" data-tippy-placement="top" onerror="this.style.display='none'">` : ''}
                 </a>
               </h4>
-              <span>${escapeHtml(title)}</span>
+              <span>${title ? escapeHtml(title) : '<span style="color:#b0b0b0;">No tagline yet</span>'}</span>
             </div>
             <div class="freelancer-rating">
-              ${rating>0 ? `<div class="star-rating" data-rating="${rating}"></div>` : `<span class="company-not-rated margin-bottom-5">Minimum of 3 votes required</span>`}
+              ${rating>0 ? `<div class="star-rating" data-rating="${rating}"></div>` : `<span class="company-not-rated margin-bottom-5">No ratings yet</span>`}
             </div>
           </div>
         </div>
@@ -226,9 +232,9 @@
         <div class="freelancer-details">
           <div class="freelancer-details-list">
             <ul>
-              <li>Location <strong><i class="icon-material-outline-location-on"></i> ${escapeHtml(location)}</strong></li>
-              <li>Rate <strong>${rate ? `$${escapeHtml(String(rate))} / hr` : "N/A"}</strong></li>
-              <li>Job Success <strong>${jobSuccess ? `${escapeHtml(String(jobSuccess))}%` : "N/A"}</strong></li>
+              <li>Location <strong>${location ? `<i class="icon-material-outline-location-on"></i> ${escapeHtml(location)}` : empty}</strong></li>
+              <li>Rate <strong>${rate ? `₦${escapeHtml(String(rate))} / hr` : empty}</strong></li>
+              <li>Job Success <strong>${jobSuccess ? `${escapeHtml(String(jobSuccess))}%` : empty}</strong></li>
             </ul>
           </div>
           <a href="/freelancer-profile/${profile.id}" class="button button-sliding-icon ripple-effect">View Profile <i class="icon-material-outline-arrow-right-alt"></i></a>
@@ -242,16 +248,16 @@
 
       disableButton(bookmarkIcon, "", profile.id);
 
-      bookmarkIcon.addEventListener("click", (e) => {
+      bookmarkIcon.addEventListener("click", async (e) => {
         const el = e.currentTarget;
+        if (!await requireLogin()) return;
 
-        if (el.classList.contains("bookmarked")) {
-          bookmarkHandling("delete", "userprofile", el);
-          el.classList.remove("bookmarked");
-        } else {
-          bookmarkHandling("create", "userprofile", el);
-          el.classList.add("bookmarked");
-        }
+        const isBookmarked = el.classList.contains("bookmarked");
+        el.style.pointerEvents = "none";
+        const ok = await bookmarkHandling(isBookmarked ? "delete" : "create", "userprofile", el);
+        el.style.pointerEvents = "";
+
+        if (ok) el.classList.toggle("bookmarked", !isBookmarked);
       });
     });
 
@@ -260,6 +266,16 @@
     $('.star-rating').empty();
     starRating('.star-rating');
 
+    // Cards are on screen; now mark which freelancers are already bookmarked
+    // (runs after render so it never blocks or flashes an empty grid).
+    const bookmarkMap = await getBookmarkedProfileMap();
+    Object.keys(bookmarkMap).forEach(profileId => {
+      const icon = container.querySelector(`.bookmark-icon[data-userprofile-id="${profileId}"]`);
+      if (icon) {
+        icon.classList.add("bookmarked");
+        icon.setAttribute("data-bookmark-id", bookmarkMap[profileId]);
+      }
+    });
   }
 
   

@@ -112,7 +112,7 @@ class Subscription(models.Model):
 
 
     def __str__(self):
-        return f"{self.user.username} - {self.plan.name}"
+        return f"{self.user.email} - {self.plan.name}"
 
 
 class Transaction(models.Model):

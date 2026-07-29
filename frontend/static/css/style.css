@@ -575,6 +575,10 @@ button.mark-as-read:hover {
 .header-notifications-content {
 	display: block;
 	width: 100%;
+	/* SimpleBar's [data-simplebar] inherits its max-height from this parent
+	   (.header-notifications-scroll uses `max-height: inherit`), so the cap that
+	   makes the dropdown scroll must live here. */
+	max-height: 300px;
 }
 
 .header-notifications-scroll {
@@ -770,6 +774,10 @@ a.header-notifications-button i {
 .status-icon.status-offline,
 .status-offline:after { background-color: #c0c0c0; }
 
+/* Invisible */
+.status-icon.status-invisible,
+.status-invisible:after { background-color: #1a1a1a; }
+
 /* Avatar */
 .user-avatar {
 	display: inline-block;
@@ -781,6 +789,8 @@ a.header-notifications-button i {
 
 .user-avatar img {
 	width: 100%;
+	height: 100%;
+	object-fit: cover;
 	display: inline-block;
 	border-radius: 50%;
 	image-rendering: -webkit-optimize-contrast;
@@ -2196,11 +2206,11 @@ em.mm-counter+a.mm-fullsubopen+span {
 	border-bottom: 1px solid #484848;
 }
 
-.footer-top-section .footer-logo img { max-height: 46px; }
+.footer-top-section .footer-logo img { height: 90px; }
 
-.footer-rows-container { 
+.footer-rows-container {
 	display: block;
-	height: 96px;
+	height: 130px;
 	position: relative;
 	z-index: 100;
 }
@@ -2222,16 +2232,18 @@ em.mm-counter+a.mm-fullsubopen+span {
 
 .footer-row-inner.footer-logo {
 	position: relative;
-	top: auto;
-	transform: translateY(0);
 	top: 50%;
-	position: relative;
-	height: 46px;
+	transform: translateY(-50%);
+	height: 90px;
  }
 
 .footer-row-inner.footer-logo img {
-	position: relative;
-	top: 50%;
+	display: block;
+	height: 90px;
+	width: auto;
+	max-width: 200px;
+	top: 0;
+	margin: 0 auto;
  }
 
 .footer-row:first-child { padding-left: 0; border-left: none; }
@@ -2498,7 +2510,7 @@ em.mm-counter+a.mm-fullsubopen+span {
 	    height: auto;
 	}
 
-	.footer-row-inner.footer-logo img { top: 0; }
+	.footer-row-inner.footer-logo img { top: 0; height: 70px; width: auto; max-width: 180px; }
 
 	.footer-row-inner {
 	    position: relative;
@@ -2509,7 +2521,7 @@ em.mm-counter+a.mm-fullsubopen+span {
 	.footer-row-inner.footer-logo {
 	    top: 0;
 	    position: relative;
-	    height: 46px;
+	    height: 70px;
 	}
 
 	#footer .footer-row {
@@ -4057,7 +4069,6 @@ span.blog-item-tag {
 
 /* Small Footer */
 .small-footer {
-	border-top: 1px solid #e0e0e0;
 	padding-top: 0px;
 	width: calc(100% + 80px);
 	left: -40px;
@@ -4531,6 +4542,22 @@ span.blog-item-tag {
 .job-listing .job-listing-company-logo img {
 	border-radius: 4px;
 	transform: translate3d(0,0,0);
+}
+
+.job-listing .job-listing-company-logo-placeholder {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	border-radius: 4px;
+	background-color: #f0f3fb;
+	color: #a0a8bf;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.job-listing .job-listing-company-logo-placeholder i {
+	font-size: 28px;
+	line-height: 1;
 }
 
 .job-listing .job-listing-description {
@@ -5226,6 +5253,28 @@ span.blog-item-tag {
 	position: absolute;
 	bottom: 0;
 	right: 0;
+}
+
+/* Online presence indicator (avatar dot).
+   .freelancer-overview .freelancer-avatar is already position:relative above. */
+.online-indicator {
+	position: absolute;
+	bottom: 2px;
+	right: 2px;
+	height: 14px;
+	width: 14px;
+	border-radius: 50%;
+	border: 2px solid #fff;
+	box-sizing: border-box;
+	z-index: 10;
+}
+
+.online-indicator.online {
+	background-color: #38b653;
+}
+
+.online-indicator.offline {
+	background-color: #b4b7bd;
 }
 
 .freelancer-name {
@@ -8167,6 +8216,14 @@ input:checked + .switch-button:before {
 	display: flex;
 }
 
+/* Only one plan available: keep the card its normal (~one-third) width and
+   centre it instead of stretching across the whole row. */
+.pricing-plans-container.single-plan {
+	max-width: 420px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .pricing-plan {
 	flex: 1;
 	padding: 35px 17px;
@@ -10866,6 +10923,7 @@ img.mfp-img {
 /* Social Login Buttons */
 .social-login-buttons {
 	display: flex;
+	justify-content: center;
 	width: calc(100% + 20px)
 }
 
@@ -10879,7 +10937,7 @@ img.mfp-img {
 	margin-right: 20px;
 	font-size: 14px;
 	padding: 9px 5px;
-	max-width: 50%;
+	max-width: 100%;
 	transition: 0.3s;
 }
 
@@ -15572,6 +15630,11 @@ ul.dashboard-box-list > li:hover {
 	position: absolute;
 }
 
+/* Suppress Bootstrap 5 auto-caret on bootstrap-select buttons (it adds its own .caret span) */
+.bootstrap-select .dropdown-toggle::after {
+    display: none !important;
+}
+
 /* Small Footer Styles
 ------------------------------------- */
 .dashboard-content-inner .small-footer {
@@ -15580,6 +15643,7 @@ ul.dashboard-box-list > li:hover {
     padding: 25px 50px;
     position: absolute;
     bottom: 0;
+    border-top: none;
 }
 
 .dashboard-footer-spacer {
@@ -15794,7 +15858,7 @@ ul.dashboard-box-list > li:hover {
 
 
 /* Scrollbar Adjustments */
-.messages-inbox ul { max-height: 875px; }
+.messages-inbox ul { max-height: 750px; overflow-y: auto; overflow-x: hidden; }
 .message-content-inner { max-height: 750px; }
 
 .message-content,
@@ -15915,6 +15979,11 @@ ul.dashboard-box-list > li:hover {
 	content: "";
 	opacity: 0;
 	transition: 0.3s;
+	/* Sit above the rounded card so the accent shows as a full side stripe
+	   instead of only peeking out at the card's rounded corners. */
+	z-index: 2;
+	border-top-left-radius: 12px;
+	border-bottom-left-radius: 12px;
 }
 
 .messages-inbox ul li:hover:before,
