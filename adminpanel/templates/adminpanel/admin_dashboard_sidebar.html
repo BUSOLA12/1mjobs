@@ -1,3 +1,4 @@
+{% with url_name=request.resolver_match.url_name %}
 <div class="dashboard-nav-container">
 
 				<!-- Responsive Navigation Trigger -->
@@ -9,73 +10,78 @@
 					</span>
 					<span class="trigger-title">Dashboard Navigation</span>
 				</a>
-				
+
 				<!-- Navigation -->
 				<div class="dashboard-nav">
 					<div class="dashboard-nav-inner">
 
 						<ul data-submenu-title="Start">
-							<li class="active"><a href="{% url 'admin-dashboard' %}"><i class="icon-material-outline-dashboard"></i> Dashboard</a></li>
-							<li><a href="{% url 'admin-action-logs' %}"><i class="icon-material-outline-question-answer"></i> Admin Action Logs</a></li>
-							
+							<li{% if url_name == 'admin-dashboard' %} class="active"{% endif %}><a href="{% url 'admin-dashboard' %}"><i class="icon-material-outline-dashboard"></i> Dashboard</a></li>
+							<li{% if url_name == 'admin-action-logs' %} class="active"{% endif %}><a href="{% url 'admin-action-logs' %}"><i class="icon-material-outline-question-answer"></i> Admin Action Logs</a></li>
+
 						</ul>
-						
+
 						<ul data-submenu-title="Organize and Manage">
-                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> User Management</a>
+                            <li{% if url_name == 'admin_user_list' or url_name == 'admin_user_detail' or url_name == 'user-edit' or url_name == 'admin_kyc_list' or url_name == 'admin_kyc_detail' or url_name == 'admin_appeal_list' or url_name == 'admin_appeal_detail' or url_name == 'user-action-logs' or url_name == 'admin_admin_list' %} class="active"{% endif %}><a href="#"><i class="icon-material-outline-business-center"></i> User Management</a>
 								<ul>
-									{% comment %} <li><a href="{% url 'dashboard_manage_jobs' %}">Manage Jobs <span class="nav-tag"></span></a></li> {% endcomment %}
-									<li><a href="{% url 'admin_user_list' %}"><i class="icon-material-outline-group"></i> Users</a></li>
+									<li{% if url_name == 'admin_user_list' %} class="active"{% endif %}><a href="{% url 'admin_user_list' %}"><i class="icon-material-outline-group"></i> Users</a></li>
 
-									<li><a href="{% url 'admin_kyc_list' %}"><i class="icon-material-outline-fingerprint"></i> Identity Verification (KYC)</a></li>
+									{% if request.user.is_superuser %}
+									<li{% if url_name == 'admin_admin_list' %} class="active"{% endif %}><a href="{% url 'admin_admin_list' %}"><i class="icon-material-outline-supervisor-account"></i> Admins</a></li>
+									{% endif %}
 
-									<li><a href="{% url 'admin_appeal_list' %}"><i class="icon-material-outline-gavel"></i> Account Appeals</a></li>
+									<li{% if url_name == 'admin_kyc_list' %} class="active"{% endif %}><a href="{% url 'admin_kyc_list' %}"><i class="icon-material-outline-fingerprint"></i> Identity Verification (KYC)</a></li>
 
-									<li><a href="{% url 'user-action-logs' %}"><i class="icon-material-outline-history"></i> User Activity</a></li>
+									<li{% if url_name == 'admin_appeal_list' %} class="active"{% endif %}><a href="{% url 'admin_appeal_list' %}"><i class="icon-material-outline-gavel"></i> Account Appeals</a></li>
+
+									<li{% if url_name == 'user-action-logs' %} class="active"{% endif %}><a href="{% url 'user-action-logs' %}"><i class="icon-material-outline-history"></i> User Activity</a></li>
 								</ul>
 							</li>
-                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Pricing Management</a>
+                            <li{% if url_name == 'admin-pricing-list' or url_name == 'admin-pricing-create' or url_name == 'admin-pricing-detail' or url_name == 'admin-pricing-edit' or url_name == 'admin-feature-add' or url_name == 'admin-feature-edit' %} class="active"{% endif %}><a href="#"><i class="icon-material-outline-business-center"></i> Pricing Management</a>
 								<ul>
-									<li><a href="{% url 'admin-pricing-list' %}"><i class="icon-material-outline-local-offer"></i> Plans</a></li>
-									<li><a href="{% url 'admin-pricing-create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create a Plan</a></li>
-								</ul>	
-							</li>
-                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Order and Subscription</a>
-								<ul>
-									<li><a href="{% url 'admin_order_list' %}"><i class="icon-material-outline-shopping-cart"></i> Orders</a></li>
-									<li><a href="{% url 'admin_subscription_list' %}"><i class="icon-material-outline-autorenew"></i> Subscriptions</a></li>
-									<li><a href="{% url 'admin_transaction_list' %}"><i class="icon-material-outline-account-balance-wallet"></i> Transactions</a></li>
-									<li><a href="{% url 'admin_withdrawal_list' %}"><i class="icon-material-outline-payment"></i> Withdrawals</a></li>
-									<li><a href="{% url 'admin_dispute_list' %}"><i class="icon-material-outline-gavel"></i> Disputes</a></li>
-									<li><a href="{% url 'admin_termination_list' %}"><i class="icon-material-outline-cancel"></i> Terminations</a></li>
+									<li{% if url_name == 'admin-pricing-list' %} class="active"{% endif %}><a href="{% url 'admin-pricing-list' %}"><i class="icon-material-outline-local-offer"></i> Plans</a></li>
+									<li{% if url_name == 'admin-pricing-create' %} class="active"{% endif %}><a href="{% url 'admin-pricing-create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create a Plan</a></li>
 								</ul>
 							</li>
-                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Jobs and Tasks</a>
+                            <li{% if url_name == 'admin_order_list' or url_name == 'admin_order_detail' or url_name == 'admin_subscription_list' or url_name == 'admin_subscription_detail' or url_name == 'admin_transaction_list' or url_name == 'admin_transaction_detail' or url_name == 'admin_withdrawal_list' or url_name == 'admin_withdrawal_detail' or url_name == 'admin_dispute_list' or url_name == 'admin_dispute_detail' or url_name == 'admin_termination_list' or url_name == 'admin_termination_detail' %} class="active"{% endif %}><a href="#"><i class="icon-material-outline-business-center"></i> Order and Subscription</a>
 								<ul>
-									<li><a href="{% url 'admin_job_list' %}"><i class="icon-material-outline-assignment"></i> Jobs</a></li>
-									<li><a href="{% url 'admin_task_list' %}"><i class="icon-material-outline-check-circle"></i> Tasks</a></li>
+									<li{% if url_name == 'admin_order_list' %} class="active"{% endif %}><a href="{% url 'admin_order_list' %}"><i class="icon-material-outline-shopping-cart"></i> Orders</a></li>
+									<li{% if url_name == 'admin_subscription_list' %} class="active"{% endif %}><a href="{% url 'admin_subscription_list' %}"><i class="icon-material-outline-autorenew"></i> Subscriptions</a></li>
+									<li{% if url_name == 'admin_transaction_list' %} class="active"{% endif %}><a href="{% url 'admin_transaction_list' %}"><i class="icon-material-outline-account-balance-wallet"></i> Transactions</a></li>
+									<li{% if url_name == 'admin_withdrawal_list' %} class="active"{% endif %}><a href="{% url 'admin_withdrawal_list' %}"><i class="icon-material-outline-local-atm"></i> Withdrawals</a></li>
+									<li{% if url_name == 'admin_dispute_list' %} class="active"{% endif %}><a href="{% url 'admin_dispute_list' %}"><i class="icon-material-outline-gavel"></i> Disputes</a></li>
+									<li{% if url_name == 'admin_termination_list' %} class="active"{% endif %}><a href="{% url 'admin_termination_list' %}"><i class="icon-material-outline-highlight-off"></i> Terminations</a></li>
 								</ul>
 							</li>
-                            <li><a href="#" id="jobs-id"><i class="icon-material-outline-business-center"></i> Company Management</a>
+                            <li style="margin-top: 12px;"{% if url_name == 'admin_job_list' or url_name == 'admin_job_detail' or url_name == 'admin_job_applications' or url_name == 'admin_job_application_detail' or url_name == 'admin_task_list' or url_name == 'admin_task_detail' or url_name == 'admin_task_bidding_list' or url_name == 'admin_job_category_list' %} class="active"{% endif %}><a href="#"><i class="icon-material-outline-business-center"></i> Jobs and Tasks</a>
 								<ul>
-									<li><a href="{% url 'admin_company_list' %}"><i class="icon-material-outline-business"></i> Companies</a></li>
-									<li><a href="{% url 'admin_company_create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create Company</a></li>
+									<li{% if url_name == 'admin_job_list' %} class="active"{% endif %}><a href="{% url 'admin_job_list' %}"><i class="icon-material-outline-assignment"></i> Jobs</a></li>
+									<li{% if url_name == 'admin_task_list' %} class="active"{% endif %}><a href="{% url 'admin_task_list' %}"><i class="icon-material-outline-check-circle"></i> Tasks</a></li>
+									<li{% if url_name == 'admin_job_category_list' %} class="active"{% endif %}><a href="{% url 'admin_job_category_list' %}"><i class="icon-material-outline-local-offer"></i> Job Categories</a></li>
+								</ul>
+							</li>
+                            <li{% if url_name == 'admin_company_list' or url_name == 'admin_company_create' or url_name == 'admin_company_detail' %} class="active"{% endif %}><a href="#"><i class="icon-material-outline-business-center"></i> Company Management</a>
+								<ul>
+									<li{% if url_name == 'admin_company_list' %} class="active"{% endif %}><a href="{% url 'admin_company_list' %}"><i class="icon-material-outline-business"></i> Companies</a></li>
+									<li{% if url_name == 'admin_company_create' %} class="active"{% endif %}><a href="{% url 'admin_company_create' %}"><i class="icon-material-outline-add-circle-outline"></i> Create Company</a></li>
 								</ul>
 							</li>
 						</ul>
 
 						<ul data-submenu-title="Dev">
-							<li><a href="{% url 'admin_bulk_add' %}"><i class="icon-material-outline-library-add"></i> Bulk Add Jobs &amp; Tasks</a></li>
-							<li><a href="{% url 'admin_bulk_add_freelancers' %}"><i class="icon-material-outline-supervisor-account"></i> Bulk Add Freelancers</a></li>
+							<li{% if url_name == 'admin_bulk_add' %} class="active"{% endif %}><a href="{% url 'admin_bulk_add' %}"><i class="icon-material-outline-library-add"></i> Bulk Add Jobs &amp; Tasks</a></li>
+							<li{% if url_name == 'admin_bulk_add_freelancers' %} class="active"{% endif %}><a href="{% url 'admin_bulk_add_freelancers' %}"><i class="icon-material-outline-supervisor-account"></i> Bulk Add Freelancers</a></li>
 						</ul>
 
 						<ul data-submenu-title="Account">
-							<li><a href="{% url 'admin_contact_message_list' %}"><i class="icon-material-outline-email"></i> Contact Messages</a></li>
-							<li><a href="{% url 'admin_contact_settings' %}"><i class="icon-material-outline-settings"></i> Contact Settings</a></li>
+							<li{% if url_name == 'admin_contact_message_list' or url_name == 'admin_contact_message_detail' %} class="active"{% endif %}><a href="{% url 'admin_contact_message_list' %}"><i class="icon-material-outline-email"></i> Contact Messages</a></li>
+							<li{% if url_name == 'admin_contact_settings' %} class="active"{% endif %}><a href="{% url 'admin_contact_settings' %}"><i class="icon-material-outline-settings"></i> Contact Settings</a></li>
 							<li><a href="/login" onclick="logout()"><i class="icon-material-outline-power-settings-new"></i> Logout</a></li>
 						</ul>
-						
+
 					</div>
 				</div>
 				<!-- Navigation / End -->
 
 			</div>
+{% endwith %}

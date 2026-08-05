@@ -83,17 +83,32 @@ function timeAgo(dateString) {
 }
 
 
+// Shown when the notifications card has nothing to display.
+function renderNotifEmpty() {
+    if (!notificationList) return;
+    notificationList.innerHTML =
+        '<li class="notif-empty">' +
+            '<span class="notif-empty-icon"><i class="icon-feather-bell"></i></span>' +
+            '<span class="notif-empty-text">You\'re all caught up. No new notifications.</span>' +
+        '</li>';
+}
+
 async function renderUnreadNotification() {
     const data = await loadUnreadNotification();
     console.log("Notification Data", data);
-    
-    
+
+
     const userId_ = await fetchUserId();
     console.log("User details 2:", userId_);
     const userId = userId_.id;
-    
+
     // Clear old notifications to avoid duplicates
     notificationList.innerHTML = '';
+
+    if (!Array.isArray(data) || data.length === 0) {
+        renderNotifEmpty();
+        return;
+    }
 
     for (const n of data) {
         
@@ -156,7 +171,11 @@ markAllNotificationReadBtn.addEventListener('click', async function (e) {
             document.querySelectorAll(".notifications-not-read").forEach(li => {
                 li.remove();
             });
-            alert("All notifications marked as read.");
+            renderNotifEmpty();
+            if (window.Snackbar) Snackbar.show({
+                text: "All notifications marked as read.", pos: "bottom-center",
+                showAction: false, duration: 2500, backgroundColor: "#38b653", textColor: "#fff"
+            });
     } catch (error) {
         console.error("Error marking all as read:", error);
         alert("Error marking all as read:" + error.message);

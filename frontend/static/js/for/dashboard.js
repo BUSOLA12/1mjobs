@@ -116,14 +116,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 	console.log("User's first name:", firstName);
 	document.getElementById('dashboard-greet').textContent = `Howdy${userInfo.firstName !== ' ' ? (', ' + firstName) : ''}!`;
 
-	setTimeout(() => {
-        confirmUserProfileCompletion();
-
-        setInterval(() => {
-            if(incomplete) {
-                confirmUserProfileCompletion();
-            }
-        }, 40000);
-    }, 5000);
+	// "Complete Your Profile" popup removed per request — it recurred every 40s.
+	// (confirmUserProfileCompletion / showOverAllPopup are left defined for the
+	// pricing / login popups that reuse them.)
 
 });

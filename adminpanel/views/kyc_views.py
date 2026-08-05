@@ -58,7 +58,7 @@ def admin_kyc_approve(request, pk):
         send_mail(
             "Your identity is verified",
             "Hello,\n\nYour identity has been verified and the verified badge now appears "
-            "on your profile.\n\nThank you,\nOne Million Jobs",
+            "on your profile.\n\nThank you,\nOpportunity Hub",
             settings.DEFAULT_FROM_EMAIL,
             [kyc.user.email],
             fail_silently=True,
@@ -84,7 +84,7 @@ def admin_kyc_reject(request, pk):
             "Your identity verification needs attention",
             f"Hello,\n\nYour identity documents could not be approved.\n\n"
             f"Reason: {reason}\n\nPlease re-upload here:\n{resubmit_url}\n\n"
-            f"Thank you,\nOne Million Jobs",
+            f"Thank you,\nOpportunity Hub",
             settings.DEFAULT_FROM_EMAIL,
             [kyc.user.email],
             fail_silently=True,

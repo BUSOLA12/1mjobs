@@ -2,120 +2,99 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern au-modern alog-modern pd-modern">
 
-<div class="container-fluid">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>{{ plan.name }} Plan</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin-pricing-list' %}">Pricing</a></li>
+        <li>{{ plan.name }}</li>
+      </ul>
+    </nav>
+  </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>{{ plan.name }} Plan</h4>
-
-        <div class="d-flex gap-2">
-            <a href="{% url 'admin-pricing-edit' plan.id %}" class="btn btn-outline-secondary">
-                Edit Plan
-            </a>
-
-            <a href="{% url 'admin-pricing-list' %}" class="btn btn-secondary">
-                Back to List
-            </a>
-        </div>
+  <!-- Overview -->
+  <div class="dashboard-box margin-top-0 pd-overview">
+    <div class="headline">
+      <h3><i class="icon-material-outline-local-offer"></i> Plan Overview</h3>
+      <div class="pd-actions">
+        <a href="{% url 'admin-pricing-edit' plan.id %}" class="au-view">Edit Plan</a>
+        <a href="{% url 'admin-pricing-list' %}" class="pd-back">Back to List</a>
+      </div>
     </div>
+    <div class="content">
+      <div class="pd-grid">
+        <div>
+          <div class="pd-kv"><span class="k">User Type</span><span class="v"><span class="au-pill au-blue">{{ plan.get_user_type_display }}</span></span></div>
+          <div class="pd-kv"><span class="k">Monthly Price</span><span class="v">&#8358;{{ plan.monthly_price }}</span></div>
+          <div class="pd-kv"><span class="k">Yearly Price</span><span class="v">{% if plan.yearly_price %}&#8358;{{ plan.yearly_price }}{% else %}—{% endif %}</span></div>
+        </div>
+        <div>
+          <p class="pd-desc-label">Description</p>
+          <p class="pd-desc">{{ plan.description|default:"No description" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>User Type:</strong> {{ plan.get_user_type_display }}</p>
-                    <p><strong>Monthly Price:</strong> ₦{{ plan.monthly_price }}</p>
-                    <p><strong>Yearly Price:</strong>
-                        {% if plan.yearly_price %}
-                        ₦{{ plan.yearly_price }}
-                        {% else %}
-                        —
-                        {% endif %}
-                    </p>
+  <!-- Features -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-fact-check"></i> Plan Features</h3>
+      <a href="#" class="au-create" data-bs-toggle="modal" data-bs-target="#addFeatureModal"><i class="icon-material-outline-add-circle-outline"></i> Add Feature</a>
+    </div>
+    <div class="content">
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Limit</th>
+              <th>Type</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for feature in plan.features.all %}
+            <tr>
+              <td data-label="Feature"><strong>{{ feature.feature_name }}</strong></td>
+              <td data-label="Limit">
+                {% if feature.is_boolean %}<span class="muted">—</span>
+                {% elif feature.limit %}{{ feature.limit }}
+                {% else %}Unlimited{% endif %}
+              </td>
+              <td data-label="Type">
+                {% if feature.is_boolean %}<span class="au-pill au-blue">Boolean</span>
+                {% else %}<span class="au-pill au-grey">Quota</span>{% endif %}
+              </td>
+              <td data-label="" class="au-action-cell">
+                <div class="au-row-actions">
+                  <button type="button" class="au-edit" data-bs-toggle="modal" data-bs-target="#editFeature{{ feature.id }}">Edit</button>
+                  <button type="button" class="au-del" data-bs-toggle="modal" data-bs-target="#deleteFeature{{ feature.id }}">Delete</button>
                 </div>
-
-                <div class="col-md-6">
-                    <p><strong>Description:</strong></p>
-                    <p class="text-muted">{{ plan.description|default:"No description" }}</p>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="4">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span>
+                  <span class="alog-empty-title">No features yet</span>
+                  <span class="alog-empty-text">Add features to define what this plan includes.</span>
                 </div>
-            </div>
-
-        </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5>Plan Features</h5>
-
-        <a href="#" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addFeatureModal">
-            + Add Feature
-        </a>
-    </div>
-
-    <div class="card">
-        <div class="card-body p-0">
-
-            <table class="table mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Feature</th>
-                        <th>Limit</th>
-                        <th>Type</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for feature in plan.features.all %}
-                    <tr>
-                        <td>{{ feature.feature_name }}</td>
-
-                        <td>
-                            {% if feature.is_boolean %}
-                            —
-                            {% elif feature.limit %}
-                            {{ feature.limit }}
-                            {% else %}
-                            Unlimited
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            {% if feature.is_boolean %}
-                            <span class="badge bg-info">Boolean</span>
-                            {% else %}
-                            <span class="badge bg-secondary">Quota</span>
-                            {% endif %}
-                        </td>
-
-                        <td>
-                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
-                                data-bs-target="#editFeature{{ feature.id }}">
-                                Edit
-                            </button>
-
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
-                                data-bs-target="#deleteFeature{{ feature.id }}">
-                                Delete
-                            </button>
-
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4">
-                            No features added yet.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-
-            </table>
-        </div>
-    </div>
+  </div>
 
 </div>
-
 {% endblock %}
 
 {% block modals %}
@@ -172,7 +151,12 @@
 
                 <div class="modal-body">
 
-                    <input type="text" name="feature_name" class="form-control" value="{{ feature.feature_name }}">
+                    <label class="form-label">Feature</label>
+                    <select name="feature_name" class="form-select">
+                        {% for value, label in feature_choices %}
+                        <option value="{{ value }}" {% if feature.feature_name == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
 
                     <div class="form-check mt-3">
                         {% if feature.is_boolean %}

@@ -434,7 +434,11 @@ async function fetchSimilarJobs(jobId) {
 
     // Get container
     const container = document.getElementById("similar-jobs");
-    container.innerHTML = ""; 
+    if (!Array.isArray(jobs) || jobs.length === 0) {
+      container.innerHTML = `<p>No similar jobs found.</p>`;
+      return;
+    }
+    container.innerHTML = "";
     // Show only first 3 similar jobs
     jobs.slice(0, 3).forEach((job) => {
       console.log("files url:", job.files);

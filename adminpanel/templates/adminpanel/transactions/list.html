@@ -2,70 +2,103 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern alog-modern au-modern">
 
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-3">
-        <input type="text" name="search" class="form-control"
-               placeholder="Search reference or user"
-               value="{{ search }}">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Transactions</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Transactions</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-account-balance-wallet"></i> Transactions</h3>
     </div>
 
-    <div class="col-md-3">
-        <select name="status" class="form-select">
-            <option value="">All Status</option>
-            <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
-            <option value="success" {% if status == "success" %}selected{% endif %}>Success</option>
-            <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
+    <div class="content">
+
+      <!-- Filters -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="search" value="{{ search }}" placeholder="Search reference or user">
+          <i class="icon-material-outline-search"></i>
+        </div>
+        <select name="status">
+          <option value="">All Status</option>
+          <option value="pending" {% if status == "pending" %}selected{% endif %}>Pending</option>
+          <option value="success" {% if status == "success" %}selected{% endif %}>Success</option>
+          <option value="failed" {% if status == "failed" %}selected{% endif %}>Failed</option>
         </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
+
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Reference</th><th>Order</th><th>User</th><th>Amount</th><th>Status</th><th>Date</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tx in page_obj %}
+            <tr>
+              <td data-label="Reference"><strong>{{ tx.reference }}</strong></td>
+              <td data-label="Order">{% if tx.order %}#{{ tx.order.id }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td data-label="User"><span class="muted">{% if tx.order %}{{ tx.order.user.email }}{% else %}—{% endif %}</span></td>
+              <td data-label="Amount">&#8358;{{ tx.amount }}</td>
+              <td data-label="Status">
+                {% if tx.status == 'success' %}<span class="au-pill au-green">Success</span>
+                {% elif tx.status == 'pending' %}<span class="au-pill au-amber">Pending</span>
+                {% else %}<span class="au-pill au-red">{{ tx.status|title }}</span>{% endif %}
+              </td>
+              <td data-label="Date"><span class="alog-date">{{ tx.created_at|date:"M j, Y H:i" }}</span></td>
+              <td data-label="" class="au-action-cell"><a href="{% url 'admin_transaction_detail' tx.id %}" class="au-view">View</a></td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="7">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></span>
+                  <span class="alog-empty-title">{% if search or status %}No matching transactions{% else %}No transactions yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if search or status %}Try a different search or filter.{% else %}Payment transactions will appear here.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in page_obj.paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
     </div>
+  </div>
 
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">Filter</button>
-    </div>
-</form>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Reference</th>
-            <th>Order</th>
-            <th>User</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for tx in page_obj %}
-        <tr>
-            <td>{{ tx.reference }}</td>
-            <td>#{{ tx.order.id }}</td>
-            <td>{{ tx.order.user.email }}</td>
-            <td>{{ tx.amount }}</td>
-            <td>
-                <span class="badge 
-                {% if tx.status == 'success' %}bg-success
-                {% elif tx.status == 'pending' %}bg-warning
-                {% else %}bg-danger{% endif %}">
-                    {{ tx.status|upper }}
-                </span>
-            </td>
-            <td>{{ tx.created_at }}</td>
-            <td>
-                <a href="{% url 'admin_transaction_detail' tx.id %}"
-                   class="btn btn-sm btn-outline-primary">
-                    View
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7">No transactions found</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-{% include "adminpanel/pagination.html" %}
-
-
+</div>
 {% endblock %}

@@ -1740,6 +1740,13 @@ showForRole("freelancer", "my-applications-element");
 // the Billing & Subscription link.
 showForRole("employer", "payments-nav-element");
 showForRole("freelancer", "wallet-nav-element");
+// "My Active Bids" (freelancer) and the employer "Jobs"/"Tasks" dropdowns are part
+// of the shared sidebar too, so toggle them globally rather than relying on each
+// page's inline script (which some pages, e.g. My Profile/Offers/Contracts/Billing,
+// don't include).
+showForRole("freelancer", "my-active-bid-element");
+showForRole("employer", "jobs-id");
+showForRole("employer", "tasks-id");
 
 
 // update user status

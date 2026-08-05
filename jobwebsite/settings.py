@@ -368,9 +368,12 @@ GOOGLE_OAUTH2_CLIENT_SECRET = config('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 
 # Google Maps JavaScript API key (used by the maps/autocomplete widgets)
 GOOGLE_MAPS_API_KEY = config('GOOGLE_MAPS_API_KEY', default='')
-GOOGLE_OAUTH2_REDIRECT_URI = "http://127.0.0.1:8000/api/auth/google/callback/" # for local testing
-# GOOGLE_OAUTH2_REDIRECT_URI = "http://freelancetesting.onemillionjobs.com.ng/api/auth/google/callback/" # for production
-# GOOGLE_OAUTH2_REDIRECT_URI = "https://lichtcode.pythonanywhere.com/api/auth/google/callback/" # for pythonanywhere
+# Env-driven so prod (Fly) and local differ without code changes.
+# Defaults to the current DOMAIN; override in local .env with the 127.0.0.1 value.
+GOOGLE_OAUTH2_REDIRECT_URI = config(
+    'GOOGLE_OAUTH2_REDIRECT_URI',
+    default=f'{FRONTEND_URL}api/auth/google/callback/',
+)
 
 
 # JWT settings

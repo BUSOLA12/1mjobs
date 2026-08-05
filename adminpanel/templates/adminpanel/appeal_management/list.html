@@ -2,82 +2,122 @@
 {% block title %}Account Appeals{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="admin-modern alog-modern au-modern">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Account Appeals</h4>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Account Appeals</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Appeals</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-gavel"></i> Appeals</h3>
     </div>
 
-    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 640px;">
-        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or email">
-        <select name="status" class="form-select" style="max-width: 200px;">
-            <option value="">All statuses</option>
-            <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pending</option>
-            <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
-            <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
-        </select>
-        <button class="btn btn-outline-secondary" type="submit">Filter</button>
-    </form>
+    <div class="content">
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>User</th>
-                            <th>Appealing</th>
-                            <th>Submitted</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for appeal in page_obj %}
-                            <tr>
-                                <td>{{ appeal.id }}</td>
-                                <td>{{ appeal.user.get_full_name|default:appeal.user.email }}<br><small class="text-muted">{{ appeal.user.email }}</small></td>
-                                <td>
-                                    {% if appeal.account_status == 'banned' %}
-                                        <span class="badge bg-dark">Ban</span>
-                                    {% else %}
-                                        <span class="badge bg-warning text-dark">Suspension</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ appeal.created_at|date:"Y-m-d H:i" }}</td>
-                                <td>
-                                    {% if appeal.status == 'approved' %}
-                                        <span class="badge bg-success">Approved</span>
-                                    {% elif appeal.status == 'rejected' %}
-                                        <span class="badge bg-danger">Rejected</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td><a href="{% url 'admin_appeal_detail' appeal.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted py-4">No appeals.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+      <!-- Filter & Search -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="q" value="{{ q }}" placeholder="Search by name or email">
+          <i class="icon-material-outline-search"></i>
         </div>
-    </div>
+        <select name="status">
+          <option value="">All statuses</option>
+          <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
 
-    {% if page_obj.paginator.num_pages > 1 %}
-        <nav class="mt-3">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Previous</a></li>
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>User</th>
+              <th>Appealing</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appeal in page_obj %}
+            <tr>
+              <td data-label="#">{{ appeal.id }}</td>
+              <td data-label="User">
+                <div>{{ appeal.user.get_full_name|default:appeal.user.email }}</div>
+                <span class="muted">{{ appeal.user.email }}</span>
+              </td>
+              <td data-label="Appealing">
+                {% if appeal.account_status == 'banned' %}
+                  <span class="au-pill au-red">Ban</span>
+                {% else %}
+                  <span class="au-pill au-amber">Suspension</span>
                 {% endif %}
-                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-                {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a></li>
+              </td>
+              <td data-label="Submitted"><span class="alog-date">{{ appeal.created_at|date:"M j, Y H:i" }}</span></td>
+              <td data-label="Status">
+                {% if appeal.status == 'approved' %}
+                  <span class="au-pill au-green">Approved</span>
+                {% elif appeal.status == 'rejected' %}
+                  <span class="au-pill au-red">Rejected</span>
+                {% else %}
+                  <span class="au-pill au-amber">Pending</span>
                 {% endif %}
-            </ul>
+              </td>
+              <td data-label="" class="au-action-cell">
+                <a href="{% url 'admin_appeal_detail' appeal.id %}" class="au-view">Review</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="6">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"></path><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg></span>
+                  <span class="alog-empty-title">{% if q or status %}No matching appeals{% else %}No appeals{% endif %}</span>
+                  <span class="alog-empty-text">{% if q or status %}Try a different search or status filter.{% else %}Account appeals will appear here when users submit them.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in page_obj.paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
         </nav>
-    {% endif %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
 </div>
 {% endblock %}

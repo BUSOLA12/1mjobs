@@ -47,6 +47,23 @@ JOB_STATUS = [
     ("rejected", "Rejected"),
 ]
 
+
+class JobCategory(models.Model):
+    """Admin-managed job categories. `Job.category` stores the slug, so seeding
+    this table from JOB_CATEGORIES keeps every existing job valid. The job-post
+    form's dropdown is built from the active rows here."""
+    name = models.CharField(max_length=120, unique=True)
+    slug = models.SlugField(max_length=140, unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Job categories"
+
+    def __str__(self):
+        return self.name
+
 class Job(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='name_job')
     title = models.CharField(max_length=255)

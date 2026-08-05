@@ -2,85 +2,126 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern au-modern alog-modern od-modern">
 
-<div class="card mb-3">
-    <div class="card-header">Subscription Info</div>
-    <div class="card-body">
-        <p><strong>User:</strong> {{ subscription.user.email }}</p>
-        <p><strong>Plan:</strong> {{ subscription.plan.name }}</p>
-        <p><strong>Billing Cycle:</strong> {{ subscription.billing_cycle }}</p>
-        <p><strong>Start:</strong> {{ subscription.start_date }}</p>
-        <p><strong>End:</strong> {{ subscription.end_date }}</p>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Subscription #{{ subscription.id }}
+      {% if subscription.is_active and not subscription.has_expired %}<span class="au-pill au-green">Active</span>
+      {% elif subscription.has_expired %}<span class="au-pill au-amber">Expired</span>
+      {% else %}<span class="au-pill au-grey">Inactive</span>{% endif %}
+    </h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_subscription_list' %}">Subscriptions</a></li>
+        <li>#{{ subscription.id }}</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="od-grid">
+
+    <!-- Subscription Info -->
+    <div class="dashboard-box margin-top-0">
+      <div class="headline">
+        <h3><i class="icon-material-outline-autorenew"></i> Subscription Info</h3>
+      </div>
+      <div class="content">
+        <div class="od-kv"><span class="k">User</span><span class="v">{{ subscription.user.email }}</span></div>
+        <div class="od-kv"><span class="k">Plan</span><span class="v">{% if subscription.plan %}{{ subscription.plan.name }}{% else %}—{% endif %}</span></div>
+        <div class="od-kv"><span class="k">Billing Cycle</span><span class="v">{{ subscription.billing_cycle|title }}</span></div>
+        <div class="od-kv"><span class="k">Start</span><span class="v">{{ subscription.start_date|date:"M j, Y H:i" }}</span></div>
+        <div class="od-kv"><span class="k">End</span><span class="v">{{ subscription.end_date|date:"M j, Y H:i" }}</span></div>
+      </div>
     </div>
-</div>
 
-<div class="card mb-3">
-    <div class="card-header">Remaining Features</div>
-    <div class="card-body">
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Remaining</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for key, value in subscription.remaining_features.items %}
-                <tr>
-                    <td>{{ key }}</td>
-                    <td>
-                        {% if value == None %}
-                            Unlimited
-                        {% else %}
-                            {{ value }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">Order</div>
-    <div class="card-body">
+    <!-- Linked Order -->
+    <div class="dashboard-box margin-top-0">
+      <div class="headline">
+        <h3><i class="icon-material-outline-receipt"></i> Order</h3>
+      </div>
+      <div class="content">
         {% if subscription.order %}
-            <p>Order ID: #{{ subscription.order.id }}</p>
-            <p>Status: {{ subscription.order.status }}</p>
-
-            <a href="{% url 'admin_order_detail' subscription.order.id %}"
-               class="btn btn-outline-primary btn-sm">
-                View Order
-            </a>
+        <div class="od-kv"><span class="k">Order ID</span><span class="v">#{{ subscription.order.id }}</span></div>
+        <div class="od-kv">
+          <span class="k">Status</span>
+          <span class="v">
+            {% if subscription.order.status == 'paid' %}<span class="au-pill au-green">Paid</span>
+            {% elif subscription.order.status == 'pending' %}<span class="au-pill au-amber">Pending</span>
+            {% elif subscription.order.status == 'failed' %}<span class="au-pill au-red">Failed</span>
+            {% else %}<span class="au-pill au-grey">{{ subscription.order.status|title }}</span>{% endif %}
+          </span>
+        </div>
+        <div class="od-actions" style="margin-top:16px;">
+          <a href="{% url 'admin_order_detail' subscription.order.id %}" class="au-view">View Order</a>
+        </div>
         {% else %}
-            <span class="text-muted">No linked order</span>
+        <p class="od-none">No linked order.</p>
         {% endif %}
+      </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header">Admin Actions</div>
-    <div class="card-body">
+  </div>
 
+  <!-- Remaining Features -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-fact-check"></i> Remaining Features</h3>
+    </div>
+    <div class="content">
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr><th>Feature</th><th>Remaining</th></tr>
+          </thead>
+          <tbody>
+            {% for key, value in subscription.remaining_features.items %}
+            <tr>
+              <td data-label="Feature"><strong>{{ key }}</strong></td>
+              <td data-label="Remaining">{% if value == None %}<span class="au-pill au-blue">Unlimited</span>{% else %}{{ value }}{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="2">
+                <div class="alog-empty">
+                  <span class="alog-empty-title">No feature quotas</span>
+                  <span class="alog-empty-text">This subscription has no tracked feature limits.</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Actions -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-settings"></i> Admin Actions</h3>
+    </div>
+    <div class="content">
+      <div class="od-actions">
         {% if subscription.is_active %}
-            <form method="post" action="{% url 'admin_subscription_deactivate' subscription.id %}">
-                {% csrf_token %}
-                <button class="btn btn-danger"
-                        onclick="return confirm('Deactivate this subscription?')">
-                    Deactivate
-                </button>
-            </form>
+        <form method="post" action="{% url 'admin_subscription_deactivate' subscription.id %}">
+          {% csrf_token %}
+          <button class="od-btn od-red" onclick="return confirm('Deactivate this subscription?')">Deactivate</button>
+        </form>
         {% else %}
-            <form method="post" action="{% url 'admin_subscription_activate' subscription.id %}">
-                {% csrf_token %}
-                <button class="btn btn-success">
-                    Activate
-                </button>
-            </form>
+        <form method="post" action="{% url 'admin_subscription_activate' subscription.id %}">
+          {% csrf_token %}
+          <button class="od-btn od-green">Activate</button>
+        </form>
         {% endif %}
-
+      </div>
     </div>
-</div>
+  </div>
 
+  <div class="od-footer">
+    <a href="{% url 'admin_subscription_list' %}" class="od-back"><i class="icon-material-outline-keyboard-arrow-left"></i> Back to Subscriptions</a>
+  </div>
+
+</div>
 {% endblock %}

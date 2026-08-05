@@ -1,42 +1,45 @@
 {% extends "adminpanel/base.html" %}
 {% load static %}
-
 {% block title %}Message from {{ message.name|default:message.email }}{% endblock %}
 
 {% block content %}
+<div class="admin-modern au-modern od-modern">
 
-<div class="container-fluid">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Message #{{ message.id }}</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_contact_message_list' %}">Contact Messages</a></li>
+        <li>#{{ message.id }}</li>
+      </ul>
+    </nav>
+  </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Contact Message</h4>
-        <a href="{% url 'admin_contact_message_list' %}" class="btn btn-secondary btn-sm">Back to messages</a>
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-email"></i> Contact Message</h3>
+      <a href="mailto:{{ message.email }}?subject=RE: {{ message.subject|urlencode }}" class="au-view">Reply by email</a>
     </div>
+    <div class="content">
+      <div class="od-kv"><span class="k">From</span><span class="v">{{ message.name|default:"—" }}</span></div>
+      <div class="od-kv"><span class="k">Email</span><span class="v"><a href="mailto:{{ message.email }}" class="au-view">{{ message.email }}</a></span></div>
+      <div class="od-kv"><span class="k">Subject</span><span class="v">{{ message.subject }}</span></div>
 
-    <div class="card">
-        <div class="card-body">
+      <hr class="od-divider">
+      <span class="od-section-label">Message</span>
+      <p class="od-msg-body">{{ message.message }}</p>
 
-            <dl class="row mb-0">
-                <dt class="col-sm-2">From</dt>
-                <dd class="col-sm-10">{{ message.name|default:"—" }}</dd>
-
-                <dt class="col-sm-2">Email</dt>
-                <dd class="col-sm-10"><a href="mailto:{{ message.email }}">{{ message.email }}</a></dd>
-
-                <dt class="col-sm-2">Subject</dt>
-                <dd class="col-sm-10">{{ message.subject }}</dd>
-
-                <dt class="col-sm-2">Message</dt>
-                <dd class="col-sm-10" style="white-space: pre-wrap;">{{ message.message }}</dd>
-            </dl>
-
-            <div class="mt-4">
-                <a href="mailto:{{ message.email }}?subject=RE: {{ message.subject|urlencode }}" class="btn btn-primary">
-                    Reply by email
-                </a>
-            </div>
-
-        </div>
+      <div class="od-actions" style="margin-top:18px;">
+        <a href="mailto:{{ message.email }}?subject=RE: {{ message.subject|urlencode }}" class="od-btn od-blue">Reply by email</a>
+      </div>
     </div>
+  </div>
+
+  <div class="od-footer">
+    <a href="{% url 'admin_contact_message_list' %}" class="od-back"><i class="icon-material-outline-keyboard-arrow-left"></i> Back to messages</a>
+  </div>
+
 </div>
-
 {% endblock %}

@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -164,63 +164,40 @@
 <!-- Wrapper / End -->
 
 <style>
-/* Loading Overlay */
+/* Modern loading: slim brand-blue top progress bar (replaces dark spinner) */
 .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
+    position: fixed; inset: 0; z-index: 9999;
+    background: transparent; opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-
-.loading-overlay.active {
-    opacity: 1;
-    visibility: visible;
+.loading-overlay.active { opacity: 1; visibility: visible; }
+.loading-popup { display: none; }
+.loading-overlay.active::before {
+    content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, rgba(42,65,232,0), #2a41e8 50%, rgba(42,65,232,0));
+    background-size: 40% 100%; background-repeat: no-repeat;
+    animation: sk-loadbar 1.1s ease-in-out infinite;
 }
 
-.loading-popup {
-    background: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 300px;
+/* Skeletons for office info + map while the contact fetch is in flight */
+.contact-location-info:not(.is-loaded) .the-contact-address:empty,
+.contact-location-info:not(.is-loaded) .the-contact-phone:empty,
+.contact-location-info:not(.is-loaded) .the-contact-mail:empty {
+    display: inline-block;
+    width: 70%; max-width: 220px; height: 13px; border-radius: 6px; margin: 4px 0;
+    background-image: linear-gradient(100deg, #e9ecf2 28%, #f6f7fb 50%, #e9ecf2 72%);
+    background-size: 200% 100%; animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+.contact-location-info:not(.is-loaded) .the-contact-phone:empty { width: 45%; max-width: 150px; }
+.contact-location-info:not(.is-loaded) .the-contact-mail:empty { width: 60%; max-width: 190px; }
+#singleListingMap:empty {
+    display: block; min-height: 300px; border-radius: 8px;
+    background-image: linear-gradient(100deg, #e9ecf2 28%, #f6f7fb 50%, #e9ecf2 72%);
+    background-size: 200% 100%; animation: sk-shimmer 1.4s ease-in-out infinite;
 }
 
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #2a41e8;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-popup h3 {
-    margin: 0 0 10px;
-    font-size: 20px;
-    color: #333;
-}
-
-.loading-popup p {
-    margin: 0;
-    color: #666;
-    font-size: 14px;
-}
+/* Empty state when no office info is configured */
+.the-contact-address.contact-empty { color: #808691; font-style: italic; }
 </style>
 
 <!-- Add this HTML right after your opening <body> tag -->
@@ -235,7 +212,7 @@
 <!-- Scripts
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
@@ -339,13 +316,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 			document.querySelector(".the-contact-mail").textContent = contact.gmail || "";
 			document.querySelector(".the-contact-mail").href = `https://mail.google.com/mail/?view=cm&fs=1&to=${contact.gmail}`;
 			document.querySelector(".github-link").href = contact.github || "#";
-		}
+			} else {
+				const addr = document.querySelector(".the-contact-address");
+				if (addr) { addr.textContent = "Contact details coming soon."; addr.classList.add("contact-empty"); }
+			}
 		// Show the company address on the map (hides the map if none is set).
 		initContactMap(contact ? contact.address : null);
-		hideLoading();
+			document.querySelector(".contact-location-info")?.classList.add("is-loaded");
+			hideLoading();
 	} catch (error) {
 		console.error("Error fetching contact info:", error);
-	}
+			document.querySelector(".contact-location-info")?.classList.add("is-loaded");
+			hideLoading();
+		}
 
 	// Handle form submission
 	const contactForm = document.querySelector("#contactform");

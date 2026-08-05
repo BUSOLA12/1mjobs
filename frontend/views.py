@@ -136,7 +136,10 @@ def dashboard_my_applications(request):
 
 @login_required(login_url='/login/')
 def dashboard_post_a_job(request):
-    return render(request, 'frontend/dashboard-post-a-job.html')
+    from ManageJobsTasks.models import JobCategory
+    return render(request, 'frontend/dashboard-post-a-job.html', {
+        'job_categories': JobCategory.objects.filter(is_active=True),
+    })
 
 @login_required(login_url='/login/')
 def dashboard_post_a_task(request):
@@ -242,7 +245,10 @@ def dashboard_settings(request):
 
 @login_required(login_url='/login/')
 def dashboard_edit_job(request, job_id=None):
-    return render(request, 'frontend/dashboard-edit-job.html')
+    from ManageJobsTasks.models import JobCategory
+    return render(request, 'frontend/dashboard-edit-job.html', {
+        'job_categories': JobCategory.objects.filter(is_active=True),
+    })
 
 @login_required(login_url='/login/')
 def dashboard_edit_task(request, task_id=None):

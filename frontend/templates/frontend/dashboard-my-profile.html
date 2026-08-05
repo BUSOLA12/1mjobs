@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 
-<title>1mjobs - My Profile</title>
+<title>Opportunity Hub - My Profile</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -47,6 +47,72 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		#go-to-dashboard-btn.attention { animation: ob-glow 1.6s ease-out infinite; }
+	}
+
+	/* --- Mobile: compact left-aligned identity block ---
+	   The Hireo theme's own @media(max-width:992px) block turns these into
+	   display:block, gives the avatar a negative margin-bottom:-70px and indents
+	   the name margin-left:90px. We override it here (with an extra
+	   .dashboard-content-container ancestor for specificity) and reset those. */
+	@media (max-width: 768px) {
+		.dashboard-content-container .single-page-header .container {
+			padding-left: 20px; padding-right: 20px;
+		}
+		.dashboard-content-container .single-page-header-inner {
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			text-align: left;
+			gap: 18px;
+		}
+		/* Avatar and name/details sit together in a row at the top-left */
+		.dashboard-content-container .single-page-header .left-side {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			text-align: left;
+			width: 100%;
+			max-width: 100%;
+			margin: 0;
+			padding: 0;
+			gap: 14px;
+		}
+		.dashboard-content-container .single-page-header .profile-avatar-wrapper {
+			margin: 0; flex: 0 0 auto;
+		}
+		.dashboard-content-container .single-page-header.freelancer-header .header-image,
+		.dashboard-content-container .single-page-header .header-image {
+			height: 64px; width: 64px; flex: 0 0 64px;
+			margin: 0;            /* undo the theme's -70px overlap */
+			padding: 0;
+		}
+		.dashboard-content-container .single-page-header .header-details {
+			margin: 0; flex: 1 1 auto; min-width: 0;
+		}
+		.dashboard-content-container .single-page-header.freelancer-header .header-details h3,
+		.dashboard-content-container .single-page-header .header-details h3,
+		.dashboard-content-container .single-page-header #profile-fullname {
+			margin: 0 0 6px;      /* undo the theme's 90px indent */
+			font-size: 22px; line-height: 1.2;
+		}
+		.dashboard-content-container .single-page-header .header-details ul {
+			display: flex;
+			justify-content: flex-start;
+			flex-wrap: wrap;
+			gap: 6px 12px;
+			margin: 0;
+			padding: 0;
+		}
+		.dashboard-content-container .single-page-header .header-details ul li { margin: 0; }
+		/* Full-width action button below */
+		.dashboard-content-container .single-page-header .right-side {
+			display: block;
+			width: 100%;
+			max-width: 100%;
+			margin: 0;
+			flex: 0 0 auto;
+		}
+		.dashboard-content-container #go-to-dashboard-btn { width: 100%; min-width: 0; }
 	}
 </style>
 
@@ -112,7 +178,7 @@
 		</div>
 		<!-- Profile Banner / End -->
 
-		<div class="dashboard-content-inner">
+		<div class="dashboard-content-inner myprofile-modern">
 
 			<!-- Dashboard Headline -->
 			<div class="dashboard-headline">
@@ -174,8 +240,8 @@
 						<!-- Profile Overview -->
 						<div class="profile-overview">
 							<div class="overview-item" id="hourly-rate-overview"><strong>₦<span id="hourly_rate">0</span></strong><span>Hourly Rate</span></div>
-							<div class="overview-item"><strong id="profile-rating-value">0</strong><span>Rating</span></div>
-							<div class="overview-item" id="job-success-overview"><strong id="job_success">0%</strong><span>Job Success</span></div>
+							<div class="overview-item" id="jobs-done-overview"><strong id="jobs_done">0</strong><span>Jobs Done</span></div>
+							<div class="overview-item" id="rehired-overview"><strong id="rehired">0</strong><span>Rehired</span></div>
 							<!-- Employer-only metrics (shown in place of Hourly Rate / Job Success) -->
 							<div class="overview-item" id="jobs-posted-overview" style="display:none;"><strong id="jobs_posted">0</strong><span>Jobs Posted</span></div>
 							<div class="overview-item" id="hires-overview" style="display:none;"><strong id="hires">0</strong><span>Hires</span></div>
@@ -185,6 +251,32 @@
 						<a href="{% url 'dashboard_settings' %}" class="apply-now-button margin-bottom-50">
 							Edit Profile <i class="icon-material-outline-edit"></i>
 						</a>
+
+						<!-- Performance Indicators (freelancers) -->
+						<div class="sidebar-widget" id="freelancer-indicators-widget">
+							<div class="freelancer-indicators">
+								<div class="indicator">
+									<strong id="job_success">0%</strong>
+									<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+									<span>Job Success</span>
+								</div>
+								<div class="indicator">
+									<strong id="recommendation">0%</strong>
+									<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+									<span>Recommendation</span>
+								</div>
+								<div class="indicator">
+									<strong id="on_time">0%</strong>
+									<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+									<span>On Time</span>
+								</div>
+								<div class="indicator">
+									<strong id="on_budget">0%</strong>
+									<div class="indicator-bar" data-indicator-percentage="0"><span></span></div>
+									<span>On Budget</span>
+								</div>
+							</div>
+						</div>
 
 						<!-- Skills -->
 						<div class="sidebar-widget" id="skills-widget">
@@ -228,9 +320,9 @@
 <!-- Scripts
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
-<script src="{% static 'js/for/dashboard-my-profile.js' %}"></script>
+<script src="{% static 'js/for/dashboard-my-profile.js' %}?v=2"></script>
 
 <script>
 // When the user has just finished registration we arrive here with ?welcome=1.

@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -103,31 +103,9 @@
 									<div class="submit-field">
 										<h5>Job Category</h5>
 										<select class="selectpicker with-border" data-size="7" title="Select Category">
-											<option value="accounting_and_finance">Accounting and Finance</option>
-											<option value="clerical_and_data_entry">Clerical and Data Entry</option>
-											<option value="customer_service">Customer Service</option>
-											<option value="engineering_and_technical">Engineering and Technical</option>
-											<option value="healthcare">Healthcare</option>
-											<option value="hospitality_and_tourism">Hospitality and Tourism</option>
-											<option value="information_technology">Information Technology</option>
-											<option value="legal">Legal</option>
-											<option value="marketing_and_advertising">Marketing and Advertising</option>
-											<option value="sales_and_business_development">Sales and Business Development</option>
-											<option value="skilled_trades_and_services">Skilled Trades and Services</option>
-											<option value="education_and_training">Education and Training</option>
-											<option value="creative_and_design">Creative and Design</option>
-											<option value="real_estate_and_property_management">Real Estate and Property Management</option>
-											<option value="transportation_and_logistics">Transportation and Logistics</option>
-											<option value="construction_and_maintenance">Construction and Maintenance</option>
-											<option value="research_and_development">Research and Development</option>
-											<option value="non_profit_and_volunteering">Non-Profit and Volunteering</option>
-											<option value="government_and_public_service">Government and Public Service</option>
-											<option value="media_and_entertainment">Media and Entertainment</option>
-											<option value="telecommunications">Telecommunications</option>
-											<option value="energy_and_utilities">Energy and Utilities</option>
-											<option value="agriculture_and_environment">Agriculture and Environment</option>
-											<option value="science_and_technology">Science and Technology</option>
-											<option value="other">Other</option>
+											{% for cat in job_categories %}
+											<option value="{{ cat.slug }}">{{ cat.name }}</option>
+											{% endfor %}
 										</select>
 									</div>
 								</div>
@@ -361,7 +339,7 @@
 <!-- Scripts
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->

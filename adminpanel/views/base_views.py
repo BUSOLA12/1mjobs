@@ -283,10 +283,12 @@ class AdminPlanDetailView(DetailView):
         return Plan.objects.prefetch_related("features")
 
     def get_context_data(self, **kwargs):
+        from pricing.features import FEATURE_CHOICES
         context = super().get_context_data(**kwargs)
         context["feature_form"] = AdminPlanFeatureForm()
+        context["feature_choices"] = FEATURE_CHOICES
         return context
-    
+
 class AdminPlanFeatureCreateView(View):
     def post(self, request, plan_id):
         plan = get_object_or_404(Plan, id=plan_id)
@@ -550,7 +552,7 @@ from django.core.paginator import Paginator
 def admin_action_logs(request):
     query = request.GET.get("q", "")
 
-    logs = AdminActionLog.objects.all().select_related("admin", "target_user")
+    logs = AdminActionLog.objects.all().select_related("admin", "target_user").order_by("-timestamp")
 
     if query:
         logs = logs.filter(
@@ -573,7 +575,7 @@ def admin_action_logs(request):
 def user_activity_logs(request):
     query = request.GET.get("q", "")
 
-    logs = UserActivityLog.objects.all().select_related("user")
+    logs = UserActivityLog.objects.all().select_related("user").order_by("-created_at")
 
     if query:
         logs = logs.filter(
@@ -691,9 +693,9 @@ def admin_verify_user(request, pk):
 
     if user.email:
         send_mail(
-            "Your 1mjobs account is verified",
+            "Your Opportunity Hub account is verified",
             "Hello,\n\nYour freelancer account has been verified. A verified badge "
-            "now appears on your profile.\n\nThank you,\nOne Million Jobs",
+            "now appears on your profile.\n\nThank you,\nOpportunity Hub",
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=True,

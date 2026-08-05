@@ -1,155 +1,106 @@
 {% load static %}
-<div id="footer">
-	
-	<!-- Footer Top Section -->
-	<div class="footer-top-section">
-		<div class="container">
-			<div class="row">
-				<div class="col-xl-12">
+<div id="footer" class="fl-footer">
+	<div class="container">
 
-					<!-- Footer Rows Container -->
-					<div class="footer-rows-container">
-						
-						<!-- Left Side -->
-						<div class="footer-rows-left">
-							<div class="footer-row">
-								<div class="footer-row-inner footer-logo">
-									<img src="{% static 'images/1mjobs_logo.png' %}" alt="" style="height:160px;width:auto;display:block;margin:0;">
-								</div>
-							</div>
-						</div>
-						
-						<!-- Right Side -->
-						<div class="footer-rows-right">
+		<!-- Main -->
+		<div class="fl-foot-top">
 
-							<!-- Social Icons -->
-							<div class="footer-row">
-								<div class="footer-row-inner">
-									<ul class="footer-social-links">
-										<li>
-											<a href="#" title="Facebook" class="facebook-link" data-tippy-placement="bottom" data-tippy-theme="light">
-												<i class="icon-brand-facebook-f"></i>
-											</a>
-										</li>
-										<li>
-											<a href="#" title="Twitter" class="x-link" data-tippy-placement="bottom" data-tippy-theme="light">
-												<i class="icon-brand-twitter"></i>
-											</a>
-										</li>
-										<li>
-											<a href="#" title="Google" class="google-link" target="_blank" data-tippy-placement="bottom" data-tippy-theme="light">
-												<i class="icon-brand-google"></i>
-											</a>
-										</li>
-										<li>
-											<a href="#" title="LinkedIn" class="linkedin-link" data-tippy-placement="bottom" data-tippy-theme="light">
-												<i class="icon-brand-linkedin-in"></i>
-											</a>
-										</li>
-									</ul>
-									<div class="clearfix"></div>
-								</div>
-							</div>
-							
-							<!-- Language Switcher -->
-							<div class="footer-row">
-								<div class="footer-row-inner">
-									<select class="selectpicker language-switcher" data-selected-text-format="count" data-size="5">
-										<option selected="">English</option>
-										<option>Français</option>
-										<option>Español</option>
-										<option>Deutsch</option>
-									</select>
-								</div>
-							</div>
-						</div>
+			<!-- Brand -->
+			<div class="fl-foot-brand">
+				<img class="fl-foot-logo" src="{% static 'images/1mjobs_logo3.png' %}" alt="Opportunity Hub">
+				<p class="fl-foot-tagline">A million talents, a million opportunities, one platform. The simplest way for small businesses and skilled people to work together.</p>
+				<ul class="fl-foot-social">
+					<li>
+						<a href="#" title="Facebook" class="facebook-link" data-tippy-placement="top" data-tippy-theme="light">
+							<i class="icon-brand-facebook-f"></i>
+						</a>
+					</li>
+					<li>
+						<a href="#" title="Twitter" class="x-link" data-tippy-placement="top" data-tippy-theme="light">
+							<i class="icon-brand-twitter"></i>
+						</a>
+					</li>
+					<li>
+						<a href="#" title="Google" class="google-link" target="_blank" data-tippy-placement="top" data-tippy-theme="light">
+							<i class="icon-brand-google"></i>
+						</a>
+					</li>
+					<li>
+						<a href="#" title="LinkedIn" class="linkedin-link" data-tippy-placement="top" data-tippy-theme="light">
+							<i class="icon-brand-linkedin-in"></i>
+						</a>
+					</li>
+				</ul>
+			</div>
 
-					</div>
-					<!-- Footer Rows Container / End -->
-				</div>
+			<!-- Links: For Candidates -->
+			<div class="fl-foot-col">
+				<h3>For Candidates</h3>
+				<ul>
+					<li><a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}">Browse Jobs</a></li>
+					<li><a href="{% url 'dashboard' %}">Job Alerts</a></li>
+					<li><a href="{% url 'dashboard_bookmarks' %}">My Bookmarks</a></li>
+				</ul>
+			</div>
+
+			<!-- Links: For Employers (shown for employers) -->
+			<div class="fl-foot-col" id="for-emp" style="display:none">
+				<h3>For Employers</h3>
+				<ul>
+					<li><a href="{% url 'dashboard_post_a_job' %}">Post a Job</a></li>
+					<li><a href="{% url 'dashboard_post_a_task' %}">Post a Task</a></li>
+					<li><a href="{% url 'pricing_plans' %}">Plans &amp; Pricing</a></li>
+				</ul>
+			</div>
+
+			<!-- Links: Helpful Links -->
+			<div class="fl-foot-col">
+				<h3>Helpful Links</h3>
+				<ul>
+					<li><a href="{% url 'contact' %}">Contact</a></li>
+					<li><a href="{% url 'privacy_policy' %}">Privacy Policy</a></li>
+					<li><a href="{% url 'term_of_use' %}">Terms of Use</a></li>
+				</ul>
+			</div>
+
+			<!-- Links: Account -->
+			<div class="fl-foot-col">
+				<h3>Account</h3>
+				<ul>
+					<li><a href="{% url 'login' %}">Log In</a></li>
+					<li><a href="{% url 'dashboard_settings' %}">My Account</a></li>
+				</ul>
+			</div>
+
+			<!-- Newsletter -->
+			<div class="fl-foot-news">
+				<h3>Stay in the loop</h3>
+				<p>Weekly job-search tips and platform news, straight to your inbox.</p>
+				<form action="#" method="get" class="fl-foot-newsletter">
+					<input type="text" name="fname" placeholder="Enter your email address">
+					<button type="submit" aria-label="Subscribe"><i class="icon-feather-arrow-right"></i></button>
+				</form>
+			</div>
+
+		</div>
+		<!-- Main / End -->
+
+		<!-- Bottom bar -->
+		<div class="fl-foot-bottom">
+			<div class="fl-foot-copy">
+				&copy; 2025 <strong>Opportunity Hub</strong>. All Rights Reserved.
+			</div>
+			<div class="fl-foot-meta">
+				<nav class="fl-foot-legal">
+					<a href="{% url 'privacy_policy' %}">Privacy Policy</a>
+					<a href="{% url 'term_of_use' %}">Terms of Use</a>
+					<a href="{% url 'contact' %}">Contact</a>
+				</nav>
 			</div>
 		</div>
+		<!-- Bottom bar / End -->
+
 	</div>
-	<!-- Footer Top Section / End -->
-
-	<!-- Footer Middle Section -->
-	<div class="footer-middle-section">
-		<div class="container">
-			<div class="row">
-
-				<!-- Links -->
-				<div class="col-xl-2 col-lg-2 col-md-3">
-					<div class="footer-links">
-						<h3>For Candidates</h3>
-						<ul>
-							<li><a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}"><span>Browse Jobs</span></a></li>
-							<li><a href="{% url 'dashboard' %}"><span>Job Alerts</span></a></li>
-							<li><a href="{% url 'dashboard_bookmarks' %}"><span>My Bookmarks</span></a></li>
-						</ul>
-					</div>
-				</div>
-
-				<!-- Links -->
-				<div class="col-xl-2 col-lg-2 col-md-3" id="for-emp" style="display:none">
-					<div class="footer-links">
-						<h3>For Employers</h3>
-						<ul>
-							<li><a href="{% url 'dashboard_post_a_job' %}"><span>Post a Job</span></a></li>
-							<li><a href="{% url 'dashboard_post_a_task' %}"><span>Post a Task</span></a></li>
-							<li><a href="{% url 'pricing_plans' %}"><span>Plans & Pricing</span></a></li>
-						</ul>
-					</div>
-				</div>
-
-				<!-- Links -->
-				<div class="col-xl-2 col-lg-2 col-md-3">
-					<div class="footer-links">
-						<h3>Helpful Links</h3>
-						<ul>
-							<li><a href="{% url 'contact' %}"><span>Contact</span></a></li>
-							<li><a href="{% url 'privacy_policy' %}"><span>Privacy Policy</span></a></li>
-							<li><a href="{% url 'term_of_use' %}"><span>Terms of Use</span></a></li>
-						</ul>
-					</div>
-				</div>
-
-				<!-- Links -->
-				<div class="col-xl-2 col-lg-2 col-md-3">
-					<div class="footer-links">
-						<h3>Account</h3>
-						<ul>
-							<li><a href="{% url 'login' %}"><span>Log In</span></a></li>
-							<li><a href="{% url 'dashboard_settings' %}"><span>My Account</span></a></li>
-						</ul>
-					</div>
-				</div>
-
-				<!-- Newsletter -->
-				<div class="col-xl-4 col-lg-4 col-md-12">
-					<h3><i class="icon-feather-mail"></i> Sign Up For a Newsletter</h3>
-					<p>Weekly breaking news, analysis and cutting edge advices on job searching.</p>
-					<form action="#" method="get" class="newsletter">
-						<input type="text" name="fname" placeholder="Enter your email address">
-						<button type="submit"><i class="icon-feather-arrow-right"></i></button>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- Footer Middle Section / End -->
-	
-	<!-- Footer Copyright -->
-	<div class="footer-bottom-section">
-		<div class="container">
-			<div class="row">
-				<div class="col-xl-12">
-					© 2025 <strong>1mjobs</strong>. All Rights Reserved.
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- Footer Copyright / End -->
-
 </div>
 
 

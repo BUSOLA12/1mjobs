@@ -105,7 +105,7 @@ def notify_employer_of_application(application, request=None):
         f"{price_line}"
         f"Total applications so far: {application.applications_count}\n\n"
         f"Review the application here: {review_url}\n\n"
-        f"One Million Jobs"
+        f"Opportunity Hub"
     )
 
     try:
@@ -165,7 +165,7 @@ def notify_employer_of_bid(bid, request=None):
         f"Delivery time: {bid.delivery_time}\n"
         f"Total bids so far: {context['bids_count']}\n\n"
         f"Review the bid here: {review_url}\n\n"
-        f"One Million Jobs"
+        f"Opportunity Hub"
     )
 
     try:

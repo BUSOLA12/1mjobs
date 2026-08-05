@@ -159,10 +159,22 @@ async function getMyReviews(page = 1) {
 
 
 // Function to create list items
+// Remove skeleton rows and, when empty, reveal the empty-state message.
+function clearReviewSkeletons(listContainer) {
+  if (listContainer) listContainer.querySelectorAll('.rv-skeleton').forEach(el => el.remove());
+}
+function showReviewEmpty(listContainer) {
+  if (!listContainer) return;
+  const empty = listContainer.querySelector('.rv-empty');
+  if (empty) empty.style.display = '';
+}
+
 function populatePendingReviews(pending) {
   const listContainer = document.querySelector('.dashboard-box-list.pending-reviews-list');
 
-  if (pending.length === 0) {
+  clearReviewSkeletons(listContainer);
+  if (!pending || pending.length === 0) {
+      showReviewEmpty(listContainer);
       return;
   }
     listContainer.innerHTML = ''; // Clear existing list
@@ -191,7 +203,9 @@ function populatePendingReviews(pending) {
 
 function populateOtherReviews(reviewList) {
   const listContainer = document.querySelector('.dashboard-box-list.reviews-list');
-  if (reviewList.length === 0) {
+  clearReviewSkeletons(listContainer);
+  if (!reviewList || reviewList.length === 0) {
+      showReviewEmpty(listContainer);
       return;
   }
   listContainer.innerHTML = ''; // Clear existing list

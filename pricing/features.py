@@ -19,6 +19,31 @@ PREMIUM_BADGE = "premium_badge"           # boolean
 HIRING_ANALYTICS = "hiring_analytics"     # boolean
 
 
+# ---- Recognized feature keys (what admins may attach to a plan) ----
+# The plan-feature NAME is the only link between a plan and a real perk in the
+# code, so admins must pick from these exact keys (never free-type them).
+FEATURE_LABELS = {
+    # Freelancer
+    FEATURED_PROFILE: "Featured profile — badge + boosted in directory (Freelancer)",
+    PROFILE_VIEWERS:  "See who viewed my profile (Freelancer)",
+    EARLY_ACCESS:     "Early access to new jobs (Freelancer)",
+    SEARCH_BOOST:     "Search boost — rank above free (Freelancer)",
+    # Employer
+    FEATURED_JOB:     "Featured job posts — quota (Employer)",
+    DIRECT_OFFERS:    "Direct offers to freelancers — quota (Employer)",
+    PREMIUM_BADGE:    "Premium badge (Employer)",
+    HIRING_ANALYTICS: "Hiring analytics (Employer)",
+    # Shared
+    PRIORITY_SUPPORT: "Priority support (Freelancer & Employer)",
+}
+
+# (value, label) pairs for form dropdowns.
+FEATURE_CHOICES = [(key, label) for key, label in FEATURE_LABELS.items()]
+
+# Keys that are quota/numeric (everything else is a yes/no boolean perk).
+NUMERIC_FEATURES = {FEATURED_JOB, DIRECT_OFFERS}
+
+
 def has_feature(user, feature_key):
     """Non-raising boolean check. Falls back to the plan's boolean features for
     subscriptions sold before a perk was added to the plan (remaining_features

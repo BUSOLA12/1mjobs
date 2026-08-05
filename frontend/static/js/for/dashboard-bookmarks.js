@@ -23,16 +23,35 @@ async function getAllBookmarks() {
 
 
   // Function to dynamically render bookmarks
+  // Remove the skeleton placeholders from a list once loading is done.
+  function clearSkeletons(container) {
+    if (container) container.querySelectorAll(".bm-skeleton").forEach((el) => el.remove());
+  }
+  // Show the (hidden) empty-state row for a list that has no items.
+  function showEmpty(container) {
+    if (!container) return;
+    const empty = container.querySelector(".bm-empty");
+    if (empty) empty.style.display = "";
+  }
+
   async function renderBookmarks() {
-    const data = await getAllBookmarks();
+    let data = await getAllBookmarks();
+    // On failure, fall back to empty so skeletons are replaced by empty states.
+    if (!data) data = { jobs: [], tasks: [], userprofiles: [] };
+    data.jobs = data.jobs || [];
+    data.tasks = data.tasks || [];
+    data.userprofiles = data.userprofiles || [];
 
     const jobsContainer = document.querySelector(".bookmarked-jobs-list");
     const tasksContainer = document.querySelector(".bookmarked-tasks-list");
     const freelancersContainer = document.querySelector(".bookmarked-freelancers-list");
 
     // Render Bookmarked Jobs
-    if (data.jobs.length !== 0) {
-      jobsContainer.innerHTML = ""; // Clear previous content
+    clearSkeletons(jobsContainer);
+    if (data.jobs.length === 0) {
+      showEmpty(jobsContainer);
+    } else {
+      const emp = jobsContainer.querySelector(".bm-empty"); if (emp) emp.remove();
       data.jobs.forEach((job) => {
         const li = document.createElement("li");
         li.innerHTML = `
@@ -65,8 +84,11 @@ async function getAllBookmarks() {
     }
 
     // Render Bookmarked Tasks
-    if (data.tasks.length !== 0) {
-      tasksContainer.innerHTML = ""; // Clear previous content
+    clearSkeletons(tasksContainer);
+    if (data.tasks.length === 0) {
+      showEmpty(tasksContainer);
+    } else {
+      const emp = tasksContainer.querySelector(".bm-empty"); if (emp) emp.remove();
       data.tasks.forEach((task) => {
         const li = document.createElement("li");
         li.innerHTML = `
@@ -99,8 +121,11 @@ async function getAllBookmarks() {
     }
 
     // Render Bookmarked Freelancers (userprofiles)
-    if (data.userprofiles.length !== 0) {
-      freelancersContainer.innerHTML = ""; // Clear previous content
+    clearSkeletons(freelancersContainer);
+    if (data.userprofiles.length === 0) {
+      showEmpty(freelancersContainer);
+    } else {
+      const emp = freelancersContainer.querySelector(".bm-empty"); if (emp) emp.remove();
       data.userprofiles.forEach((user) => {
         const li = document.createElement("li");
         li.innerHTML = `

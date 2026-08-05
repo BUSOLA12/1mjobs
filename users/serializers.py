@@ -99,11 +99,32 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ["id", "name", "slug"]
 
 
+def compute_job_success(user):
+    """Percentage of a freelancer's concluded contracts that ended successfully.
+
+    Successful = completed or ended. Concluded = successful plus the contracts
+    that fell through (terminated / cancelled / disputed). Returns a whole-number
+    percentage, or 0 when nothing has concluded yet.
+    """
+    from django.apps import apps
+    Contract = apps.get_model('contracts', 'Contract')
+    qs = Contract.objects.filter(freelancer=user)
+    successful = qs.filter(status__in=("completed", "ended")).count()
+    concluded = qs.filter(
+        status__in=("completed", "ended", "terminated", "cancelled", "disputed")
+    ).count()
+    if not concluded:
+        return 0
+    return round(successful * 100 / concluded)
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     full_name = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     skills = serializers.SerializerMethodField(read_only=True)
+    # Computed live from the freelancer's contracts (see compute_job_success).
+    job_success = serializers.SerializerMethodField(read_only=True)
     # Filled by the ProfileListView queryset annotation (search_boost perk).
     is_pro = serializers.BooleanField(read_only=True, default=False)
 
@@ -125,9 +146,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip()
-    
+
     def get_skills(self, obj):
         return ", ".join(skill.name for skill in obj.skills.all())
+
+    def get_job_success(self, obj):
+        return compute_job_success(obj.user)
 
 class UserFileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
@@ -157,6 +181,13 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
     jobs_posted = serializers.SerializerMethodField(read_only=True)
     hires = serializers.SerializerMethodField(read_only=True)
     is_pro = serializers.SerializerMethodField(read_only=True)
+    # Freelancer performance stats, computed from real contracts + reviews.
+    job_success = serializers.SerializerMethodField(read_only=True)
+    jobs_done = serializers.SerializerMethodField(read_only=True)
+    rehired = serializers.SerializerMethodField(read_only=True)
+    recommendation = serializers.SerializerMethodField(read_only=True)
+    on_time = serializers.SerializerMethodField(read_only=True)
+    on_budget = serializers.SerializerMethodField(read_only=True)
 
 
     class Meta:
@@ -165,7 +196,7 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
         "id", "user_id", "full_name", "email", "tagline", "category", "nationality",
         "hourly_rate", "job_success", "rating", "verified", "bio", "avatar",
         "skills", "files", "portfolio_url", "created_at", "jobs_posted", "hires",
-        "is_pro",
+        "is_pro", "jobs_done", "rehired", "recommendation", "on_time", "on_budget",
         ]
 
         read_only_fields = fields
@@ -211,6 +242,61 @@ class ProfileDetailSerializer(serializers.ModelSerializer):
     def get_is_pro(self, obj):
         from pricing.features import FEATURED_PROFILE, has_feature
         return has_feature(obj.user, FEATURED_PROFILE)
+
+    # ----- Freelancer performance stats -----
+    # Contract statuses that count as a finished engagement ("job done").
+    DONE_CONTRACT_STATUSES = ("completed", "ended", "terminated")
+
+    def _freelancer_contracts(self, obj):
+        from django.apps import apps
+        Contract = apps.get_model('contracts', 'Contract')
+        return Contract.objects.filter(freelancer=obj.user)
+
+    def _freelancer_reviews(self, obj):
+        from django.apps import apps
+        Review = apps.get_model('reviews', 'Review')
+        return Review.objects.filter(reviewee=obj.user)
+
+    def get_job_success(self, obj):
+        # Share of concluded contracts that ended successfully.
+        return compute_job_success(obj.user)
+
+    def get_jobs_done(self, obj):
+        # Contracts that reached a finished state.
+        return self._freelancer_contracts(obj).filter(
+            status__in=self.DONE_CONTRACT_STATUSES
+        ).count()
+
+    def get_rehired(self, obj):
+        # Repeat engagements: real contracts beyond the first with each employer.
+        qs = self._freelancer_contracts(obj).exclude(
+            status__in=("cancelled", "awaiting_funding")
+        )
+        total = qs.count()
+        distinct_employers = qs.values("employer").distinct().count()
+        return max(0, total - distinct_employers)
+
+    def get_recommendation(self, obj):
+        # Share of received ratings that are 4 stars or higher.
+        qs = self._freelancer_reviews(obj).filter(rating__isnull=False)
+        total = qs.count()
+        if not total:
+            return 0
+        return round(qs.filter(rating__gte=4).count() * 100 / total)
+
+    def get_on_time(self, obj):
+        qs = self._freelancer_reviews(obj)
+        total = qs.count()
+        if not total:
+            return 0
+        return round(qs.filter(on_time=True).count() * 100 / total)
+
+    def get_on_budget(self, obj):
+        qs = self._freelancer_reviews(obj)
+        total = qs.count()
+        if not total:
+            return 0
+        return round(qs.filter(on_budget=True).count() * 100 / total)
 
 # class UserFileSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -266,3 +352,13 @@ class WorkHistorySerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         
         return WorkHistory.objects.create(**validated_data)
+
+
+from .models import Note
+
+
+class NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = ["id", "text", "priority", "created_at"]
+        read_only_fields = ["id", "created_at"]

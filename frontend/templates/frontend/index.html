@@ -6,7 +6,7 @@
 
 	<!-- Basic Page Needs
 ================================================== -->
-	<title>1mjobs</title>
+	<title>Opportunity Hub</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -32,10 +32,7 @@
 		<!-- Intro Banner
 ================================================== -->
 		<!-- add class "disable-gradient" to enable consistent background overlay -->
-		<div class="intro-banner" data-background-image="{% static 'images/herojob.png' %}">
-
-
-			<!-- Background Video -->
+		<div class="intro-banner home-hero" data-background-image="{% static 'images/herojob.png' %}">
 
 			<div class="container">
 
@@ -46,7 +43,7 @@
 							<h3>
 								<strong>A million talents. A million opportunities. One platform.</strong>
 								<br>
-								<span>Thousands of small businesses use <strong class="color">1mjobs</strong> to turn
+								<span>Thousands of small businesses use <strong class="color">Opportunity Hub</strong> to turn
 									their ideas into reality.</span>
 							</h3>
 						</div>
@@ -70,7 +67,7 @@
 
 							<!-- Search Field -->
 							<div class="intro-search-field">
-								<label for="intro-keywords" class="field-title ripple-effect">What job you want?</label>
+								<label for="intro-keywords" class="field-title ripple-effect">What job do you want?</label>
 								<input id="intro-keywords" type="text" placeholder="Job Title or Keywords">
 							</div>
 
@@ -85,18 +82,27 @@
 				<!-- Stats -->
 				<div class="row">
 					<div class="col-md-12">
-						<ul class="intro-stats margin-top-45 hide-under-992px">
+						<ul class="hero-value-props margin-top-45">
 							<li>
-								<strong class="counter">1,586</strong>
-								<span>Jobs Posted</span>
+								<span class="hvp-icon"><i class="icon-feather-shield"></i></span>
+								<span class="hvp-body">
+									<strong>Secure escrow</strong>
+									<span>Payments held safely until work is done</span>
+								</span>
 							</li>
 							<li>
-								<strong class="counter">3,543</strong>
-								<span>Tasks Posted</span>
+								<span class="hvp-icon"><i class="icon-feather-check-circle"></i></span>
+								<span class="hvp-body">
+									<strong>Verified members</strong>
+									<span>Employers and freelancers you can trust</span>
+								</span>
 							</li>
 							<li>
-								<strong class="counter">1,232</strong>
-								<span>Freelancers</span>
+								<span class="hvp-icon"><i class="icon-feather-clock"></i></span>
+								<span class="hvp-body">
+									<strong>Post in minutes</strong>
+									<span>Publish a job or task and start today</span>
+								</span>
 							</li>
 						</ul>
 					</div>
@@ -120,11 +126,13 @@
 
 						<!-- Category Boxes Container -->
 						<div class="categories-container" id="categories-container">
+							<div class="home-sk home-sk-categories" aria-hidden="true">{% for _ in "12345678" %}<span class="sk" style="height:120px;"></span>{% endfor %}</div>
 							<!-- Empty State -->
-							<div class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
-								<i class="icon-line-awesome-folder-open-o" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
-								<h4 style="margin:0 0 8px; color:#666;">No Job Categories Yet</h4>
-								<p style="margin:0; color:#999;">Categories will appear here once available.</p>
+							<div class="js-empty-state home-empty">
+								<div class="home-empty__icon"><i class="icon-line-awesome-folder-open-o"></i></div>
+								<h4 class="home-empty__title">No categories yet</h4>
+								<p class="home-empty__text">Categories fill in as employers post roles. Browse everything that's live right now.</p>
+								<a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}" class="button ripple-effect">Browse all jobs</a>
 							</div>
 						</div>
 
@@ -150,14 +158,16 @@
 
 						<!-- Jobs Container -->
 						<div class="listings-container compact-list-layout margin-top-35">
+							<div class="home-sk home-sk-jobs" aria-hidden="true">{% for _ in "1234" %}<span class="sk" style="height:92px;border-radius:8px;"></span>{% endfor %}</div>
 
 							<!-- Job Listing -->
 
 							<!-- Empty State -->
-							<div class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
-								<i class="icon-line-awesome-briefcase" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
-								<h4 style="margin:0 0 8px; color:#666;">No Featured Jobs Yet</h4>
-								<p style="margin:0; color:#999;">Check back soon — featured jobs will be listed here.</p>
+							<div class="js-empty-state home-empty">
+								<div class="home-empty__icon"><i class="icon-line-awesome-briefcase"></i></div>
+								<h4 class="home-empty__title">No featured jobs yet</h4>
+								<p class="home-empty__text">New roles show up here as employers post them. See what's open across the platform.</p>
+								<a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}" class="button ripple-effect">Browse jobs</a>
 							</div>
 
 						</div>
@@ -183,10 +193,11 @@
 					</div>
 
 					<!-- Empty State -->
-					<div class="col-xl-12 js-empty-state empty-state-message" style="text-align:center; padding:30px 20px;">
-						<i class="icon-line-awesome-map-marker" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
-						<h4 style="margin:0 0 8px; color:#666;">No Featured Cities Yet</h4>
-						<p style="margin:0; color:#999;">City highlights will appear here once jobs are posted.</p>
+					<div class="col-xl-12 js-empty-state home-empty">
+						<div class="home-empty__icon"><i class="icon-line-awesome-map-marker"></i></div>
+						<h4 class="home-empty__title">No featured cities yet</h4>
+						<p class="home-empty__text">City highlights appear once jobs are posted. Explore roles by location in the meantime.</p>
+						<a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}" class="button ripple-effect">Explore jobs by city</a>
 					</div>
 
 				</div>
@@ -213,10 +224,11 @@
 							<!-- Freelancers go here-->
 						</div>
 						<!-- Empty State -->
-						<div id="freelancers-empty-state" class="js-empty-state empty-state-message" style="width:100%; text-align:center; padding:50px 20px;">
-							<i class="icon-line-awesome-users" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
-							<h4 style="margin:0 0 8px; color:#666;">No Freelancers Yet</h4>
-							<p style="margin:0; color:#999;">Top-rated freelancers will appear here once they join.</p>
+						<div id="freelancers-empty-state" class="js-empty-state home-empty">
+							<div class="home-empty__icon"><i class="icon-line-awesome-users"></i></div>
+							<h4 class="home-empty__title">No freelancers yet</h4>
+							<p class="home-empty__text">Top-rated freelancers show up here as they join. Take a look at who's already on the platform.</p>
+							<a href="{% url 'freelancers' %}" class="button ripple-effect">Browse freelancers</a>
 						</div>
 					</div>
 
@@ -258,10 +270,11 @@
 						<!-- Pricing Plans Container -->
 
 						<!-- Empty State -->
-						<div id="membership-plans-empty-state" class="js-empty-state empty-state-message" style="display:none; width:100%; text-align:center; padding:50px 20px;">
-							<i class="icon-line-awesome-tags" style="font-size:64px; color:#cfd6e1; display:block; margin-bottom:15px;"></i>
-							<h4 style="margin:0 0 8px; color:#666;">No Membership Plans Yet</h4>
-							<p style="margin:0; color:#999;">Plans will be available here soon.</p>
+						<div id="membership-plans-empty-state" class="js-empty-state home-empty" style="display:none;">
+							<div class="home-empty__icon"><i class="icon-line-awesome-tags"></i></div>
+							<h4 class="home-empty__title">Plans are on the way</h4>
+							<p class="home-empty__text">Membership plans aren't set up yet. Reach out if you'd like help getting started.</p>
+							<a href="{% url 'contact' %}" class="button ripple-effect">Contact us</a>
 						</div>
 
 						{% if not user.is_authenticated or user.role != 'employer' %}
@@ -566,6 +579,10 @@
 	<!-- Scripts
 ================================================== -->
 	{% include 'frontend/partials/scripts.html' %}
+
+	<!-- Populate the header notification + message dropdowns (guarded to logged-in users) -->
+	<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
+	<script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 
 	<!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->

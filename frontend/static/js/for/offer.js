@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function loadOffersReceived() {
         const container = document.querySelector("#offers-received-list");
         if (!container) return; // section hidden for this role
-        container.innerHTML = `<li>Loading...</li>`;
+        // Skeleton rows (rendered by the template) stay visible until data loads.
 
         try {
             const response = await fetchProtected("/api/offers/received/", {
@@ -30,7 +30,12 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             if (data.offers.length === 0) {
-                container.innerHTML = `<li>No offers received yet.</li>`;
+                container.innerHTML = `
+                    <li class="of-empty">
+                        <span class="of-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span>
+                        <span class="of-empty-title">No offers received</span>
+                        <span class="of-empty-text">When someone sends you an offer, it will appear here.</span>
+                    </li>`;
                 return;
             }
 
@@ -66,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     async function loadOffersSent() {
         const container = document.querySelector("#offers-sent-list");
         if (!container) return; // section hidden for this role
-        container.innerHTML = `<li>Loading...</li>`;
+        // Skeleton rows (rendered by the template) stay visible until data loads.
 
         try {
             const response = await fetchProtected("/api/offers/sent/", {
@@ -77,7 +82,12 @@ document.addEventListener("DOMContentLoaded", function () {
             container.innerHTML = "";
 
             if (data.length === 0) {
-                container.innerHTML = `<li>You have not sent any offers yet.</li>`;
+                container.innerHTML = `
+                    <li class="of-empty">
+                        <span class="of-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></span>
+                        <span class="of-empty-title">No offers sent</span>
+                        <span class="of-empty-text">Offers you send to freelancers will appear here.</span>
+                    </li>`;
                 return;
             }
 

@@ -72,7 +72,7 @@ def admin_appeal_approve(request, pk):
             "Your appeal has been approved",
             f"Hello,\n\nGood news: your appeal has been approved and your account has "
             f"been reinstated. You can now log in as usual.{note}\n\n"
-            f"Thank you,\nOne Million Jobs",
+            f"Thank you,\nOpportunity Hub",
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=True,
@@ -102,7 +102,7 @@ def admin_appeal_reject(request, pk):
         send_mail(
             "Update on your appeal",
             f"Hello,\n\nWe have reviewed your appeal and it was not approved at this time.\n\n"
-            f"Reason: {response}\n\nThank you,\nOne Million Jobs",
+            f"Reason: {response}\n\nThank you,\nOpportunity Hub",
             settings.DEFAULT_FROM_EMAIL,
             [appeal.user.email],
             fail_silently=True,

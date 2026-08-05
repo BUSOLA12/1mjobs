@@ -211,7 +211,7 @@ class AppealLinkRequestView(APIView):
                 f"Hello,\n\nUse the link below to appeal the restriction on your "
                 f"account. The link expires in a few days.\n\n{link}\n\n"
                 f"If you did not request this, you can ignore this email.\n\n"
-                f"Thank you,\nOne Million Jobs",
+                f"Thank you,\nOpportunity Hub",
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=True,
@@ -314,9 +314,15 @@ class GoogleAuthInitView(View):
         state = secrets.token_urlsafe(32)
         request.session["oauth_state"] = state
 
+        # Build the callback on the SAME host the user started from, so the
+        # session cookie (which holds oauth_state) is sent back on the return.
+        # Hardcoding one domain breaks logins started on any other host
+        # (e.g. onemillionjobs.com.ng vs one-million-jobs.fly.dev).
+        callback_url = request.build_absolute_uri("/api/auth/google/callback/")
+
         params = {
             "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
-            "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
+            "redirect_uri": callback_url,
             "response_type": "code",
             "scope": "openid email profile",
             "state": state,
@@ -355,7 +361,9 @@ class GoogleAuthCallbackView(View):
                 "code": code,
                 "client_id": settings.GOOGLE_OAUTH2_CLIENT_ID,
                 "client_secret": settings.GOOGLE_OAUTH2_CLIENT_SECRET,
-                "redirect_uri": settings.GOOGLE_OAUTH2_REDIRECT_URI,
+                # Must exactly match the redirect_uri sent in the init step.
+                # Rebuilt from this request's host (same domain the user is on).
+                "redirect_uri": request.build_absolute_uri("/api/auth/google/callback/"),
                 "grant_type": "authorization_code",
             },
         )

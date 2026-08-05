@@ -392,3 +392,28 @@ class EmployerHiringAnalyticsView(APIView):
             "top_jobs": list(per_job),
             "funnel": funnel,
         })
+
+
+from .models import Note
+from .serializers import NoteSerializer
+
+
+class NoteListCreateView(generics.ListCreateAPIView):
+    """List the current user's dashboard notes, or add a new one."""
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Note.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class NoteDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Edit or delete one of the current user's notes."""
+    serializer_class = NoteSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Note.objects.filter(user=self.request.user)

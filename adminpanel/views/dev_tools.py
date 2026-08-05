@@ -9,6 +9,7 @@ from django.shortcuts import redirect, render
 from ManageJobsTasks.models import (
     Job,
     Task,
+    JobCategory,
     JOB_TYPES,
     JOB_CATEGORIES,
     JOB_STATUS,
@@ -89,7 +90,9 @@ def bulk_add(request):
         "companies": Company.objects.select_related("created_by", "members").order_by("company_name"),
         "employers": User.objects.filter(role="employer").order_by("email"),
         "job_types": JOB_TYPES,
-        "job_categories": JOB_CATEGORIES,
+        # Use the admin-managed JobCategory table (same source as the job-post
+        # form) instead of the old hardcoded JOB_CATEGORIES list.
+        "job_categories": JobCategory.objects.filter(is_active=True),
         "job_statuses": JOB_STATUS,
         "task_categories": TASK_CATEGORIES,
         "project_types": PROJECT_TYPES,

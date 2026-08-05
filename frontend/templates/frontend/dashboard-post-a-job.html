@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -39,8 +39,8 @@
 	<!-- Dashboard Content
 	================================================== -->
 	<div class="dashboard-content-container" data-simplebar="">
-		<div class="dashboard-content-inner">
-			
+		<div class="dashboard-content-inner pf-modern">
+
 			<!-- Dashboard Headline -->
 			<div class="dashboard-headline">
 				<h3>Post a Job</h3>
@@ -48,8 +48,8 @@
 				<!-- Breadcrumbs -->
 				<nav id="breadcrumbs" class="dark">
 					<ul>
-						<li><a href="#">Home</a></li>
-						<li><a href="#">Dashboard</a></li>
+						<li><a href="{% url 'index' %}">Home</a></li>
+						<li><a href="{% url 'dashboard' %}">Dashboard</a></li>
 						<li>Post a Job</li>
 					</ul>
 				</nav>
@@ -95,31 +95,9 @@
 									<div class="submit-field">
 										<h5>Job Category</h5>
 										<select class="selectpicker with-border" data-size="7" title="Select Category">
-											<option value="accounting_and_finance">Accounting and Finance</option>
-											<option value="clerical_and_data_entry">Clerical and Data Entry</option>
-											<option value="customer_service">Customer Service</option>
-											<option value="engineering_and_technical">Engineering and Technical</option>
-											<option value="healthcare">Healthcare</option>
-											<option value="hospitality_and_tourism">Hospitality and Tourism</option>
-											<option value="information_technology">Information Technology</option>
-											<option value="legal">Legal</option>
-											<option value="marketing_and_advertising">Marketing and Advertising</option>
-											<option value="sales_and_business_development">Sales and Business Development</option>
-											<option value="skilled_trades_and_services">Skilled Trades and Services</option>
-											<option value="education_and_training">Education and Training</option>
-											<option value="creative_and_design">Creative and Design</option>
-											<option value="real_estate_and_property_management">Real Estate and Property Management</option>
-											<option value="transportation_and_logistics">Transportation and Logistics</option>
-											<option value="construction_and_maintenance">Construction and Maintenance</option>
-											<option value="research_and_development">Research and Development</option>
-											<option value="non_profit_and_volunteering">Non-Profit and Volunteering</option>
-											<option value="government_and_public_service">Government and Public Service</option>
-											<option value="media_and_entertainment">Media and Entertainment</option>
-											<option value="telecommunications">Telecommunications</option>
-											<option value="energy_and_utilities">Energy and Utilities</option>
-											<option value="agriculture_and_environment">Agriculture and Environment</option>
-											<option value="science_and_technology">Science and Technology</option>
-											<option value="other">Other</option>
+											{% for cat in job_categories %}
+											<option value="{{ cat.slug }}">{{ cat.name }}</option>
+											{% endfor %}
 										</select>
 									</div>
 								</div>
@@ -272,62 +250,15 @@
 <!-- Wrapper / End -->
 
 <style>
-/* Loading Overlay */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.loading-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.loading-popup {
-    background: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 300px;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #2a41e8;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-popup h3 {
-    margin: 0 0 10px;
-    font-size: 20px;
-    color: #333;
-}
-
-.loading-popup p {
-    margin: 0;
-    color: #666;
-    font-size: 14px;
+/* Loading overlay -> slim top progress bar */
+.loading-overlay { position: fixed; inset: 0; z-index: 9999; background: transparent; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s ease, visibility .3s ease; }
+.loading-overlay.active { opacity: 1; visibility: visible; }
+.loading-popup { display: none; }
+.loading-overlay.active::before {
+    content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, rgba(42,65,232,0), #2a41e8 50%, rgba(42,65,232,0));
+    background-size: 40% 100%; background-repeat: no-repeat;
+    animation: sk-loadbar 1.1s ease-in-out infinite;
 }
 
 /* Staged file list (before posting) */
@@ -385,7 +316,7 @@
 <!-- Scripts
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->

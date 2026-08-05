@@ -1,649 +1,440 @@
-/* =============================================================================
- * 1mjobs "Job Journey" animated hero  (Three.js, flat 2D vector style)
+/*
+ * 1mjobs — "Job Journey" 3D background animation
+ * ------------------------------------------------------------------
+ * A wordless looping vignette of the freelance lifecycle, told with props
+ * (no cartoon human): get a job offer -> accept it -> submit the work ->
+ * get paid. Built on three.js r128. Calm, premium, brand-themed; it sits
+ * behind the results panel so it stays atmospheric, never busy.
  *
- * A wordless, seamlessly-looping motivational story:
- *     Apply  ->  Accepted  ->  Paid  ->  Can now afford things
- *
- * Vanilla drop-in module. Requires global `THREE` (loaded before this file).
- * Mount:   JobJourney.mount(containerEl)   ->  returns an instance
- * Unmount: instance.unmount()  (or JobJourney.unmount())
- *
- * Everything is procedural geometry: no model files, no external textures.
- * The animation is fully DETERMINISTIC (a pure function of the loop clock),
- * which is what makes the loop perfectly seamless.
- * ============================================================================= */
+ * Public API (unchanged, drop-in):
+ *   JobJourney.mount(containerEl)  -> instance { unmount() }
+ *   JobJourney.unmount()
+ */
 (function (global) {
-    "use strict";
+    'use strict';
+    var THREE = global.THREE;
 
-    // ======================= TUNABLE CONSTANTS ===============================
-    var COLORS = {
-        primary:     "#4F46E5",   // brand blue
-        primaryDark: "#4338CA",   // brand blue, depth
-        white:       "#FFFFFF",
-        navy:        "#0B1020",   // panel background
-        yellow:      "#FBBF24",   // accent
-        coral:       "#F97066",   // accent
-        green:       "#34D399",   // success
-        // supporting shades (derived, not brand-critical)
-        skin:        "#F6C8A8",
-        hair:        "#2B2140",
-        deskTop:     "#3730A3",
-        wallet:      "#4338CA",
-        note:        "#34D399",
-        coin:        "#FBBF24",
-        shadow:      "#000000"
+    var BG = 0x0B1020;
+    var C = {
+        card:   '#F4F6FF',
+        brand:  0x2A41E8,
+        indigo: 0x4F6BFF,
+        blue:   '#2A41E8',
+        blueL:  '#6C86FF',
+        cyan:   '#58C4FF',
+        green:  '#22C55E',
+        gold:   '#F5A623',
+        ink:    '#191919'
+    };
+    var LOOP = 22; // seconds
+
+    // easeInOutCubic
+    function ease(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+    function clamp01(x) { return x < 0 ? 0 : x > 1 ? 1 : x; }
+    function smooth(t, a, b) { return ease(clamp01((t - a) / (b - a))); }
+    // trapezoid envelope: 0 -> 1 over [a,b], hold, 1 -> 0 over [c,d]
+    function env(t, a, b, c, d) {
+        if (t <= a || t >= d) return 0;
+        if (t < b) return ease((t - a) / (b - a));
+        if (t < c) return 1;
+        return ease(1 - (t - c) / (d - c));
+    }
+
+    function Instance(container) {
+        this.container = container;
+        this.destroyed = false;
+        this.disposables = [];
+        this.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        this._init();
+    }
+
+    // ---- small builders -------------------------------------------------
+    Instance.prototype._canvasTex = function (w, h, draw) {
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        var g = cv.getContext('2d');
+        draw(g, w, h);
+        var tx = new THREE.CanvasTexture(cv);
+        tx.anisotropy = 4;
+        this.disposables.push(tx);
+        return { tex: tx, cv: cv, ctx: g };
     };
 
-    var SCENE_DURATION = 5.0;     // seconds each scene holds the stage
-    var CROSSFADE      = 0.75;    // seconds of slide+fade between scenes
-    var BALANCE_TARGET = 250000;  // the wallet balance the counter ticks up to
-    var CURRENCY       = "₦";// Naira sign
+    Instance.prototype._track = function (obj) { this.disposables.push(obj); return obj; };
 
-    var NUM_SCENES = 4;
-    var TOTAL      = SCENE_DURATION * NUM_SCENES;
-    var REF        = 50;          // camera half-extent of the shorter axis
-    var SLIDE      = REF * 1.9;   // how far scenes slide when transitioning
-
-    // ======================= SMALL MATH HELPERS ==============================
-    function clamp01(t) { return t < 0 ? 0 : (t > 1 ? 1 : t); }
-    function lerp(a, b, t) { return a + (b - a) * t; }
-    function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
-    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-    function easeOutBack(t) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
-    function commas(n) { return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
-
-    // ======================= GEOMETRY HELPERS ================================
-    function roundedRectShape(w, h, r) {
-        var s = new THREE.Shape();
-        var x = -w / 2, y = -h / 2;
-        r = Math.min(r, w / 2, h / 2);
+    Instance.prototype._roundedRectShape = function (w, h, r) {
+        var s = new THREE.Shape(), x = -w / 2, y = -h / 2;
         s.moveTo(x + r, y);
-        s.lineTo(x + w - r, y);
-        s.quadraticCurveTo(x + w, y, x + w, y + r);
-        s.lineTo(x + w, y + h - r);
-        s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        s.lineTo(x + r, y + h);
-        s.quadraticCurveTo(x, y + h, x, y + h - r);
-        s.lineTo(x, y + r);
-        s.quadraticCurveTo(x, y, x + r, y);
+        s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+        s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+        s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
         return s;
-    }
+    };
 
-    // A flat mesh with a MeshBasicMaterial (no lighting -> illustration look)
-    function flat(geometry, color, opacity) {
-        var mat = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(color),
-            transparent: true,
-            opacity: opacity == null ? 1 : opacity,
-            depthWrite: false
-        });
-        var m = new THREE.Mesh(geometry, mat);
-        m.userData.baseOpacity = opacity == null ? 1 : opacity;
-        return m;
-    }
-    function rrect(w, h, r, color, opacity) { return flat(new THREE.ShapeGeometry(roundedRectShape(w, h, r)), color, opacity); }
-    function circle(r, color, opacity) { return flat(new THREE.CircleGeometry(r, 40), color, opacity); }
-    function ellipse(rx, ry, color, opacity) {
-        var m = circle(1, color, opacity); m.scale.set(rx, ry, 1); return m;
-    }
-    function triangle(w, h, color) {
-        var s = new THREE.Shape();
-        s.moveTo(-w / 2, -h / 2); s.lineTo(w / 2, -h / 2); s.lineTo(0, h / 2); s.closePath();
-        return flat(new THREE.ShapeGeometry(s), color);
-    }
-
-    // Soft faked ground shadow
-    function shadow(rx) {
-        var e = ellipse(rx, rx * 0.28, COLORS.shadow, 0.18);
-        return e;
-    }
-
-    // ------- Text / chip / card labels drawn on a canvas ---------------------
-    function makeLabel(text, o) {
-        o = o || {};
-        var fontPx = 72;
-        var weight = o.weight || "bold";
-        var family = "Arial, Helvetica, sans-serif";
-        var meas = document.createElement("canvas").getContext("2d");
-        meas.font = weight + " " + fontPx + "px " + family;
-        var checkW = o.check ? fontPx * 1.2 : 0;
-        var textW = Math.ceil(meas.measureText(text).width) + checkW;
-        var chip = !!o.bg;
-        var padX = o.padX != null ? o.padX : (chip ? 46 : 6);
-        var padY = o.padY != null ? o.padY : (chip ? 30 : 6);
-        var cw = textW + padX * 2, ch = fontPx + padY * 2;
-        var cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
-        var ctx = cv.getContext("2d");
-
-        var worldH = o.worldHeight || 8;
-        var worldW = worldH * cw / ch;
-        var tex = new THREE.CanvasTexture(cv);
-        var mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
-        var mesh = new THREE.Mesh(new THREE.PlaneGeometry(worldW, worldH), mat);
-        mesh.userData.baseOpacity = 1;
-
-        function draw(str) {
-            ctx.clearRect(0, 0, cw, ch);
-            if (chip) {
-                ctx.fillStyle = o.bg;
-                var r = o.radius != null ? o.radius : ch / 2;
-                roundRectPath(ctx, 2, 2, cw - 4, ch - 4, r);
-                ctx.fill();
-            }
-            var tx = padX;
-            ctx.textBaseline = "middle";
-            if (o.check) {
-                var cy = ch / 2, cr = fontPx * 0.42, ccx = padX + cr;
-                ctx.fillStyle = o.checkBg || COLORS.green;
-                ctx.beginPath(); ctx.arc(ccx, cy, cr, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = COLORS.white; ctx.lineWidth = fontPx * 0.12;
-                ctx.lineCap = "round"; ctx.beginPath();
-                ctx.moveTo(ccx - cr * 0.45, cy + cr * 0.02);
-                ctx.lineTo(ccx - cr * 0.08, cy + cr * 0.42);
-                ctx.lineTo(ccx + cr * 0.52, cy - cr * 0.42);
-                ctx.stroke();
-                tx = ccx + cr + fontPx * 0.22;
-            }
-            ctx.font = weight + " " + fontPx + "px " + family;
-            ctx.fillStyle = o.color || COLORS.white;
-            ctx.textAlign = "left";
-            ctx.fillText(str, tx, ch / 2 + 2);
-            tex.needsUpdate = true;
+    // A flat rounded card facing +Z, with a texture on its front face.
+    Instance.prototype._card = function (w, h, surface, faceTex) {
+        var grp = new THREE.Group();
+        var geo = this._track(new THREE.ExtrudeGeometry(this._roundedRectShape(w, h, Math.min(w, h) * 0.09), { depth: 0.14, bevelEnabled: false }));
+        var mat = this._track(new THREE.MeshStandardMaterial({ color: surface, roughness: 0.55, metalness: 0.05, transparent: true }));
+        var body = new THREE.Mesh(geo, mat);
+        grp.add(body);
+        if (faceTex) {
+            var pgeo = this._track(new THREE.PlaneGeometry(w * 0.98, h * 0.98));
+            var pmat = this._track(new THREE.MeshBasicMaterial({ map: faceTex, transparent: true }));
+            var face = new THREE.Mesh(pgeo, pmat);
+            face.position.z = 0.145;
+            grp.add(face);
         }
-        draw(text);
-        mesh.userData.setText = draw;   // for dynamic labels (balance counter)
-        return mesh;
-    }
-    function roundRectPath(ctx, x, y, w, h, r) {
-        r = Math.min(r, w / 2, h / 2);
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + w, y, x + w, y + h, r);
-        ctx.arcTo(x + w, y + h, x, y + h, r);
-        ctx.arcTo(x, y + h, x, y, r);
-        ctx.arcTo(x, y, x + w, y, r);
-        ctx.closePath();
-    }
+        grp.userData.mats = [mat].concat(faceTex ? [face.material] : []);
+        return grp;
+    };
 
-    // ------- A simple flat character ----------------------------------------
-    // Returns a group with `.armL` / `.armR` pivots and a `.setArms(angleL,angleR)`.
-    function makeCharacter(shirt) {
-        var g = new THREE.Group();
-        g.add(withPos(shadow(13), 0, -20, -1));
+    Instance.prototype._glow = function (rgba, scale) {
+        var tex = this._canvasTex(128, 128, function (g, s) {
+            var grd = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+            grd.addColorStop(0, rgba);
+            grd.addColorStop(1, 'rgba(0,0,0,0)');
+            g.fillStyle = grd; g.fillRect(0, 0, s, s);
+        }).tex;
+        var mat = this._track(new THREE.SpriteMaterial({ map: tex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, depthTest: false, opacity: 1 }));
+        var sp = new THREE.Sprite(mat);
+        sp.scale.set(scale, scale, 1);
+        return sp;
+    };
 
-        // legs
-        g.add(withPos(rrect(6, 12, 3, COLORS.primaryDark), -4, -14, 0));
-        g.add(withPos(rrect(6, 12, 3, COLORS.primaryDark), 4, -14, 0));
-        // body
-        g.add(withPos(rrect(18, 20, 7, shirt || COLORS.primary), 0, -2, 1));
-        // arm pivots (rotate about shoulder)
-        var armL = new THREE.Group(); armL.position.set(-8.5, 4, 2);
-        armL.add(withPos(rrect(4.5, 15, 2.2, shirt || COLORS.primary), 0, -6, 0));
-        var armR = new THREE.Group(); armR.position.set(8.5, 4, 2);
-        armR.add(withPos(rrect(4.5, 15, 2.2, shirt || COLORS.primary), 0, -6, 0));
-        g.add(armL); g.add(armR);
-        // head
-        g.add(withPos(circle(8, COLORS.skin), 0, 14, 3));
-        // hair
-        var hair = circle(8, COLORS.hair); hair.scale.set(1, 0.55, 1);
-        g.add(withPos(hair, 0, 18.5, 3.1));
-        // eyes
-        g.add(withPos(circle(0.9, COLORS.hair), -2.6, 13.5, 4));
-        g.add(withPos(circle(0.9, COLORS.hair), 2.6, 13.5, 4));
-
-        g.armL = armL; g.armR = armR;
-        g.setArms = function (aL, aR) { armL.rotation.z = aL; armR.rotation.z = aR; };
-        g.setArms(0.15, -0.15);
-        return g;
-    }
-
-    function withPos(obj, x, y, z) { obj.position.set(x, y, z || 0); return obj; }
-
-    // ------- Flat vector icons for scene 4 ----------------------------------
-    function iconHouse() {
-        var g = new THREE.Group();
-        g.add(withPos(rrect(14, 11, 1.5, COLORS.white), 0, -2, 0));
-        g.add(withPos(triangle(18, 8, COLORS.coral), 0, 6.5, 1));
-        g.add(withPos(rrect(4, 6, 1, COLORS.primary), 0, -4, 2));
-        return g;
-    }
-    function iconCar() {
-        var g = new THREE.Group();
-        g.add(withPos(rrect(20, 7, 3, COLORS.primary), 0, 0, 0));
-        g.add(withPos(rrect(11, 6, 3, COLORS.primaryDark), -1, 4.5, 1));
-        g.add(withPos(circle(3.2, COLORS.navy), -6, -4, 2));
-        g.add(withPos(circle(3.2, COLORS.navy), 6, -4, 2));
-        g.add(withPos(circle(1.3, COLORS.white), -6, -4, 3));
-        g.add(withPos(circle(1.3, COLORS.white), 6, -4, 3));
-        return g;
-    }
-    function iconCart() {
-        var g = new THREE.Group();
-        g.add(withPos(rrect(15, 9, 2, COLORS.yellow), 1, 1, 0));
-        // handle
-        g.add(withPos(rrect(3, 2, 1, COLORS.white), -8.5, 6, 1));
-        g.add(withPos(rrect(2, 10, 1, COLORS.white), -8.5, 1.5, 1));
-        g.add(withPos(circle(2, COLORS.navy), -3, -6, 1));
-        g.add(withPos(circle(2, COLORS.navy), 6, -6, 1));
-        return g;
-    }
-    function iconCap() {
-        var g = new THREE.Group();
-        var d = rrect(13, 13, 1.5, COLORS.navy); d.rotation.z = Math.PI / 4; d.scale.set(1, 1, 1);
-        g.add(withPos(d, 0, 3, 1));
-        g.add(withPos(rrect(9, 5, 1, COLORS.primaryDark), 0, -1.5, 0));
-        g.add(withPos(rrect(1, 6, 0.5, COLORS.yellow), 7, 1, 2));
-        g.add(withPos(circle(1.3, COLORS.yellow), 7, -2.2, 2));
-        return g;
-    }
-
-    // ======================= SCENE BUILDERS =================================
-    // Each returns { group, update(localT) }. localT runs 0..SCENE_DURATION.
-
-    // ---- Scene 1: APPLY ----------------------------------------------------
-    function buildApply() {
-        var group = new THREE.Group();
-        var char = makeCharacter();
-        char.position.set(-16, 2, 0); char.scale.setScalar(0.85);
-        group.add(char);
-
-        // desk + laptop
-        group.add(withPos(rrect(40, 4, 1.5, COLORS.deskTop), -6, -22, 2));
-        var laptopBase = rrect(20, 3, 1, COLORS.primaryDark); laptopBase.position.set(-2, -18, 3);
-        var screen = rrect(18, 12, 1.5, COLORS.white); screen.position.set(-2, -10, 3);
-        group.add(laptopBase); group.add(screen);
-        var applyCard = makeLabel("Apply", { bg: COLORS.primary, color: COLORS.white, worldHeight: 4.2, radius: 8 });
-        applyCard.position.set(-2, -10, 4);
-        group.add(applyCard);
-
-        // paper plane (a triangle) that launches off
-        var plane = triangle(7, 5, COLORS.white); plane.rotation.z = -0.5;
-        plane.position.set(-2, -8, 6);
-        group.add(plane);
-
-        // "Applied" chip that pops
-        var chip = makeLabel("Applied", { bg: COLORS.green, color: COLORS.white, check: true, worldHeight: 6, radius: 12 });
-        chip.position.set(12, 20, 7);
-        group.add(chip);
-
-        return {
-            group: group,
-            update: function (t) {
-                // idle handled globally; small tap with right arm at ~1.0s
-                var tap = Math.max(0, Math.min(1, (t - 0.7) / 0.4));
-                char.setArms(0.15, -0.15 - easeInOut(tap) * 0.5);
-
-                // plane launch 1.1s -> 2.6s, flies up-right and fades
-                var pl = clamp01((t - 1.1) / 1.5);
-                var e = easeIn(pl);
-                plane.visible = pl > 0 && pl < 1;
-                plane.position.set(-2 + e * 46, -8 + e * 44, 6);
-                plane.rotation.z = -0.5 + e * 0.9;
-                setOpacity(plane, 1 - pl);
-
-                // applied chip pops at 2.4s
-                var cp = clamp01((t - 2.4) / 0.5);
-                chip.visible = cp > 0;
-                chip.scale.setScalar(easeOutBack(cp) * 1.0 + 0.0001);
-                setOpacity(chip, cp);
-            }
-        };
-    }
-    function easeIn(t) { return t * t; }
-
-    // ---- Scene 2: ACCEPTED -------------------------------------------------
-    function buildAccepted() {
-        var group = new THREE.Group();
-        var char = makeCharacter();
-        char.position.set(-14, -2, 0); char.scale.setScalar(0.9);
-        group.add(char);
-
-        // phone that wiggles
-        var phone = new THREE.Group();
-        phone.add(rrect(12, 22, 3, COLORS.primaryDark));
-        phone.add(withPos(rrect(10, 16, 1.5, COLORS.white), 0, 1, 1));
-        phone.add(withPos(circle(2.2, COLORS.green), 0, -7, 2));
-        phone.position.set(-30, 6, 4);
-        group.add(phone);
-
-        // "You're Hired!" card slides in from top
-        var card = makeLabel("You're Hired!", { bg: COLORS.white, color: COLORS.primary, check: true, checkBg: COLORS.green, worldHeight: 9, radius: 14 });
-        card.position.set(6, 26, 6);
-        group.add(card);
-
-        // confetti (deterministic burst)
-        var confetti = new THREE.Group();
-        var palette = [COLORS.yellow, COLORS.coral, COLORS.green, COLORS.primary, COLORS.white];
-        var N = 34, parts = [];
-        for (var i = 0; i < N; i++) {
-            var p = rrect(2.2, 2.2, 0.6, palette[i % palette.length]);
-            confetti.add(p);
-            parts.push({
-                mesh: p,
-                ang: Math.random() * Math.PI * 2,
-                spd: 26 + Math.random() * 34,
-                spin: (Math.random() - 0.5) * 12,
-                size: 0.7 + Math.random() * 0.8
-            });
-        }
-        confetti.position.set(6, 20, 7);
-        group.add(confetti);
-
-        return {
-            group: group,
-            update: function (t) {
-                // phone wiggle 0.2..1.4s
-                var w = clamp01((t - 0.2) / 1.2);
-                phone.rotation.z = Math.sin(t * 22) * 0.18 * (1 - w) * (w > 0 ? 1 : 0);
-
-                // card slide-in with overshoot, 0.5s -> 1.3s
-                var cs = clamp01((t - 0.5) / 0.8);
-                card.position.y = lerp(40, 22, easeOutBack(cs));
-                setOpacity(card, cs);
-                card.visible = cs > 0;
-
-                // happy jump at ~1.3s (squash + up + arms up)
-                var j = clamp01((t - 1.3) / 0.9);
-                var jump = Math.sin(clamp01(j) * Math.PI) * 10;
-                char.position.y = -2 + jump;
-                var arm = Math.sin(clamp01(j) * Math.PI);
-                char.setArms(0.15 + arm * 1.3, -0.15 - arm * 1.3);
-
-                // confetti burst starting 1.2s
-                var tau = Math.max(0, t - 1.2);
-                var vis = tau > 0 && tau < 2.6;
-                confetti.visible = vis;
-                for (var i = 0; i < parts.length; i++) {
-                    var pt = parts[i], m = pt.mesh;
-                    var x = Math.cos(pt.ang) * pt.spd * tau;
-                    var y = Math.sin(pt.ang) * pt.spd * tau - 20 * tau * tau;
-                    m.position.set(x, y, 0);
-                    m.rotation.z = pt.spin * tau;
-                    m.scale.setScalar(pt.size);
-                    setOpacity(m, clamp01(1 - tau / 2.6));
-                }
-            }
-        };
-    }
-
-    // ---- Scene 3: PAID -----------------------------------------------------
-    function buildPaid() {
-        var group = new THREE.Group();
-
-        // wallet
-        var wallet = new THREE.Group();
-        wallet.add(withPos(shadow(20), 0, -18, -1));
-        wallet.add(rrect(40, 26, 4, COLORS.wallet));
-        wallet.add(withPos(rrect(40, 12, 4, COLORS.primaryDark), 0, -7, 1));
-        wallet.add(withPos(rrect(9, 7, 2, COLORS.yellow), 13, -6, 2)); // clasp
-        wallet.position.set(0, -8, 3);
-        group.add(wallet);
-
-        // falling money (notes + coins), continuous deterministic stream
-        var money = new THREE.Group();
-        var items = [], M = 12;
-        for (var i = 0; i < M; i++) {
-            var isCoin = i % 3 === 0;
-            var m;
-            if (isCoin) {
-                m = new THREE.Group();
-                m.add(circle(3, COLORS.coin));
-                m.add(withPos(circle(2, COLORS.yellow), 0, 0, 1));
-            } else {
-                m = makeLabel(CURRENCY, { color: COLORS.white, worldHeight: 5, weight: "bold", padX: 12, padY: 6, bg: COLORS.note, radius: 3 });
-            }
-            money.add(m);
-            items.push({ mesh: m, x0: (Math.random() * 2 - 1) * 26, off: Math.random(), spin: (Math.random() - 0.5) * 3, coin: isCoin });
-        }
-        group.add(money);
-
-        // balance counter
-        var balance = makeLabel(CURRENCY + "0", { bg: COLORS.white, color: COLORS.primary, worldHeight: 9, radius: 12, padX: 40 });
-        balance.position.set(0, 26, 6);
-        group.add(balance);
-
-        return {
-            group: group,
-            update: function (t) {
-                // wallet grows in 0..0.5, satisfied bounce ~3.4
-                var win = easeOutBack(clamp01(t / 0.5));
-                var bounce = 1 + Math.sin(clamp01((t - 3.3) / 0.5) * Math.PI) * 0.12;
-                wallet.scale.setScalar(win * bounce);
-
-                // money stream falls into wallet
-                for (var i = 0; i < items.length; i++) {
-                    var it = items[i], m = it.mesh;
-                    var period = 2.4;
-                    var ph = ((t / period) + it.off) % 1;         // 0..1 loop
-                    var e = easeIn(ph);
-                    m.position.set(lerp(it.x0, 0, e), lerp(40, -6, e), 4);
-                    m.rotation.z = it.spin * ph;
-                    var s = lerp(1, 0.2, ph);
-                    m.scale.setScalar(s);
-                    setOpacity(m, ph < 0.85 ? 1 : (1 - (ph - 0.85) / 0.15));
-                    m.visible = t > 0.4;
-                }
-
-                // counter ticks up 0.6s -> 3.2s
-                var cv = easeOut(clamp01((t - 0.6) / 2.6));
-                balance.userData.setText(CURRENCY + commas(BALANCE_TARGET * cv));
-            }
-        };
-    }
-
-    // ---- Scene 4: AFFORD ---------------------------------------------------
-    function buildAfford() {
-        var group = new THREE.Group();
-        var char = makeCharacter();
-        char.position.set(-30, -2, 0); char.scale.setScalar(0.95);
-        char.setArms(1.25, -1.25);   // arms up, proud
-        group.add(char);
-
-        var makers = [iconHouse, iconCar, iconCart, iconCap];
-        var icons = [];
-        var startX = -6, gap = 20;
-        for (var i = 0; i < makers.length; i++) {
-            var wrap = new THREE.Group();
-            wrap.add(withPos(circle(11, COLORS.white, 0.10), 0, 0, -1));
-            wrap.add(makers[i]());
-            wrap.position.set(startX + i * gap, 4, 2);
-            group.add(wrap);
-            icons.push(wrap);
-        }
-
-        return {
-            group: group,
-            update: function (t) {
-                // proud little bob
-                char.position.y = -2 + Math.sin(t * 2) * 0.6;
-                // icons pop in sequence
-                for (var i = 0; i < icons.length; i++) {
-                    var start = 0.4 + i * 0.5;
-                    var p = clamp01((t - start) / 0.5);
-                    icons[i].visible = p > 0;
-                    icons[i].scale.setScalar(p > 0 ? easeOutBack(p) : 0.0001);
-                    setOpacity(icons[i], p);
-                }
-            }
-        };
-    }
-
-    // ======================= OPACITY / DISPOSE UTILS =========================
-    function setOpacity(obj, o) {
-        obj.traverse(function (n) {
+    function setOpacity(grp, o) {
+        grp.traverse(function (n) {
             if (n.material) {
-                var base = n.userData.baseOpacity != null ? n.userData.baseOpacity : 1;
-                n.material.opacity = base * o;
-            }
-        });
-    }
-    function disposeObject(root) {
-        root.traverse(function (n) {
-            if (n.geometry) n.geometry.dispose();
-            if (n.material) {
-                if (n.material.map) n.material.map.dispose();
-                n.material.dispose();
+                if (Array.isArray(n.material)) n.material.forEach(function (m) { m.transparent = true; m.opacity = o; });
+                else { n.material.transparent = true; n.material.opacity = o; }
             }
         });
     }
 
-    // ============================= INSTANCE ==================================
-    function mount(container) {
-        if (!container || typeof THREE === "undefined") return null;
+    // ---- scene ----------------------------------------------------------
+    Instance.prototype._init = function () {
+        var self = this;
+        var rect = this.container.getBoundingClientRect();
+        var w = Math.max(1, rect.width), h = Math.max(1, rect.height);
 
-        var reduce = global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(w, h);
+        renderer.setClearColor(BG, 1);
+        renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
+        this.container.appendChild(renderer.domElement);
+        this.renderer = renderer;
 
-        var W = container.clientWidth || 1, H = container.clientHeight || 1;
         var scene = new THREE.Scene();
-        scene.background = new THREE.Color(COLORS.navy);
+        scene.background = new THREE.Color(BG);
+        scene.fog = new THREE.Fog(BG, 13, 34);
+        this.scene = scene;
 
-        var camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100, 100);
+        var cam = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
+        cam.position.set(0, 0.4, 13.5);
+        cam.lookAt(0, 0.2, 0);
+        this.cam = cam;
 
-        var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(global.devicePixelRatio || 1, 2));
-        renderer.setSize(W, H);
-        container.appendChild(renderer.domElement);
-        renderer.domElement.setAttribute("aria-hidden", "true");
-        renderer.domElement.style.display = "block";
+        scene.add(new THREE.AmbientLight(0x3A4A80, 0.7));
+        var key = new THREE.DirectionalLight(0xFFFFFF, 0.95);
+        key.position.set(4, 8, 7); scene.add(key);
+        var rim = new THREE.PointLight(0x2A41E8, 0.9, 60); rim.position.set(-6, 2, -6); scene.add(rim);
+        this.warm = new THREE.PointLight(0xF5A623, 0.0, 40); this.warm.position.set(0, 0, 6); scene.add(this.warm);
 
-        // Accessible text alternative
-        var sr = document.createElement("span");
-        sr.textContent = "Animated illustration: apply for a job, get accepted, get paid, and afford a better life with 1mjobs.";
-        sr.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);";
-        container.appendChild(sr);
+        // central brand glow (background depth)
+        var bgGlow = this._glow('rgba(42,65,232,0.55)', 22); bgGlow.position.set(0, 0.2, -6); scene.add(bgGlow);
 
-        var root = new THREE.Group();
-        scene.add(root);
-        var scenes = [buildApply(), buildAccepted(), buildPaid(), buildAfford()];
-        for (var i = 0; i < scenes.length; i++) { scene.add(scenes[i].group); scenes[i].group.visible = false; }
+        this._buildOffer();
+        this._buildAccept();
+        this._buildSubmit();
+        this._buildPaid();
 
-        function resize() {
-            W = container.clientWidth || 1; H = container.clientHeight || 1;
-            var aspect = W / H;
-            var halfW, halfH;
-            if (aspect >= 1) { halfH = REF; halfW = REF * aspect; }
-            else { halfW = REF; halfH = REF / aspect; }
-            camera.left = -halfW; camera.right = halfW;
-            camera.top = halfH; camera.bottom = -halfH;
-            camera.updateProjectionMatrix();
-            renderer.setSize(W, H);
-        }
-        resize();
+        this.clock = new THREE.Clock();
 
-        var cfFrac = CROSSFADE / SCENE_DURATION;
+        this._onResize = function () { self._resize(); };
+        window.addEventListener('resize', this._onResize);
+        if (window.ResizeObserver) { this.ro = new ResizeObserver(function () { self._resize(); }); this.ro.observe(this.container); }
 
-        function renderFrame(animTime) {
-            // hide all first
-            for (var s = 0; s < scenes.length; s++) scenes[s].group.visible = false;
-
-            var t = ((animTime % TOTAL) + TOTAL) % TOTAL;
-            var phase = t / SCENE_DURATION;          // 0..NUM_SCENES
-            var si = Math.floor(phase) % NUM_SCENES;
-            var f = phase - Math.floor(phase);       // 0..1 within scene
-            var e = f > (1 - cfFrac) ? easeInOut((f - (1 - cfFrac)) / cfFrac) : 0;
-
-            // current scene
-            var cur = scenes[si];
-            cur.group.visible = true;
-            cur.group.position.x = -e * SLIDE;
-            setOpacity(cur.group, 1 - e);
-            cur.update(f * SCENE_DURATION);
-
-            // incoming scene during crossfade (rendered at its opening frame)
-            if (e > 0) {
-                var ni = (si + 1) % NUM_SCENES;
-                var nxt = scenes[ni];
-                nxt.group.visible = true;
-                nxt.group.position.x = (1 - e) * SLIDE;
-                setOpacity(nxt.group, e);
-                nxt.update(0);
-            }
-
-            // gentle idle float on the whole stage for life
-            root.position.y = 0;
-            scene.position.y = Math.sin(animTime * 1.1) * 0.8;
-
-            renderer.render(scene, camera);
-        }
-
-        function teardownGL() {
-            disposeObject(scene);
-            renderer.dispose();
-            if (renderer.domElement && renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
-            if (sr.parentNode) sr.parentNode.removeChild(sr);
-        }
-
-        // ---- reduced motion: one static "final happy" frame, no loop -------
-        if (reduce) {
-            var s4 = scenes[3];
-            s4.group.visible = true; s4.group.position.x = 0; setOpacity(s4.group, 1);
-            s4.update(SCENE_DURATION);
-            var drawStatic = function () { resize(); s4.update(SCENE_DURATION); renderer.render(scene, camera); };
-            drawStatic();
-            global.addEventListener("resize", drawStatic);
-            return {
-                unmount: function () {
-                    global.removeEventListener("resize", drawStatic);
-                    teardownGL();
-                }
-            };
-        }
-
-        // ---- animation loop with pause on hidden / off-screen --------------
-        var rafId = null, running = false, animTime = 0, last = 0;
-
-        function loop(now) {
-            if (!running) return;
-            var dt = (now - last) / 1000; last = now;
-            if (dt > 0.1) dt = 0.1;          // clamp big gaps (tab refocus)
-            animTime += dt;
-            renderFrame(animTime);
-            rafId = global.requestAnimationFrame(loop);
-        }
-        function start() {
-            if (running) return;
-            running = true; last = performance.now();
-            rafId = global.requestAnimationFrame(loop);
-        }
-        function stop() {
-            running = false;
-            if (rafId) { global.cancelAnimationFrame(rafId); rafId = null; }
-        }
-
-        function onVisibility() { if (document.hidden) stop(); else if (onScreen) start(); }
-        var onScreen = true;
-        var io = null;
-        if (global.IntersectionObserver) {
-            io = new IntersectionObserver(function (entries) {
-                onScreen = entries[0].isIntersecting;
-                if (onScreen && !document.hidden) start(); else stop();
-            }, { threshold: 0.05 });
-            io.observe(container);
-        }
-        document.addEventListener("visibilitychange", onVisibility);
-
-        var resizeBound = function () { resize(); if (!running) renderFrame(animTime); };
-        function attachResize() { global.addEventListener("resize", resizeBound); }
-        attachResize();
-
-        start();
-
-        return {
-            unmount: function () {
-                stop();
-                document.removeEventListener("visibilitychange", onVisibility);
-                global.removeEventListener("resize", resizeBound);
-                if (io) io.disconnect();
-                teardownGL();
-            }
+        var loop = function () {
+            if (self.destroyed) return;
+            self._frame();
+            self.raf = requestAnimationFrame(loop);
         };
-    }
+        this.raf = requestAnimationFrame(loop);
+    };
+
+    Instance.prototype._resize = function () {
+        var r = this.container.getBoundingClientRect();
+        var w = Math.max(1, r.width), h = Math.max(1, r.height);
+        this.renderer.setSize(w, h);
+        this.cam.aspect = w / h; this.cam.updateProjectionMatrix();
+    };
+
+    // ---- beat 1: the offer ---------------------------------------------
+    Instance.prototype._buildOffer = function () {
+        var self = this;
+        var tex = this._canvasTex(320, 400, function (g, W, H) {
+            g.clearRect(0, 0, W, H);
+            // briefcase
+            g.strokeStyle = C.blue; g.lineWidth = 12; g.lineJoin = 'round';
+            var bx = W / 2 - 62, by = 96, bw = 124, bh = 92;
+            g.strokeRect(bx, by, bw, bh);
+            g.beginPath(); g.moveTo(W / 2 - 26, by); g.lineTo(W / 2 - 26, by - 22);
+            g.lineTo(W / 2 + 26, by - 22); g.lineTo(W / 2 + 26, by); g.stroke();
+            g.fillStyle = C.blueL; g.fillRect(bx, by + bh / 2 - 6, bw, 12);
+            // title
+            g.fillStyle = C.ink; g.font = '600 30px Inter, sans-serif'; g.textAlign = 'center';
+            g.fillText('New Job Offer', W / 2, 250);
+            // doc lines
+            g.fillStyle = 'rgba(25,25,25,0.18)';
+            g.fillRect(W / 2 - 96, 286, 192, 10);
+            g.fillRect(W / 2 - 96, 310, 150, 10);
+            // pill
+            g.fillStyle = C.blue; g.beginPath();
+            var px = W / 2 - 62, py = 340, pw = 124, ph = 34, pr = 17;
+            g.moveTo(px + pr, py); g.arcTo(px + pw, py, px + pw, py + ph, pr);
+            g.arcTo(px + pw, py + ph, px, py + ph, pr); g.arcTo(px, py + ph, px, py, pr);
+            g.arcTo(px, py, px + pw, py, pr); g.fill();
+            g.fillStyle = '#fff'; g.font = '600 16px Inter, sans-serif'; g.fillText('REVIEW', W / 2, py + 23);
+        }).tex;
+
+        var g = new THREE.Group();
+        g.add(this._glow('rgba(42,65,232,0.85)', 8.5));
+        var card = this._card(3.1, 3.9, C.card, tex);
+        g.add(card);
+        // notification ring
+        var rg = this._track(new THREE.RingGeometry(0.9, 1.02, 48));
+        var rm = this._track(new THREE.MeshBasicMaterial({ color: 0x6C86FF, transparent: true, side: THREE.DoubleSide }));
+        this.offerRing = new THREE.Mesh(rg, rm); this.offerRing.position.set(1.1, 1.5, 0.2); g.add(this.offerRing);
+        this.offer = g; g.visible = false; this.scene.add(g);
+    };
+
+    // ---- beat 2: accept -------------------------------------------------
+    Instance.prototype._buildAccept = function () {
+        var g = new THREE.Group();
+        g.add(this._glow('rgba(34,197,94,0.8)', 7));
+        var cgeo = this._track(new THREE.CircleGeometry(1.15, 48));
+        var cmat = this._track(new THREE.MeshStandardMaterial({ color: 0x22C55E, roughness: 0.4, metalness: 0.1, transparent: true, emissive: 0x0c3a1c }));
+        g.add(new THREE.Mesh(cgeo, cmat));
+        var checkTex = this._canvasTex(128, 128, function (gg, s) {
+            gg.clearRect(0, 0, s, s);
+            gg.strokeStyle = '#fff'; gg.lineWidth = 12; gg.lineCap = 'round'; gg.lineJoin = 'round';
+            gg.beginPath(); gg.moveTo(38, 66); gg.lineTo(56, 86); gg.lineTo(92, 44); gg.stroke();
+        }).tex;
+        var pmat = this._track(new THREE.MeshBasicMaterial({ map: checkTex, transparent: true }));
+        var check = new THREE.Mesh(this._track(new THREE.PlaneGeometry(1.7, 1.7)), pmat);
+        check.position.z = 0.02; g.add(check);
+
+        // confetti triangles (logo motif)
+        this.confetti = [];
+        var tshape = new THREE.Shape(); tshape.moveTo(0, 0.16); tshape.lineTo(-0.14, -0.1); tshape.lineTo(0.14, -0.1); tshape.closePath();
+        for (var i = 0; i < 14; i++) {
+            var tg = this._track(new THREE.ShapeGeometry(tshape));
+            var tm = this._track(new THREE.MeshBasicMaterial({ color: (i % 3 ? 0x6C86FF : 0x2A41E8), transparent: true, side: THREE.DoubleSide }));
+            var tri = new THREE.Mesh(tg, tm);
+            var ang = (i / 14) * Math.PI * 2;
+            tri.userData = { ang: ang, spin: (Math.random() * 2 - 1) * 3, rad: 1.4 + Math.random() * 1.2 };
+            g.add(tri); this.confetti.push(tri);
+        }
+        this.accept = g; g.visible = false; this.scene.add(g);
+    };
+
+    // ---- beat 3: submit work -------------------------------------------
+    Instance.prototype._buildSubmit = function () {
+        var g = new THREE.Group();
+        g.add(this._glow('rgba(88,196,255,0.7)', 7));
+        // package
+        var box = new THREE.Mesh(
+            this._track(new THREE.BoxGeometry(1.9, 1.5, 1.9)),
+            this._track(new THREE.MeshStandardMaterial({ color: 0x4F6BFF, roughness: 0.5, metalness: 0.1, transparent: true }))
+        );
+        box.rotation.y = 0.5; box.position.y = -0.1;
+        // upload arrow on top face via small plane
+        var arrowTex = this._canvasTex(128, 128, function (gg, s) {
+            gg.clearRect(0, 0, s, s);
+            gg.strokeStyle = '#fff'; gg.lineWidth = 12; gg.lineCap = 'round'; gg.lineJoin = 'round';
+            gg.beginPath(); gg.moveTo(s / 2, 96); gg.lineTo(s / 2, 40); gg.stroke();
+            gg.beginPath(); gg.moveTo(s / 2 - 22, 60); gg.lineTo(s / 2, 34); gg.lineTo(s / 2 + 22, 60); gg.stroke();
+        }).tex;
+        var arrow = new THREE.Mesh(this._track(new THREE.PlaneGeometry(1.1, 1.1)), this._track(new THREE.MeshBasicMaterial({ map: arrowTex, transparent: true })));
+        arrow.position.set(0, 0.9, 0); arrow.rotation.x = 0; box.add(arrow);
+        this.pkg = box; g.add(box);
+
+        // progress ring (canvas, redrawn during beat)
+        this.progress = this._canvasTex(256, 256, function () {});
+        var pm = this._track(new THREE.MeshBasicMaterial({ map: this.progress.tex, transparent: true }));
+        this.progressMesh = new THREE.Mesh(this._track(new THREE.PlaneGeometry(3.6, 3.6)), pm);
+        this.progressMesh.position.z = 1.4; g.add(this.progressMesh);
+
+        this.submit = g; g.visible = false; this.scene.add(g);
+    };
+
+    Instance.prototype._drawProgress = function (p) {
+        var g = this.progress.ctx, s = 256;
+        g.clearRect(0, 0, s, s);
+        g.lineWidth = 12; g.lineCap = 'round';
+        g.strokeStyle = 'rgba(255,255,255,0.12)';
+        g.beginPath(); g.arc(s / 2, s / 2, 110, 0, Math.PI * 2); g.stroke();
+        var grd = g.createLinearGradient(0, 0, s, s);
+        grd.addColorStop(0, C.cyan); grd.addColorStop(1, C.gold);
+        g.strokeStyle = grd;
+        g.beginPath(); g.arc(s / 2, s / 2, 110, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); g.stroke();
+        this.progress.tex.needsUpdate = true;
+    };
+
+    // ---- beat 4: get paid ----------------------------------------------
+    Instance.prototype._buildPaid = function () {
+        var g = new THREE.Group();
+        g.add(this._glow('rgba(245,166,35,0.85)', 8.5));
+        // wallet
+        var wTex = this._canvasTex(320, 220, function (gg, W, H) {
+            gg.clearRect(0, 0, W, H);
+            gg.fillStyle = 'rgba(245,166,35,0.18)'; gg.fillRect(0, 0, W, 54);
+            gg.fillStyle = C.gold; gg.font = '600 26px Inter, sans-serif'; gg.textAlign = 'left';
+            gg.fillText('Wallet', 26, 36);
+            gg.strokeStyle = 'rgba(245,166,35,0.9)'; gg.lineWidth = 8;
+            gg.strokeRect(210, 96, 84, 60);
+            gg.fillStyle = C.gold; gg.beginPath(); gg.arc(214, 126, 9, 0, Math.PI * 2); gg.fill();
+        }).tex;
+        var wallet = this._card(3.4, 2.35, 0x141a35, wTex);
+        wallet.position.y = -0.3; g.add(wallet);
+        this.wallet = wallet;
+
+        // coin
+        var coinTex = this._canvasTex(128, 128, function (gg, s) {
+            gg.clearRect(0, 0, s, s);
+            gg.fillStyle = '#F7B733'; gg.beginPath(); gg.arc(s / 2, s / 2, 58, 0, Math.PI * 2); gg.fill();
+            gg.strokeStyle = '#E6820F'; gg.lineWidth = 7; gg.beginPath(); gg.arc(s / 2, s / 2, 54, 0, Math.PI * 2); gg.stroke();
+            gg.fillStyle = '#7a4b06'; gg.font = '700 64px Inter, sans-serif'; gg.textAlign = 'center';
+            gg.fillText('₦', s / 2, s / 2 + 24);
+        }).tex;
+        this.coin = new THREE.Mesh(this._track(new THREE.CircleGeometry(0.62, 40)), this._track(new THREE.MeshBasicMaterial({ map: coinTex, transparent: true })));
+        this.coin.position.set(0, 2.6, 0.3); g.add(this.coin);
+        this.coinGlow = this._glow('rgba(245,166,35,0.9)', 2.2); this.coinGlow.position.copy(this.coin.position); g.add(this.coinGlow);
+
+        // balance chip
+        this.balance = this._canvasTex(320, 96, function () {});
+        this.balanceMesh = new THREE.Mesh(this._track(new THREE.PlaneGeometry(3.0, 0.9)), this._track(new THREE.MeshBasicMaterial({ map: this.balance.tex, transparent: true })));
+        this.balanceMesh.position.set(0, 1.55, 0.4); g.add(this.balanceMesh);
+
+        this.paid = g; g.visible = false; this.scene.add(g);
+    };
+
+    Instance.prototype._drawBalance = function (val) {
+        var g = this.balance.ctx, W = 320, H = 96;
+        g.clearRect(0, 0, W, H);
+        g.fillStyle = 'rgba(34,197,94,0.16)';
+        g.beginPath();
+        var r = 24; g.moveTo(r, 6); g.arcTo(W - 6, 6, W - 6, H - 6, r); g.arcTo(W - 6, H - 6, 6, H - 6, r);
+        g.arcTo(6, H - 6, 6, 6, r); g.arcTo(6, 6, W - 6, 6, r); g.fill();
+        g.fillStyle = '#22C55E'; g.font = '600 40px Inter, sans-serif'; g.textAlign = 'center';
+        g.fillText('+ ₦' + Math.round(val).toLocaleString('en-NG'), W / 2, H / 2 + 15);
+        this.balance.tex.needsUpdate = true;
+    };
+
+    // ---- frame ----------------------------------------------------------
+    Instance.prototype._frame = function () {
+        var el = this.clock.getElapsedTime();
+        var t = this.reduced ? 0.84 : (el % LOOP) / LOOP;
+        var bob = Math.sin(el * 0.9);
+
+        // camera gentle dolly + orbit
+        var ph = t * Math.PI * 2;
+        this.cam.position.set(Math.sin(ph) * 0.9, 0.4 + Math.sin(ph * 2) * 0.18, 13.5 + Math.cos(ph) * 0.6);
+        this.cam.lookAt(0, 0.15, 0);
+
+        // -- offer
+        var eO = env(t, 0.02, 0.10, 0.24, 0.30) || (this.reduced ? 0 : 0);
+        this.offer.visible = eO > 0.001;
+        if (this.offer.visible) {
+            setOpacity(this.offer, eO);
+            this.offer.position.set(0, 0.2 + (1 - eO) * 1.2 + bob * 0.06, 0);
+            this.offer.rotation.set(-0.05, (1 - eO) * -0.4 + Math.sin(el * 0.6) * 0.05, 0);
+            this.offer.scale.setScalar(0.9 + eO * 0.1);
+            var pr = (Math.sin(el * 2.2) * 0.5 + 0.5);
+            this.offerRing.scale.setScalar(0.6 + pr * 1.1);
+            this.offerRing.material.opacity = (1 - pr) * 0.7 * eO;
+        }
+
+        // -- accept
+        var eA = env(t, 0.26, 0.33, 0.44, 0.50);
+        this.accept.visible = eA > 0.001;
+        if (this.accept.visible) {
+            setOpacity(this.accept, eA);
+            var pop = 0.8 + ease(clamp01((t - 0.26) / 0.09)) * 0.2 + Math.sin(el * 3) * 0.01;
+            this.accept.position.set(0, 0.25 + bob * 0.05, 0);
+            this.accept.scale.setScalar(pop);
+            var spread = ease(clamp01((t - 0.30) / 0.12));
+            for (var i = 0; i < this.confetti.length; i++) {
+                var c = this.confetti[i], rad = c.userData.rad * spread;
+                c.position.set(Math.cos(c.userData.ang) * rad, Math.sin(c.userData.ang) * rad + spread * 0.4, 0.3);
+                c.rotation.z = el * c.userData.spin;
+                c.material.opacity = eA * (1 - spread) * 0.9;
+                c.scale.setScalar(0.8 + spread * 0.6);
+            }
+        }
+
+        // -- submit
+        var eS = env(t, 0.48, 0.55, 0.66, 0.72);
+        this.submit.visible = eS > 0.001;
+        if (this.submit.visible) {
+            setOpacity(this.submit, eS);
+            var local = clamp01((t - 0.50) / 0.16);
+            this._drawProgress(local);
+            var lift = ease(clamp01((t - 0.62) / 0.10)); // dissolve up near the end
+            this.submit.position.set(0, 0.1 + bob * 0.06 + lift * 1.4, 0);
+            this.pkg.rotation.y = 0.5 + el * 0.35;
+            this.pkg.material.opacity = eS * (1 - lift);
+            this.progressMesh.rotation.z = -el * 0.4;
+        }
+
+        // -- paid
+        var eP = env(t, 0.70, 0.78, 0.92, 0.98) || (this.reduced ? 1 : 0);
+        this.paid.visible = eP > 0.001;
+        if (this.paid.visible) {
+            setOpacity(this.paid, eP);
+            this.paid.position.set(0, 0.05 + bob * 0.05, 0);
+            var drop = this.reduced ? 1 : ease(clamp01((t - 0.76) / 0.10));
+            this.coin.position.y = 2.6 - drop * 2.5;
+            this.coin.rotation.y = el * 3.0;
+            this.coin.scale.setScalar(1 - drop * 0.25);
+            this.coinGlow.position.copy(this.coin.position);
+            this.coinGlow.material.opacity = eP;
+            var settle = this.reduced ? 1 : clamp01((t - 0.80) / 0.12);
+            this._drawBalance(settle * 50000);
+            this.balanceMesh.material.opacity = eP * settle;
+            this.warm.intensity = eP * (0.6 + Math.max(0, Math.sin((t - 0.80) * 30)) * 0.8);
+        } else {
+            this.warm.intensity = 0;
+        }
+
+        this.renderer.render(this.scene, this.cam);
+    };
+
+    Instance.prototype.unmount = function () {
+        this.destroyed = true;
+        if (this.raf) cancelAnimationFrame(this.raf);
+        window.removeEventListener('resize', this._onResize);
+        if (this.ro) this.ro.disconnect();
+        for (var i = 0; i < this.disposables.length; i++) {
+            var d = this.disposables[i];
+            if (d && d.dispose) { try { d.dispose(); } catch (e) {} }
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
+        }
+    };
 
     var current = null;
     global.JobJourney = {
-        mount: function (container) {
-            if (current) { current.unmount(); current = null; }
-            current = mount(container);
+        mount: function (el) {
+            if (!el || !global.THREE) return null;
+            if (current) current.unmount();
+            current = new Instance(el);
             return current;
         },
         unmount: function () { if (current) { current.unmount(); current = null; } }

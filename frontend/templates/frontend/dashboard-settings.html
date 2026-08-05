@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -55,7 +55,7 @@
 				</nav>
 			</div>
 			
-			{% if not request.user.onboarding_completed %}
+			{% if not request.user.onboarding_completed and request.user.role != 'admin' and not request.user.is_staff and not request.user.is_superuser %}
 			<div class="onboarding-progress" id="onboarding-progress"
 				style="background:#fff;border:1px solid #e6e8ec;border-radius:8px;padding:22px 24px;margin-bottom:30px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
 				<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
@@ -582,7 +582,7 @@
 ================================================== -->
 
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->

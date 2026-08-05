@@ -232,7 +232,9 @@ async function loadMyProfile() {
             [
                 "about-section",
                 "hourly-rate-overview",
-                "job-success-overview",
+                "jobs-done-overview",
+                "rehired-overview",
+                "freelancer-indicators-widget",
                 "skills-widget",
                 "attachments-widget",
                 "employment-history-box",
@@ -275,12 +277,25 @@ async function loadMyProfile() {
         // Hourly rate
         document.getElementById("hourly_rate").textContent = parseInt(me.hourly_rate) || 0;
 
-        // Rating value
-        document.getElementById("profile-rating-value").textContent = parseFloat(detail.rating || 0).toFixed(1);
+        // Overview tiles: jobs done & rehired
+        const jobsDoneEl = document.getElementById("jobs_done");
+        if (jobsDoneEl) jobsDoneEl.textContent = detail.jobs_done || 0;
+        const rehiredEl = document.getElementById("rehired");
+        if (rehiredEl) rehiredEl.textContent = detail.rehired || 0;
 
-        // Job success
-        const jobSuccessPct = detail.job_success || 0;
-        document.getElementById("job_success").textContent = `${jobSuccessPct}%`;
+        // Performance indicators: set the number and fill the progress bar.
+        const setIndicator = (id, pct) => {
+            pct = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+            const strong = document.getElementById(id);
+            if (!strong) return;
+            strong.textContent = pct + "%";
+            const bar = strong.closest(".indicator")?.querySelector(".indicator-bar span");
+            if (bar) bar.style.width = pct + "%";
+        };
+        setIndicator("job_success", detail.job_success);
+        setIndicator("recommendation", detail.recommendation);
+        setIndicator("on_time", detail.on_time);
+        setIndicator("on_budget", detail.on_budget);
 
         // Skills
         const skillsContainer = document.getElementById("skills-container");

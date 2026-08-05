@@ -2,152 +2,178 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern au-modern ud-modern">
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>User Detail</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_user_list' %}">Users</a></li>
+        <li>{{ user_obj.get_full_name|default:user_obj.email }}</li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Identity header -->
+  <div class="dashboard-box margin-top-0 ud-identity">
+    <div class="content">
+      <div class="ud-head">
         <div>
-            <h2>{{ user_obj.get_full_name|default:user_obj.email }}</h2>
-            <p class="text-muted mb-0">{{ user_obj.email }}</p>
+          <h4 class="ud-name">{{ user_obj.get_full_name|default:user_obj.email }}</h4>
+          <p class="ud-email">{{ user_obj.email }}</p>
         </div>
-
-        <div>
-            <span class="badge bg-info">{{ user_obj.role|title }}</span>
-
-            {% if user_obj.role == "freelancer" and user_obj.user_profile.verified %}
-            <span class="badge bg-primary">Verified</span>
-            {% endif %}
-
-            {% if user_obj.account_status == "active" %}
-            <span class="badge bg-success">Active</span>
-            {% elif user_obj.account_status == "suspended" %}
-            <span class="badge bg-warning">Suspended</span>
-            {% elif user_obj.account_status == "banned" %}
-            <span class="badge bg-danger">Banned</span>
-            {% else %}
-            <span class="badge bg-secondary">{{ user_obj.account_status }}</span>
-            {% endif %}
+        <div class="ud-badges">
+          <span class="au-pill au-blue">{{ user_obj.role|title }}</span>
+          {% if user_obj.role == "freelancer" and user_obj.user_profile.verified %}
+            <span class="au-pill au-green">Verified</span>
+          {% endif %}
+          {% if user_obj.account_status == "active" %}
+            <span class="au-pill au-green">Active</span>
+          {% elif user_obj.account_status == "suspended" %}
+            <span class="au-pill au-amber">Suspended</span>
+          {% elif user_obj.account_status == "banned" %}
+            <span class="au-pill au-red">Banned</span>
+          {% else %}
+            <span class="au-pill au-grey">{{ user_obj.account_status|title }}</span>
+          {% endif %}
         </div>
+      </div>
     </div>
-    <div class="col-md-8">
+  </div>
 
-        <div class="card mb-4">
-            <div class="card-header">Active Subscription</div>
-            <div class="card-body">
+  <div class="row">
+    <!-- Main column -->
+    <div class="col-xl-8 col-lg-8">
 
-                {% if subscription %}
-                <p><strong>Plan:</strong> {{ subscription.pricing_plan.name }}</p>
-                <p><strong>Started:</strong> {{ subscription.start_date|date:"Y-m-d" }}</p>
-                <p><strong>Expires:</strong> {{ subscription.end_date|date:"Y-m-d" }}</p>
-                <p>
-                    <a href="{% url 'admin_subscription_detail' subscription.id %}"
-                        class="btn btn-sm btn-outline-primary">
-                        View
-                    </a>
-                </p>
-                {% else %}
-                <p class="text-muted">No active subscription</p>
-                {% endif %}
-
-            </div>
+      <!-- Active Subscription -->
+      <div class="dashboard-box">
+        <div class="headline">
+          <h3><i class="icon-material-outline-card-membership"></i> Active Subscription</h3>
         </div>
-
-        <div class="card mb-4">
-            <div class="card-header">Recent Orders</div>
-
-            <table class="table mb-0">
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Plan</th>
-                        <th>Status</th>
-                        <th>Amount</th>
-                        <th>Date</th>
-                        <th></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for order in recent_orders %}
-                    <tr>
-                        <td>#{{ order.id }}</td>
-                        <td>{{ order.pricing_plan.name }}</td>
-                        <td>{{ order.status|title }}</td>
-                        <td>{{ order.amount }}</td>
-                        <td>{{ order.created_at|date:"Y-m-d" }}</td>
-                        <td>
-                            <a href="{% url 'admin_order_detail' order.id %}" class="btn btn-outline-primary btn-sm">
-                                View Order
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">
-                            No orders found
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="content">
+          {% if subscription %}
+            <div class="ud-kv"><span class="k">Plan</span><span class="v">{{ subscription.plan.name|default:"—" }}</span></div>
+            <div class="ud-kv"><span class="k">Billing cycle</span><span class="v">{{ subscription.billing_cycle|default:"—"|title }}</span></div>
+            <div class="ud-kv"><span class="k">Started</span><span class="v">{{ subscription.start_date|date:"M j, Y" }}</span></div>
+            <div class="ud-kv"><span class="k">Expires</span><span class="v">{{ subscription.end_date|date:"M j, Y" }}</span></div>
+            <a href="{% url 'admin_subscription_detail' subscription.id %}" class="au-view" style="margin-top:16px;">View subscription</a>
+          {% else %}
+            <p class="ud-empty">No active subscription.</p>
+          {% endif %}
         </div>
-    </div>
+      </div>
 
-    <div class="col-md-4">
-        <div class="card mb-3">
-
-            <div class="card-header">User Activities</div>
-            <div class="card-body">
-                {% for activity in user_recent_activities %}
-                <p>
-                    {{ activity.action|title }} on {{ activity.created_at|date:"Y-m-d H:i:s" }}<br>
-                    {% for k, v in activity.metadata.items %}<small class="text-muted">{{ k }}: {{ v|safe
-                        }}</small><br>{% endfor %}
-                </p>
-                {% empty %}
-                <p class="text text-muted">
-                    No activity found
-                </p>
-                {% endfor %}
-            </div>
+      <!-- Recent Orders -->
+      <div class="dashboard-box ud-flush">
+        <div class="headline">
+          <h3><i class="icon-material-outline-receipt"></i> Recent Orders</h3>
         </div>
-
-        <div class="card border-danger">
-            <div class="card-header text-danger">Admin Actions</div>
-            <div class="card-body">
-                {% if not user_obj.is_suspended %}
-                <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#suspendModal">
-                    Suspend
-                </button>
-                {% else %}
-                <a href="{% url 'user-unsuspend' user_obj.pk %}" class="btn btn-success btn-sm">Unsuspend</a>
-                {% endif %}
-
-
-                {% if not user_obj.is_banned %}
-                <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#banModal">Ban</button>
-                {% else %}
-                <a href="{% url 'user-unban' user_obj.pk %}" class="btn btn-secondary btn-sm">Unban</a>
-                {% endif %}
-
-                {% if user_obj.role == "freelancer" %}
-                    {% if user_obj.user_profile.verified %}
-                    <form method="post" action="{% url 'admin_user_unverify' user_obj.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-secondary btn-sm">Remove verification</button>
-                    </form>
+        <div class="content">
+          <div class="ud-table-wrap">
+            <table class="ud-table">
+              <thead>
+                <tr>
+                  <th>Order</th><th>Plan</th><th>Status</th><th>Amount</th><th>Date</th><th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                  <td>#{{ order.id }}</td>
+                  <td>{% if order.plan_name_snapshot %}{{ order.plan_name_snapshot }}{% elif order.plan %}{{ order.plan.name }}{% else %}—{% endif %}</td>
+                  <td>
+                    {% if order.status == "paid" %}
+                      <span class="au-pill au-green">Paid</span>
+                    {% elif order.status == "pending" %}
+                      <span class="au-pill au-amber">Pending</span>
+                    {% elif order.status == "failed" %}
+                      <span class="au-pill au-red">Failed</span>
                     {% else %}
-                    <form method="post" action="{% url 'admin_user_verify' user_obj.pk %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-sm">Verify freelancer</button>
-                    </form>
+                      <span class="au-pill au-grey">{{ order.status|title }}</span>
                     {% endif %}
-                {% endif %}
-
-            </div>
+                  </td>
+                  <td>&#8358;{{ order.amount }}</td>
+                  <td><span class="muted">{{ order.created_at|date:"M j, Y" }}</span></td>
+                  <td class="au-action-cell"><a href="{% url 'admin_order_detail' order.id %}" class="au-view">View</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6"><div class="ud-empty" style="padding:26px 16px;text-align:center;">No orders found.</div></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
-    </div>
-</div>
+      </div>
 
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-xl-4 col-lg-4">
+
+      <!-- User Activities -->
+      <div class="dashboard-box">
+        <div class="headline">
+          <h3><i class="icon-material-outline-timeline"></i> User Activities</h3>
+        </div>
+        <div class="content">
+          {% for activity in user_recent_activities %}
+          <div class="ud-activity">
+            <div class="ud-act-title">{{ activity.action|title }}</div>
+            <div class="ud-act-date">{{ activity.created_at|date:"M j, Y H:i" }}</div>
+            {% if activity.metadata.items %}
+            <div class="ud-act-meta">
+              {% for k, v in activity.metadata.items %}<span>{{ k }}: {{ v }}</span>{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="ud-empty">No activity found.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Admin Actions -->
+      <div class="dashboard-box">
+        <div class="headline">
+          <h3><i class="icon-material-outline-admin-panel-settings"></i> Admin Actions</h3>
+        </div>
+        <div class="content">
+          <div class="ud-actions">
+            {% if not user_obj.is_suspended %}
+              <button type="button" class="udbtn udbtn-amber" data-bs-toggle="modal" data-bs-target="#suspendModal">Suspend user</button>
+            {% else %}
+              <a href="{% url 'user-unsuspend' user_obj.pk %}" class="udbtn udbtn-green">Unsuspend user</a>
+            {% endif %}
+
+            {% if not user_obj.is_banned %}
+              <button type="button" class="udbtn udbtn-red" data-bs-toggle="modal" data-bs-target="#banModal">Ban user</button>
+            {% else %}
+              <a href="{% url 'user-unban' user_obj.pk %}" class="udbtn udbtn-grey">Unban user</a>
+            {% endif %}
+
+            {% if user_obj.role == "freelancer" %}
+              {% if user_obj.user_profile.verified %}
+                <form method="post" action="{% url 'admin_user_unverify' user_obj.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="udbtn udbtn-grey" style="width:100%;">Remove verification</button>
+                </form>
+              {% else %}
+                <form method="post" action="{% url 'admin_user_verify' user_obj.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="udbtn udbtn-green" style="width:100%;">Verify freelancer</button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
 {% endblock %}
 
 {% block modals %}
@@ -161,22 +187,16 @@
                     <h5 class="modal-title" id="suspendModalLabel">Suspend User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
-
                     <div class="mb-3">
                         <label class="form-label">Duration (Days)</label>
                         <input type="number" class="form-control" name="days" min="1" placeholder="e.g. 7" required>
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Suspension Reason</label>
-                        <textarea class="form-control" name="reason" rows="3"
-                            placeholder="Reason for suspension..."></textarea>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="Reason for suspension..."></textarea>
                     </div>
-
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-warning">Suspend User</button>
@@ -196,21 +216,15 @@
                     <h5 class="modal-title" id="banModalLabel">Ban User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body">
-
                     <div class="alert alert-danger">
                         <strong>Warning:</strong> A ban is permanent until manually removed.
                     </div>
-
                     <div class="mb-3">
                         <label class="form-label">Ban Reason</label>
-                        <textarea class="form-control" name="reason" rows="3" required
-                            placeholder="Reason for ban..."></textarea>
+                        <textarea class="form-control" name="reason" rows="3" required placeholder="Reason for ban..."></textarea>
                     </div>
-
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">Ban User</button>

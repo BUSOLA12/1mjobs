@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -42,7 +42,7 @@
 	<!-- Dashboard Content
 	================================================== -->
 	<div class="dashboard-content-container" data-simplebar>
-		<div class="dashboard-content-inner" >
+		<div class="dashboard-content-inner ma-modern" >
 			
 			<!-- Dashboard Headline -->
 			<div class="dashboard-headline">
@@ -72,8 +72,16 @@
 
 						<div class="content">
 							<ul class="dashboard-box-list bidding">
-								
-								
+								{% for _ in "123" %}
+								<li class="ma-skeleton">
+									<div class="ma-sk-main">
+										<span class="sk ma-sk-title"></span>
+										<span class="sk ma-sk-meta"></span>
+									</div>
+									<span class="sk ma-sk-status"></span>
+									<span class="sk ma-sk-btn"></span>
+								</li>
+								{% endfor %}
 							</ul>
 						</div>
 					</div>
@@ -157,62 +165,19 @@
 <!-- Edit Bid Popup / End -->
 
 <style>
-/* Loading Overlay */
+/* Slim brand top-progress bar instead of the dark overlay */
 .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    visibility: hidden;
+    position: fixed; inset: 0; z-index: 9999; background: transparent;
+    opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-
-.loading-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.loading-popup {
-    background: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 300px;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #2a41e8;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-popup h3 {
-    margin: 0 0 10px;
-    font-size: 20px;
-    color: #333;
-}
-
-.loading-popup p {
-    margin: 0;
-    color: #666;
-    font-size: 14px;
+.loading-overlay.active { opacity: 1; visibility: visible; }
+.loading-popup { display: none; }
+.loading-overlay.active::before {
+    content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, rgba(42,65,232,0), #2a41e8 50%, rgba(42,65,232,0));
+    background-size: 40% 100%; background-repeat: no-repeat;
+    animation: sk-loadbar 1.1s ease-in-out infinite;
 }
 </style>
 
@@ -228,7 +193,7 @@
 <!-- Scripts
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
 <script>
@@ -320,6 +285,19 @@ try {
 
 let bids_list = document.querySelector(".dashboard-box-list.bidding");
 bids_list.innerHTML = "";
+
+// Empty state when the freelancer has no active bids.
+if (!Array.isArray(bids_data) || bids_data.length === 0) {
+	bids_list.innerHTML = `
+		<li class="ma-empty">
+			<span class="ma-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg></span>
+			<span class="ma-empty-title">No active bids</span>
+			<span class="ma-empty-text">You haven't placed any bids yet. Browse tasks to find work and place your first bid.</span>
+			<a href="/tasks/" class="button ripple-effect">Browse Tasks</a>
+		</li>`;
+	hideLoading();
+	return;
+}
 
 for (const bids of bids_data) {
 	//const task_res = await fetchProtected(`/api/tasks/detail/${bids.task}/`);

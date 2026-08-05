@@ -100,6 +100,46 @@ async function setCountryFromOnline() {
   }
 }
 
+// Thousand separator for the slider label. custom.js keeps its own copy of
+// this inside a closure we can't reach from here, so we redefine a small one.
+function formatBidAmount(n) {
+	return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Rebuild the bidding slider so its min/max match the task's budget range.
+// custom.js initialises the slider with hardcoded bounds (1,000 - 1,000,000)
+// before the task data is fetched, which is why an unrelated figure shows up;
+// once we know the real budget we tear that instance down and recreate it.
+function setBidSliderRange(budgetMin, budgetMax) {
+	let min = Math.floor(parseFloat(budgetMin));
+	let max = Math.ceil(parseFloat(budgetMax));
+	if (isNaN(min) || isNaN(max)) return;
+	if (max <= min) max = min + 1; // guard against a zero-width range
+
+	const $slider = $('.bidding-slider');
+	if (!$slider.length) return;
+
+	// Pick a step that stays usable for both tiny and large ranges.
+	const range = max - min;
+	let step = 500;
+	if (range < 5000) step = Math.max(1, Math.round(range / 100));
+
+	if ($slider.data('slider')) {
+		$slider.slider('destroy');
+	}
+	$slider.attr({
+		'data-slider-min': min,
+		'data-slider-max': max,
+		'data-slider-step': step,
+		'data-slider-value': min
+	});
+	$slider.slider();
+	$slider.on('slide', function (e) {
+		$('#biddingVal').text(formatBidAmount(e.value));
+	});
+	$('#biddingVal').text(formatBidAmount(min));
+}
+
 function showLoading(message = null) {
     document.getElementById('loadingOverlay').classList.add('active');
     if (message !== null) {
@@ -266,6 +306,9 @@ async function companyCreated(empId) {
 				document.querySelector(".project-name").textContent = data.project_name;
 				//salary
 				document.querySelector(".budget-amount").textContent = `₦${data.budget_min} - ₦${data.budget_max}`;
+
+				// Constrain the bid slider to the employer's budget range.
+				setBidSliderRange(data.budget_min, data.budget_max);
 
 				// skills
 				document.querySelector(".task-skills").textContent = data.skills;

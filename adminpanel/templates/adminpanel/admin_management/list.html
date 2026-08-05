@@ -1,0 +1,150 @@
+{% extends "adminpanel/base.html" %}
+{% block title %}Admin Accounts{% endblock %}
+
+{% block content %}
+<div class="admin-modern au-modern alog-modern aa-modern">
+
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Admin Accounts</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Admins</li>
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Create admin -->
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-person-add"></i> Create Admin</h3>
+    </div>
+    <div class="content">
+      <form method="post" action="{% url 'admin_admin_create' %}" id="aa-form" class="aa-form" autocomplete="off" novalidate>
+        {% csrf_token %}
+        <div class="aa-field">
+          <label>First name</label>
+          <input type="text" name="first_name" placeholder="First name">
+        </div>
+        <div class="aa-field">
+          <label>Last name</label>
+          <input type="text" name="last_name" placeholder="Last name">
+        </div>
+        <div class="aa-field">
+          <label>Email <span class="aa-req">*</span></label>
+          <input type="email" name="email" placeholder="admin@example.com">
+          <span class="aa-err" data-err="email"></span>
+        </div>
+        <div class="aa-field">
+          <label>Temporary password <span class="aa-req">*</span></label>
+          <input type="text" name="password" placeholder="At least 8 characters">
+          <span class="aa-err" data-err="password"></span>
+          <span class="aa-hint">Share this securely; the new admin can change it after logging in.</span>
+        </div>
+        <label class="aa-check">
+          <input type="checkbox" name="is_superuser">
+          <span>Grant <strong>superuser</strong> (can create and manage other admins)</span>
+        </label>
+        <div class="aa-actions">
+          <button type="submit" class="au-apply">Create Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Existing admins -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-supervisor-account"></i> Existing Admins</h3>
+    </div>
+    <div class="content">
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Level</th>
+              <th>Status</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in admins %}
+            <tr>
+              <td data-label="Email">{{ a.email }}</td>
+              <td data-label="Name">{{ a.get_full_name|default:"—" }}</td>
+              <td data-label="Level">
+                {% if a.is_superuser %}
+                  <span class="au-pill au-red">Superuser</span>
+                {% else %}
+                  <span class="au-pill au-blue">Admin</span>
+                {% endif %}
+              </td>
+              <td data-label="Status">
+                {% if a.account_status == "active" %}
+                  <span class="au-pill au-green">Active</span>
+                {% elif a.account_status == "suspended" %}
+                  <span class="au-pill au-amber">Suspended</span>
+                {% elif a.account_status == "banned" %}
+                  <span class="au-pill au-red">Banned</span>
+                {% else %}
+                  <span class="au-pill au-grey">{{ a.account_status|title }}</span>
+                {% endif %}
+              </td>
+              <td data-label="Joined"><span class="alog-date">{{ a.date_joined|date:"M j, Y" }}</span></td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="5"><div class="alog-empty"><span class="alog-empty-title">No admins yet</span></div></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById("aa-form");
+  if (!form) return;
+  var emailEl = form.querySelector('input[name="email"]');
+  var pwEl = form.querySelector('input[name="password"]');
+  var emailErr = form.querySelector('.aa-err[data-err="email"]');
+  var pwErr = form.querySelector('.aa-err[data-err="password"]');
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function setError(input, errEl, msg) {
+    if (msg) { input.classList.add("aa-invalid"); errEl.textContent = msg; }
+    else { input.classList.remove("aa-invalid"); errEl.textContent = ""; }
+    return !msg;
+  }
+
+  form.addEventListener("submit", function (e) {
+    var email = emailEl.value.trim();
+    var pw = pwEl.value;
+    var okEmail = setError(emailEl, emailErr,
+      !email ? "Email is required." : (!EMAIL_RE.test(email) ? "Enter a valid email address." : ""));
+    var okPw = setError(pwEl, pwErr,
+      !pw ? "A temporary password is required." : (pw.length < 8 ? "Password must be at least 8 characters." : ""));
+    if (!okEmail || !okPw) {
+      e.preventDefault();
+      (!okEmail ? emailEl : pwEl).focus();
+    }
+  });
+
+  // Clear a field's error as soon as the user starts fixing it.
+  [emailEl, pwEl].forEach(function (el) {
+    el.addEventListener("input", function () {
+      el.classList.remove("aa-invalid");
+      var err = form.querySelector('.aa-err[data-err="' + el.name + '"]');
+      if (err) err.textContent = "";
+    });
+  });
+})();
+</script>
+{% endblock %}

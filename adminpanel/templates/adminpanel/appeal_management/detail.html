@@ -2,78 +2,123 @@
 {% block title %}Review appeal: {{ appeal.user.email }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="admin-modern au-modern kd-modern">
 
-    <a href="{% url 'admin_appeal_list' %}" class="btn btn-link px-0 mb-2">&larr; Back to appeals</a>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Review Appeal</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_appeal_list' %}">Appeals</a></li>
+        <li>{{ appeal.user.get_full_name|default:appeal.user.email }}</li>
+      </ul>
+    </nav>
+  </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">{{ appeal.user.get_full_name|default:appeal.user.email }}</h4>
+  <a href="{% url 'admin_appeal_list' %}" class="kd-back"><i class="icon-feather-arrow-left"></i> Back to appeals</a>
+
+  <!-- Identity header -->
+  <div class="dashboard-box margin-top-0 kd-identity">
+    <div class="content">
+      <div class="kd-head">
+        <div>
+          <h4 class="kd-name">{{ appeal.user.get_full_name|default:appeal.user.email }}</h4>
+          <p class="kd-sub">{{ appeal.user.email }} &middot; Submitted {{ appeal.created_at|date:"M j, Y H:i" }}{% if appeal.reviewed_at %} &middot; Reviewed {{ appeal.reviewed_at|date:"M j, Y H:i" }} by {{ appeal.reviewed_by.email|default:"—" }}{% endif %}</p>
+        </div>
         {% if appeal.status == 'approved' %}
-            <span class="badge bg-success">Approved</span>
+          <span class="au-pill au-green">Approved</span>
         {% elif appeal.status == 'rejected' %}
-            <span class="badge bg-danger">Rejected</span>
+          <span class="au-pill au-red">Rejected</span>
         {% else %}
-            <span class="badge bg-secondary">Pending</span>
+          <span class="au-pill au-amber">Pending</span>
         {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-xl-6 col-lg-6">
+      <!-- Account status -->
+      <div class="dashboard-box">
+        <div class="headline"><h3><i class="icon-material-outline-block"></i> Account Status</h3></div>
+        <div class="content">
+          <div class="kd-field">
+            <span class="k">Appealing</span>
+            <span class="v">{% if appeal.account_status == 'banned' %}Ban{% else %}Suspension{% endif %}</span>
+          </div>
+          <div class="kd-field">
+            <span class="k">Current account status</span>
+            <span class="v">
+              {% if appeal.user.account_status == 'active' %}<span class="au-pill au-green">Active</span>
+              {% elif appeal.user.account_status == 'suspended' %}<span class="au-pill au-amber">Suspended</span>
+              {% elif appeal.user.account_status == 'banned' %}<span class="au-pill au-red">Banned</span>
+              {% else %}<span class="au-pill au-grey">{{ appeal.user.account_status|title }}</span>{% endif %}
+            </span>
+          </div>
+          {% if appeal.user.account_status == 'banned' %}
+            <div class="kd-field"><span class="k">Ban reason given to user</span><span class="v">{{ appeal.user.banned_reason|default:"—" }}</span></div>
+          {% elif appeal.user.account_status == 'suspended' %}
+            <div class="kd-field"><span class="k">Suspension reason given to user</span><span class="v">{{ appeal.user.suspension_reason|default:"—" }}</span></div>
+            <div class="kd-field"><span class="k">Suspended until</span><span class="v">{{ appeal.user.suspended_until|date:"M j, Y H:i"|default:"Indefinite" }}</span></div>
+          {% elif appeal.status == 'approved' %}
+            <div class="kd-field"><span class="k">Outcome</span><span class="v">Account reinstated after this appeal.</span></div>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <p class="text-muted">
-        {{ appeal.user.email }} &middot; Submitted {{ appeal.created_at|date:"Y-m-d H:i" }}
-        {% if appeal.reviewed_at %}&middot; Reviewed {{ appeal.reviewed_at|date:"Y-m-d H:i" }} by {{ appeal.reviewed_by.email|default:"—" }}{% endif %}
-    </p>
-
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="mb-2">Account status</h6>
-            {% if appeal.account_status == 'banned' %}
-                <p class="mb-1"><span class="badge bg-dark">Banned</span></p>
-                <p class="mb-0"><strong>Ban reason given to user:</strong> {{ appeal.user.banned_reason|default:"—" }}</p>
-            {% else %}
-                <p class="mb-1"><span class="badge bg-warning text-dark">Suspended</span></p>
-                <p class="mb-1"><strong>Suspension reason given to user:</strong> {{ appeal.user.suspension_reason|default:"—" }}</p>
-                <p class="mb-0"><strong>Suspended until:</strong> {{ appeal.user.suspended_until|date:"Y-m-d H:i"|default:"Indefinite" }}</p>
-            {% endif %}
+    <div class="col-xl-6 col-lg-6">
+      <!-- Appeal message -->
+      <div class="dashboard-box">
+        <div class="headline"><h3><i class="icon-material-outline-message"></i> Appeal from User</h3></div>
+        <div class="content">
+          <p class="kd-message">{{ appeal.message }}</p>
         </div>
+      </div>
     </div>
+  </div>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="mb-2">Appeal from user</h6>
-            <p class="mb-0" style="white-space: pre-wrap;">{{ appeal.message }}</p>
-        </div>
+  {% if appeal.admin_response %}
+  <div class="kd-alert {% if appeal.status == 'approved' %}kd-alert-green{% else %}kd-alert-amber{% endif %}">
+    <strong>Your response:</strong> {{ appeal.admin_response }}
+  </div>
+  {% endif %}
+
+  {% if appeal.status == 'pending' %}
+  <div class="kd-actions">
+    <button type="button" class="kd-btn kd-approve" data-bs-toggle="collapse" data-bs-target="#approveBox">Approve &amp; reinstate</button>
+    <button type="button" class="kd-btn kd-reject" data-bs-toggle="collapse" data-bs-target="#rejectBox">Reject</button>
+  </div>
+
+  <div class="collapse" id="approveBox">
+    <div class="dashboard-box kd-rejectcard">
+      <div class="content">
+        <form method="post" action="{% url 'admin_appeal_approve' appeal.id %}">
+          {% csrf_token %}
+          <label class="kd-label">Optional note to the user (emailed on approval)</label>
+          <textarea name="response" rows="2" class="kd-textarea"></textarea>
+          <button type="submit" class="kd-btn kd-approve" style="margin-top:12px;">Confirm approval &amp; reinstate account</button>
+        </form>
+      </div>
     </div>
+  </div>
 
-    {% if appeal.admin_response %}
-        <div class="alert {% if appeal.status == 'approved' %}alert-success{% else %}alert-warning{% endif %}">
-            <strong>Your response:</strong> {{ appeal.admin_response }}
-        </div>
-    {% endif %}
+  <div class="collapse" id="rejectBox">
+    <div class="dashboard-box kd-rejectcard">
+      <div class="content">
+        <form method="post" action="{% url 'admin_appeal_reject' appeal.id %}">
+          {% csrf_token %}
+          <label class="kd-label">Reason for rejection (emailed to the user)</label>
+          <textarea name="response" rows="3" class="kd-textarea" required></textarea>
+          <button type="submit" class="kd-btn kd-reject" style="margin-top:12px;">Confirm rejection &amp; notify</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="kd-alert kd-alert-grey">This appeal has already been {{ appeal.status }}.</div>
+  {% endif %}
 
-    {% if appeal.status == 'pending' %}
-        <div class="d-flex gap-2">
-            <button class="btn btn-success" data-bs-toggle="collapse" data-bs-target="#approveBox">Approve &amp; reinstate</button>
-            <button class="btn btn-danger" data-bs-toggle="collapse" data-bs-target="#rejectBox">Reject</button>
-        </div>
-
-        <div class="collapse mt-3" id="approveBox">
-            <form method="post" action="{% url 'admin_appeal_approve' appeal.id %}" class="card card-body">
-                {% csrf_token %}
-                <label class="form-label">Optional note to the user (emailed on approval)</label>
-                <textarea name="response" rows="2" class="form-control mb-2"></textarea>
-                <button type="submit" class="btn btn-success">Confirm approval &amp; reinstate account</button>
-            </form>
-        </div>
-
-        <div class="collapse mt-3" id="rejectBox">
-            <form method="post" action="{% url 'admin_appeal_reject' appeal.id %}" class="card card-body">
-                {% csrf_token %}
-                <label class="form-label">Reason for rejection (emailed to the user)</label>
-                <textarea name="response" rows="3" class="form-control mb-2" required></textarea>
-                <button type="submit" class="btn btn-danger">Confirm rejection &amp; notify</button>
-            </form>
-        </div>
-    {% else %}
-        <div class="alert alert-secondary">This appeal has already been {{ appeal.status }}.</div>
-    {% endif %}
 </div>
 {% endblock %}

@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 {% include 'frontend/partials/css_links.html' %}
@@ -20,7 +20,7 @@
 	{% include 'frontend/partials/Dashboard_sidebar.html' %}
 
 	<div class="dashboard-content-container" data-simplebar>
-		<div class="dashboard-content-inner">
+		<div class="dashboard-content-inner cd-modern">
 
 			<div class="dashboard-headline">
 				<h3>Contract</h3>
@@ -41,7 +41,10 @@
 							<h3><i class="icon-material-outline-assignment"></i> <span id="contract-job-title">Contract</span></h3>
 						</div>
 						<div class="content with-padding" id="contract-summary">
-							<p>Loading...</p>
+							<span class="sk cd-sk-line" style="width:70%"></span>
+							<span class="sk cd-sk-line" style="width:90%"></span>
+							<span class="sk cd-sk-line" style="width:55%"></span>
+							<span class="sk cd-sk-line" style="width:80%"></span>
 						</div>
 					</div>
 
@@ -90,7 +93,10 @@
 							<h3 id="escrow-heading"><i class="icon-material-outline-account-balance"></i> Escrow</h3>
 						</div>
 						<div class="content with-padding" id="escrow-box">
-							<p>Loading...</p>
+							<span class="sk cd-sk-line" style="width:70%"></span>
+							<span class="sk cd-sk-line" style="width:90%"></span>
+							<span class="sk cd-sk-line" style="width:55%"></span>
+							<span class="sk cd-sk-line" style="width:80%"></span>
 						</div>
 					</div>
 				</div>
@@ -106,11 +112,10 @@
 </div>
 
 <style>
-.loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; opacity:0; visibility:hidden; transition: opacity .3s ease, visibility .3s ease; }
+.loading-overlay { position: fixed; inset:0; z-index:9999; background: transparent; opacity:0; visibility:hidden; pointer-events:none; transition: opacity .3s ease, visibility .3s ease; }
 .loading-overlay.active { opacity:1; visibility:visible; }
-.loading-popup { background:#fff; padding:40px; border-radius:10px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3); max-width:300px; }
-.loading-spinner { width:50px; height:50px; border:4px solid #f3f3f3; border-top:4px solid #2a41e8; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
-@keyframes spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+.loading-popup { display:none; }
+.loading-overlay.active::before { content:""; position:fixed; top:0; left:0; right:0; height:3px; background: linear-gradient(90deg, rgba(42,65,232,0), #2a41e8 50%, rgba(42,65,232,0)); background-size:40% 100%; background-repeat:no-repeat; animation: sk-loadbar 1.1s ease-in-out infinite; }
 .contract-status { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; text-transform:capitalize; }
 .cs-awaiting_funding { background:#fff3cd; color:#8a6d3b; }
 .cs-funded { background:#e6f4ff; color:#1264a3; }
@@ -226,7 +231,7 @@
 </div>
 
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 <script>
@@ -507,11 +512,11 @@ function renderDeliverables() {
 	}
 
 	for (const s of subs) {
-		const links = (s.files || []).map((f, i) => `<a href="${f.file_url}" target="_blank" class="button dark ripple-effect" download><i class="icon-feather-download"></i> File ${i + 1}</a>`).join(" ");
-		html += `<div style="border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;">
-			<div style="color:#555;">Submission v${s.version} &middot; ${new Date(s.submitted_at).toLocaleString()}</div>
-			${s.message ? `<p style="white-space:pre-wrap;margin:6px 0;">${s.message}</p>` : ""}
-			${links ? `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">${links}</div>` : ""}
+		const links = (s.files || []).map((f, i) => `<a href="${f.file_url}" target="_blank" rel="noopener" class="ctr-sub-file" download><i class="icon-feather-download"></i> File ${i + 1}</a>`).join("");
+		html += `<div class="ctr-sub-item">
+			<div class="ctr-sub-head"><span class="ctr-sub-ver">v${s.version}</span><span class="ctr-sub-time">${new Date(s.submitted_at).toLocaleString()}</span></div>
+			${s.message ? `<p class="ctr-sub-msg">${s.message}</p>` : ""}
+			${links ? `<div class="ctr-sub-files">${links}</div>` : ""}
 		</div>`;
 	}
 

@@ -32,6 +32,18 @@ async function fetchUserId() {
 
 const upperNotificationList = document.querySelector('.upper-notification');
 
+// Shown when there are no unread notifications (initial load or after mark-all).
+function renderUpperNotifEmpty() {
+    if (!upperNotificationList) return;
+    upperNotificationList.innerHTML =
+        '<li class="notif-empty">' +
+            '<span class="notif-empty-icon"><i class="icon-feather-bell"></i></span>' +
+            '<span class="notif-empty-text">You\'re all caught up. No new notifications.</span>' +
+        '</li>';
+    const c = document.getElementById("upper-notification-count");
+    if (c) c.textContent = "0";
+}
+
 
 
 async function loadUnreadloadUnreadUpperNotification() {
@@ -73,6 +85,11 @@ async function renderUnreadUpperNotification() {
     
     // Clear old notifications to avoid duplicates
     upperNotificationList.innerHTML = '';
+
+    if (!Array.isArray(data) || data.length === 0) {
+        renderUpperNotifEmpty();
+        return;
+    }
 
     for (const n of data) {
         //const user_data = await fetchcurrentuserId(n.sender_id);
@@ -119,22 +136,23 @@ async function whenReady() {
 }
 
 const markAllUpperNotificationReadBtn = document.querySelector('.mark-as-read.ripple-effect-dark.upper-not');
-console.log("userInfo:", userInfo);
-if (userInfo) {
+// Bind whenever the button exists. (It was previously gated on `userInfo`,
+// which is populated asynchronously after the token refresh, so at this point
+// it was almost always null and the handler never got attached.)
+if (markAllUpperNotificationReadBtn) {
     markAllUpperNotificationReadBtn.addEventListener('click', async function (e) {
         e.preventDefault();
-
         try {
-                await fetchProtected(`/api/notifications/mark-all-notification/`, {method: 'POST'});
-                document.querySelectorAll(".notifications-not-read").forEach(li => {
-                    li.remove();
-                });
-                alert("All notifications marked as read.");
+            const res = await fetchProtected(`/api/notifications/mark-all-notification/`, { method: 'POST' });
+            if (!res || !res.ok) return;
+            renderUpperNotifEmpty();
+            if (window.Snackbar) Snackbar.show({
+                text: "All notifications marked as read.", pos: "bottom-center",
+                showAction: false, duration: 2500, backgroundColor: "#38b653", textColor: "#fff"
+            });
         } catch (error) {
             console.error("Error marking all as read:", error);
-            alert("Error marking all as read:" + error.message);
         }
-
     });
 }
 

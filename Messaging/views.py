@@ -177,16 +177,24 @@ class GetConversationView(APIView):
                 "conversation_id": conversation.id,
                 "subject": conversation.subject,
                 "other_user": {
-                    "id": other_participant.id if other_participant else None,  
+                    "id": other_participant.id if other_participant else None,
                     "name": other_participant.first_name if other_participant else "Unknown",
                     "avatar": (
                         "" if hasattr(other_participant, "messaging_profile") and other_participant.messaging_profile else None
-                    )
+                    ),
+                    "is_admin": bool(
+                        other_participant and (
+                            other_participant.is_staff
+                            or other_participant.is_superuser
+                            or getattr(other_participant, "role", "") in ("admin", "superadmin")
+                        )
+                    ),
                 },
                 "last_message": {
                     "content": last_message.content if last_message else "",
                     "timestamp": last_message.timestamp.isoformat() if last_message else None,
-                    "is_read": last_message.is_read if last_message else False
+                    "is_read": last_message.is_read if last_message else False,
+                    "sender_id": last_message.sender_id if last_message else None
                 } if last_message else None,
                 "unread_count": conversation.messages.filter(
                     recipient=user, is_read=False

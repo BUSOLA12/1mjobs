@@ -1,0 +1,133 @@
+{% comment %}
+Admin <-> party chat panels. Expects `chats` (list of {label, party, conversation, messages}) and `back_url`.
+The admin panel has no WebSocket, so these panels send via AJAX and poll for replies.
+{% endcomment %}
+<div class="dashboard-box cx-modern">
+    <div class="headline">
+        <h3><i class="icon-material-outline-forum"></i> Messages</h3>
+    </div>
+    <div class="content">
+        <div class="cx-chats">
+            {% for chat in chats %}
+                <div class="cx-chat admin-chat"
+                     data-recipient="{{ chat.party.id }}"
+                     data-conversation="{% if chat.conversation %}{{ chat.conversation.id }}{% endif %}"
+                     data-name="{{ chat.party.get_full_name|default:chat.party.email }}">
+
+                    <div class="cx-head">
+                        <span class="cx-avatar cx-av-{{ chat.label|lower }}">{{ chat.party.get_full_name|default:chat.party.email|first|upper }}</span>
+                        <div class="cx-head-text">
+                            <span class="cx-name">{{ chat.party.get_full_name|default:chat.party.email }}</span>
+                            <span class="cx-role">{{ chat.label }}</span>
+                        </div>
+                    </div>
+
+                    <div class="cx-thread chat-thread">
+                        {% for m in chat.messages %}
+                            {% if m.sender_id == request.user.id %}
+                                <div class="cx-msg cx-mine" data-mid="{{ m.id }}">
+                                    <div class="cx-bubble">{{ m.content }}</div>
+                                    <div class="cx-meta">You &middot; {{ m.timestamp|date:"M d, H:i" }}</div>
+                                </div>
+                            {% else %}
+                                <div class="cx-msg" data-mid="{{ m.id }}">
+                                    <div class="cx-bubble">{{ m.content }}</div>
+                                    <div class="cx-meta">{{ chat.party.get_full_name|default:chat.party.email }} &middot; {{ m.timestamp|date:"M d, H:i" }}</div>
+                                </div>
+                            {% endif %}
+                        {% empty %}
+                            <div class="cx-empty chat-empty">
+                                <span class="cx-empty-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+                                No messages yet. Start the conversation below.
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <form class="cx-form admin-chat-form" method="post" action="{% url 'admin_send_message' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="recipient" value="{{ chat.party.id }}">
+                        <input type="hidden" name="next" value="{{ back_url }}">
+                        <input type="text" name="content" class="cx-input" placeholder="Message {{ chat.label|lower }}…" autocomplete="off" required>
+                        <button class="cx-send" type="submit" aria-label="Send">
+                            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    function getCookie(name) {
+        const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+        return m ? m.pop() : '';
+    }
+    function esc(s) {
+        const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML;
+    }
+    function bubble(m) {
+        const meta = (m.is_mine ? 'You' : esc(m.name)) + ' &middot; ' + esc(m.when);
+        return '<div class="cx-msg' + (m.is_mine ? ' cx-mine' : '') + '" data-mid="' + m.id + '">' +
+            '<div class="cx-bubble">' + esc(m.content) + '</div>' +
+            '<div class="cx-meta">' + meta + '</div></div>';
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    document.querySelectorAll('.admin-chat').forEach(function (panel) {
+        const thread = panel.querySelector('.chat-thread');
+        const form = panel.querySelector('.admin-chat-form');
+        const input = form.querySelector('input[name="content"]');
+
+        function lastId() {
+            const nodes = thread.querySelectorAll('[data-mid]');
+            return nodes.length ? nodes[nodes.length - 1].getAttribute('data-mid') : '';
+        }
+        function append(list) {
+            const empty = thread.querySelector('.chat-empty');
+            if (empty && list.length) empty.remove();
+            list.forEach(function (m) {
+                if (thread.querySelector('[data-mid="' + m.id + '"]')) return;
+                thread.insertAdjacentHTML('beforeend', bubble(m));
+            });
+            thread.scrollTop = thread.scrollHeight;
+        }
+        thread.scrollTop = thread.scrollHeight;
+
+        async function poll() {
+            const convId = panel.dataset.conversation;
+            if (!convId) return;
+            try {
+                const res = await fetch('/site-admin/conversation/' + convId + '/messages/?after=' + lastId(),
+                    { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.messages && data.messages.length) append(data.messages);
+            } catch (e) { /* ignore transient errors */ }
+        }
+        setInterval(poll, 4000);
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const content = input.value.trim();
+            if (!content) return;
+            const fd = new FormData(form);
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrftoken },
+                    body: fd,
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    panel.dataset.conversation = data.conversation_id;
+                    append([data.message]);
+                    input.value = '';
+                }
+            } catch (e) { /* leave input so the admin can retry */ }
+        });
+    });
+})();
+</script>

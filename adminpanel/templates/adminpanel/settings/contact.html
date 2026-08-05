@@ -1,89 +1,90 @@
 {% extends "adminpanel/base.html" %}
 {% load static %}
-
 {% block title %}Contact Settings{% endblock %}
 
 {% block content %}
+<div class="admin-modern df-modern">
 
-<div class="container-fluid">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Site Contact Details</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Contact Settings</li>
+      </ul>
+    </nav>
+  </div>
+  <p class="df-intro">
+    These details power the public <a href="/contact/" target="_blank">contact page</a>
+    (email, phone, address and social links).
+  </p>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Site Contact Details</h4>
-        <a href="/contact/" target="_blank" class="btn btn-secondary btn-sm">View contact page</a>
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-email"></i> Contact &amp; Social</h3>
+      <a href="/contact/" target="_blank" class="df-headaction"><i class="icon-material-outline-launch"></i> View contact page</a>
     </div>
+    <div class="content">
+      <form method="post" novalidate>
+        {% csrf_token %}
 
-    <p class="text-muted">
-        These details power the public
-        <a href="/contact/" target="_blank">contact page</a>
-        (email, phone, address and social links).
-    </p>
+        <div class="df-fields">
+          <div class="df-field">
+            <label class="df-label">Display name</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+          </div>
+          <div class="df-field">
+            <label class="df-label">{{ form.gmail.label }} <span class="df-req">*</span></label>
+            {{ form.gmail }}
+            {{ form.gmail.errors }}
+          </div>
 
-    {% if form.non_field_errors %}
-        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-    {% endif %}
+          <div class="df-field">
+            <label class="df-label">Phone</label>
+            {{ form.phone }}
+            {{ form.phone.errors }}
+          </div>
+          <div class="df-field">
+            <label class="df-label">Address</label>
+            {{ form.address }}
+            {{ form.address.errors }}
+          </div>
 
-    <div class="card">
-        <div class="card-body">
+          <div class="df-field">
+            <label class="df-label">Facebook</label>
+            {{ form.facebook }}
+            {{ form.facebook.errors }}
+          </div>
+          <div class="df-field">
+            <label class="df-label">LinkedIn</label>
+            {{ form.linkedin }}
+            {{ form.linkedin.errors }}
+          </div>
 
-            <form method="post" novalidate>
-                {% csrf_token %}
-
-                <div class="row g-3">
-
-                    <div class="col-md-6">
-                        <label class="form-label">Display name</label>
-                        {{ form.name }}
-                        {{ form.name.errors }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.gmail.label }} <span class="text-danger">*</span></label>
-                        {{ form.gmail }}
-                        {{ form.gmail.errors }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Phone</label>
-                        {{ form.phone }}
-                        {{ form.phone.errors }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Address</label>
-                        {{ form.address }}
-                        {{ form.address.errors }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Facebook</label>
-                        {{ form.facebook }}
-                        {{ form.facebook.errors }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">LinkedIn</label>
-                        {{ form.linkedin }}
-                        {{ form.linkedin.errors }}
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">{{ form.x.label }}</label>
-                        {{ form.x }}
-                        {{ form.x.errors }}
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">GitHub</label>
-                        {{ form.github }}
-                        {{ form.github.errors }}
-                    </div>
-
-                </div>
-
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Save contact details</button>
-                </div>
-
-            </form>
-
+          <div class="df-field">
+            <label class="df-label">{{ form.x.label }}</label>
+            {{ form.x }}
+            {{ form.x.errors }}
+          </div>
+          <div class="df-field">
+            <label class="df-label">GitHub</label>
+            {{ form.github }}
+            {{ form.github.errors }}
+          </div>
         </div>
-    </div>
-</div>
 
+        <div class="df-submit">
+          <button type="submit" class="df-btn">Save contact details</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

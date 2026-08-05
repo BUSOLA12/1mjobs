@@ -1,9 +1,12 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.text import slugify
+from django.views.decorators.http import require_POST
 
-from ManageJobsTasks.models import Job
+from ManageJobsTasks.models import Job, JobCategory
 from adminpanel.utils.base_utils import log_admin_action
 
 
@@ -147,9 +150,31 @@ from ManageJobsTasks.models import Task, TaskBidding
 def admin_task_list(request):
     tasks = Task.objects.select_related('user').order_by('-created_at')
 
+    status = request.GET.get('status')
+    if status:
+        tasks = tasks.filter(status=status)
+
+    featured = request.GET.get('featured')
+    if featured in ['true', 'false']:
+        tasks = tasks.filter(is_featured=(featured == 'true'))
+
+    q = request.GET.get('q')
+    if q:
+        tasks = tasks.filter(
+            Q(project_name__icontains=q) |
+            Q(user__email__icontains=q) |
+            Q(category__icontains=q)
+        )
+
+    page_obj = Paginator(tasks, 15).get_page(request.GET.get('page'))
+
     return render(request, 'adminpanel/tasks/list.html', {
-        'tasks': tasks,
-        'now': timezone.now()
+        'tasks': page_obj,
+        'now': timezone.now(),
+        'status': status or '',
+        'featured': featured or '',
+        'q': q or '',
+        'status_choices': Task._meta.get_field('status').choices,
     })
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -182,7 +207,10 @@ def admin_task_detail(request, task_id):
 
     return render(request, 'adminpanel/tasks/detail.html', {
         'task': task,
-        'status_choices': Task._meta.get_field('status').choices
+        'status_choices': Task._meta.get_field('status').choices,
+        # Real bid count (the Task.applications_count/views_count fields are never
+        # populated in app code, so show the actual TaskBidding total instead).
+        'bids_count': TaskBidding.objects.filter(task=task).count(),
     })
 
 
@@ -273,3 +301,86 @@ def admin_update_task_bid_status(request, bid_id):
 
     messages.success(request, "Bid status updated successfully.")
     return redirect('admin_task_bidding_list', task_id=bid.task.id)
+
+
+# ---------------------------------------------------------------------------
+# Job categories (admin-managed; feeds the job-post form dropdown)
+# ---------------------------------------------------------------------------
+
+def _unique_category_slug(name):
+    # Match the existing convention (e.g. "accounting_and_finance"): slugify
+    # gives hyphens, so swap them for underscores.
+    base = slugify(name).replace("-", "_") or "category"
+    slug = base
+    i = 2
+    while JobCategory.objects.filter(slug=slug).exists():
+        slug = f"{base}_{i}"
+        i += 1
+    return slug
+
+
+@staff_member_required
+def admin_job_category_list(request):
+    if request.method == "POST":
+        name = (request.POST.get("name") or "").strip()
+        if not name:
+            messages.error(request, "Category name is required.")
+        elif JobCategory.objects.filter(name__iexact=name).exists():
+            messages.error(request, f'A category named "{name}" already exists.')
+        else:
+            category = JobCategory.objects.create(name=name, slug=_unique_category_slug(name))
+            log_admin_action(request.user, category, "job_category_create", f'Created job category "{name}".')
+            messages.success(request, f'Category "{name}" created.')
+        return redirect("admin_job_category_list")
+
+    categories = JobCategory.objects.order_by("name")
+
+    search = (request.GET.get("q") or "").strip()
+    if search:
+        categories = categories.filter(name__icontains=search)
+
+    page_obj = Paginator(categories, 15).get_page(request.GET.get("page"))
+
+    # Job.category stores the slug (no FK), so count jobs per slug in one query
+    # and attach it to each category on the current page.
+    slug_counts = dict(
+        Job.objects.values_list("category").annotate(n=Count("id")).values_list("category", "n")
+    )
+    for cat in page_obj:
+        cat.job_count = slug_counts.get(cat.slug, 0)
+
+    return render(request, "adminpanel/job_categories/list.html", {
+        "page_obj": page_obj,
+        "q": search,
+        "total": JobCategory.objects.count(),
+    })
+
+
+@staff_member_required
+@require_POST
+def admin_job_category_toggle(request, pk):
+    category = get_object_or_404(JobCategory, pk=pk)
+    category.is_active = not category.is_active
+    category.save(update_fields=["is_active"])
+    state = "activated" if category.is_active else "deactivated"
+    log_admin_action(request.user, category, "job_category_toggle", f'{state.capitalize()} job category "{category.name}".')
+    messages.success(request, f'Category "{category.name}" {state}.')
+    return redirect("admin_job_category_list")
+
+
+@staff_member_required
+@require_POST
+def admin_job_category_delete(request, pk):
+    category = get_object_or_404(JobCategory, pk=pk)
+    name = category.name
+    used = Job.objects.filter(category=category.slug).count()
+    if used:
+        messages.error(
+            request,
+            f'Cannot delete "{name}" - it is used by {used} job(s). Deactivate it instead to hide it from the job form.',
+        )
+        return redirect("admin_job_category_list")
+    log_admin_action(request.user, None, "job_category_delete", f'Deleted job category "{name}".')
+    category.delete()
+    messages.success(request, f'Category "{name}" deleted.')
+    return redirect("admin_job_category_list")

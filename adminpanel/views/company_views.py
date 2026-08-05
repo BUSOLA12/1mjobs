@@ -149,7 +149,7 @@ def _email_rejected_fields(request, company, rejected):
         message=(
             f"Hello,\n\nSome details for '{company.company_name}' could not be verified:\n\n"
             f"{lines}\n\nPlease correct these and resubmit here:\n{edit_url}\n\n"
-            f"Thank you,\nOne Million Jobs"
+            f"Thank you,\nOpportunity Hub"
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[owner.email],

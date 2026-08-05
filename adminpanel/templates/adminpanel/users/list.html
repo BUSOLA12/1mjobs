@@ -1,128 +1,153 @@
 {% extends "adminpanel/base.html" %}
 {% load static %}
 
+{% block title %}User Management{% endblock %}
+
 {% block content %}
+<div class="admin-modern alog-modern au-modern">
 
-<div class="container-fluid">
-    <h4 class="mb-4">Pricing Plans</h4>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>User Management</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Users</li>
+      </ul>
+    </nav>
+  </div>
 
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-supervisor-account"></i> Users</h3>
+    </div>
 
-    <!-- Filter & Search -->
-    <form method="get" class="row g-2 mb-3">
+    <div class="content">
 
-        <div class="col-md-3">
-            <input type="text" name="search" class="form-control" placeholder="Search email or name"
-                value="{{ search }}">
+      <!-- Filter & Search -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="search" value="{{ search }}" placeholder="Search email or name">
+          <i class="icon-material-outline-search"></i>
         </div>
+        <select name="role">
+          <option value="">All Roles</option>
+          <option value="freelancer" {% if role == "freelancer" %}selected{% endif %}>Freelancer</option>
+          <option value="employer" {% if role == "employer" %}selected{% endif %}>Employer</option>
+          <option value="admin" {% if role == "admin" %}selected{% endif %}>Admin</option>
+        </select>
+        <select name="account_status">
+          <option value="">Account Status</option>
+          <option value="pending_verification" {% if account_status == "pending_verification" %}selected{% endif %}>Pending</option>
+          <option value="active" {% if account_status == "active" %}selected{% endif %}>Active</option>
+          <option value="suspended" {% if account_status == "suspended" %}selected{% endif %}>Suspended</option>
+          <option value="banned" {% if account_status == "banned" %}selected{% endif %}>Banned</option>
+        </select>
+        <select name="verified">
+          <option value="">Verified?</option>
+          <option value="true" {% if verified == "true" %}selected{% endif %}>Yes</option>
+          <option value="false" {% if verified == "false" %}selected{% endif %}>No</option>
+        </select>
+        <button type="submit" class="au-apply">Apply</button>
+      </form>
 
-        <div class="col-md-2">
-            <select name="role" class="form-select">
-                <option value="">All Roles</option>
-                <option value="freelancer" {% if role == "freelancer" %}selected{% endif %}>Freelancer</option>
-                <option value="employer" {% if role == "employer" %}selected{% endif %}>Employer</option>
-                <option value="admin" {% if role == "admin" %}selected{% endif %}>Admin</option>
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <select name="account_status" class="form-select">
-                <option value="">Account Status</option>
-                <option value="pending_verification" {% if account_status == "pending_verification" %}selected{% endif %}>
-                    Pending</option>
-                <option value="active" {% if account_status == "active" %}selected{% endif %}>Active</option>
-                <option value="suspended" {% if account_status == "suspended" %}selected{% endif %}>Suspended</option>
-                <option value="banned" {% if account_status == "banned" %}selected{% endif %}>Banned</option>
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <select name="verified" class="form-select">
-                <option value="">Verified?</option>
-                <option value="true" {% if verified == "true" %}selected{% endif %}>Yes</option>
-                <option value="false" {% if verified == "false" %}selected{% endif %}>No</option>
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100">Apply</button>
-        </div>
-
-    </form>
-
-
-    <!-- Table -->
-    <table class="table table-hover align-middle">
-        <thead>
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
             <tr>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Verified</th>
-                <th>Active</th>
-                <th>Joined</th>
-                <th></th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Verified</th>
+              <th>Active</th>
+              <th>Joined</th>
+              <th></th>
             </tr>
-        </thead>
-
-        <tbody>
+          </thead>
+          <tbody>
             {% for user in page_obj %}
             <tr>
-                <td>{{ user.email }}</td>
-
-                <td>
-                    <span class="badge bg-info text-dark">
-                        {{ user.role|title }}
-                    </span>
-                </td>
-
-                <td>
-                    {% if user.account_status == "active" %}
-                    <span class="badge bg-success">Active</span>
-                    {% elif user.account_status == "pending_verification" %}
-                    <span class="badge bg-warning">Pending</span>
-                    {% elif user.account_status == "suspended" %}
-                    <span class="badge bg-secondary">Suspended</span>
-                    {% else %}
-                    <span class="badge bg-danger">Banned</span>
-                    {% endif %}
-                </td>
-
-                <td>
-                    {% if user.user_profile.verified %}
-                    <span class="badge bg-success">Yes</span>
-                    {% else %}
-                    <span class="badge bg-secondary">No</span>
-                    {% endif %}
-                </td>
-
-                <td>
-                    {% if user.is_active %}
-                    <span class="badge bg-success">Yes</span>
-                    {% else %}
-                    <span class="badge bg-danger">No</span>
-                    {% endif %}
-                </td>
-
-                <td>{{ user.date_joined|date:"Y-m-d" }}</td>
-
-                <td>
-                    <a href="{% url 'admin_user_detail' user.id %}" class="btn btn-sm btn-outline-primary">
-                        View
-                    </a>
-                </td>
+              <td data-label="Email">{{ user.email }}</td>
+              <td data-label="Role"><span class="au-pill au-blue">{{ user.role|title }}</span></td>
+              <td data-label="Status">
+                {% if user.account_status == "active" %}
+                  <span class="au-pill au-green">Active</span>
+                {% elif user.account_status == "pending_verification" %}
+                  <span class="au-pill au-amber">Pending</span>
+                {% elif user.account_status == "suspended" %}
+                  <span class="au-pill au-grey">Suspended</span>
+                {% else %}
+                  <span class="au-pill au-red">Banned</span>
+                {% endif %}
+              </td>
+              <td data-label="Verified">
+                {% if user.user_profile.verified %}
+                  <span class="au-pill au-green">Yes</span>
+                {% else %}
+                  <span class="au-pill au-grey">No</span>
+                {% endif %}
+              </td>
+              <td data-label="Active">
+                {% if user.is_active %}
+                  <span class="au-pill au-green">Yes</span>
+                {% else %}
+                  <span class="au-pill au-red">No</span>
+                {% endif %}
+              </td>
+              <td data-label="Joined"><span class="alog-date">{{ user.date_joined|date:"M j, Y" }}</span></td>
+              <td data-label="" class="au-action-cell">
+                <div class="au-row-actions">
+                  <a href="{% url 'admin_user_detail' user.id %}" class="au-view">View</a>
+                  {% if not user.is_staff and not user.is_superuser and user.role != 'admin' and user.id != request.user.id %}
+                  <form method="post" action="{% url 'admin_user_delete' user.id %}" class="au-del-form"
+                        onsubmit="return confirm('Permanently delete {{ user.email|escapejs }}? This cannot be undone.');">
+                    {% csrf_token %}
+                    <button type="submit" class="au-del">Delete</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="7" class="text-center text-muted">
-                    No users found
-                </td>
+            <tr class="alog-empty-row">
+              <td colspan="7">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+                  <span class="alog-empty-title">No users found</span>
+                  <span class="alog-empty-text">Try adjusting your filters or search term.</span>
+                </div>
+              </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
 
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if account_status %}&account_status={{ account_status }}{% endif %}{% if verified %}&verified={{ verified }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in page_obj.paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if account_status %}&account_status={{ account_status }}{% endif %}{% if verified %}&verified={{ verified }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}{% if account_status %}&account_status={{ account_status }}{% endif %}{% if verified %}&verified={{ verified }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
 
-    {% include "adminpanel/pagination.html" %}
+    </div>
+  </div>
+
 </div>
-
 {% endblock %}

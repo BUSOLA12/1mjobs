@@ -18,6 +18,113 @@ from payments.services.withdrawal_service import WithdrawalService, WithdrawalEr
 from contracts.models import Dispute, TerminationRequest
 from contracts import utils as contract_utils
 from payments.services.payment_service import PaymentService
+from django.http import JsonResponse
+from Messaging.models import Conversation, Message, MessageNotification
+
+
+def _msg_json(m, viewer):
+    return {
+        "id": m.id,
+        "sender_id": m.sender_id,
+        "is_mine": m.sender_id == viewer.id,
+        "name": m.sender.get_full_name or m.sender.email,
+        "content": m.content,
+        "when": m.timestamp.strftime("%b %d, %H:%M"),
+    }
+
+
+def _find_direct_conversation(a, b):
+    """Existing 1:1 (job/task-less) conversation between users a and b, or None."""
+    target = {a.id, b.id}
+    for conv in (
+        Conversation.objects.filter(participants=a, job__isnull=True, task__isnull=True)
+        .prefetch_related("participants")
+    ):
+        if set(conv.participants.values_list("id", flat=True)) == target:
+            return conv
+    return None
+
+
+def _admin_chats(admin, contract):
+    """Chat threads the admin has with each party of a contract. Conversations
+    are created lazily on first send (admin_send_message), so viewing a page
+    never spams empty threads into a party's inbox."""
+    chats = []
+    for label, party in (("Freelancer", contract.freelancer), ("Employer", contract.employer)):
+        conv = _find_direct_conversation(admin, party)
+        msgs = conv.messages.select_related("sender").order_by("timestamp") if conv else []
+        chats.append({"label": label, "party": party, "conversation": conv, "messages": msgs})
+    return chats
+
+
+@staff_member_required
+@require_POST
+def admin_send_message(request):
+    """Admin sends a direct message to a contract party from a finance page.
+    Reuses the Messaging models so the party sees it in their normal inbox."""
+    from django.contrib.auth import get_user_model
+
+    User = get_user_model()
+    recipient_id = request.POST.get("recipient")
+    content = (request.POST.get("content") or "").strip()
+    back_url = request.POST.get("next") or "/site-admin/"
+
+    if not recipient_id or not content:
+        messages.error(request, "Message cannot be empty.")
+        return redirect(back_url)
+
+    recipient = get_object_or_404(User, pk=recipient_id)
+    conv = _find_direct_conversation(request.user, recipient)
+    if conv is None:
+        conv = Conversation.objects.create(subject="Support (admin)")
+        conv.participants.set([request.user, recipient])
+
+    message = Message.objects.create(
+        conversation=conv, sender=request.user, recipient=recipient, content=content,
+    )
+    MessageNotification.objects.create(message=message, conversation=conv, user=request.user)
+    log_admin_action(request.user, recipient, "admin_message", f"Messaged {recipient.email} from a finance page.")
+
+    # Push a live 'new_message' to the recipient's socket group so it appends to
+    # their open dashboard thread immediately (the recipient is always joined to
+    # user_<id>). The post_save signal separately handles their unread badge and
+    # conversation list. Best-effort: a channel-layer outage must not fail send.
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        layer = get_channel_layer()
+        if layer is not None:
+            async_to_sync(layer.group_send)(f"user_{recipient.id}", {
+                "type": "new_message",
+                "message": {"id": message.id, "content": message.content,
+                            "timestamp": str(message.timestamp), "sender_id": message.sender_id},
+                "reciever_avatar": "",
+                "sender_avatar": "",
+                "conversation_id": conv.id,
+                "sender_id": message.sender_id,
+            })
+    except Exception:
+        pass
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "conversation_id": conv.id, "message": _msg_json(message, request.user)})
+
+    messages.success(request, f"Message sent to {recipient.get_full_name or recipient.email}.")
+    return redirect(back_url)
+
+
+@staff_member_required
+def admin_conversation_messages(request, pk):
+    """JSON messages for a conversation the admin is part of. Used by the finance
+    chat panels to poll for new replies (the admin panel has no WebSocket)."""
+    conv = get_object_or_404(Conversation, pk=pk)
+    if not conv.participants.filter(id=request.user.id).exists():
+        return JsonResponse({"messages": []}, status=403)
+    qs = conv.messages.select_related("sender").order_by("timestamp")
+    after = request.GET.get("after")
+    if after:
+        qs = qs.filter(id__gt=after)
+    return JsonResponse({"messages": [_msg_json(m, request.user) for m in qs]})
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +261,8 @@ def admin_dispute_detail(request, pk):
     return render(
         request,
         "adminpanel/disputes/detail.html",
-        {"d": dispute, "contract": contract, "submissions": submissions, "escrow_payment": escrow_payment},
+        {"d": dispute, "contract": contract, "submissions": submissions, "escrow_payment": escrow_payment,
+         "chats": _admin_chats(request.user, contract), "back_url": request.path},
     )
 
 
@@ -283,7 +391,8 @@ def admin_termination_detail(request, pk):
     return render(
         request,
         "adminpanel/terminations/detail.html",
-        {"t": tr, "contract": contract, "periods": periods},
+        {"t": tr, "contract": contract, "periods": periods,
+         "chats": _admin_chats(request.user, contract), "back_url": request.path},
     )
 
 

@@ -2,112 +2,114 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern alog-modern au-modern">
 
-<div class="container-fluid">
-    <h4 class="mb-4">Pricing Plans</h4>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{% url 'admin-pricing-create' %}" class="btn btn-success">
-            + Create Pricing Plan
-        </a>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Pricing Plans</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Pricing</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-local-offer"></i> Plans</h3>
+      <a href="{% url 'admin-pricing-create' %}" class="au-create"><i class="icon-material-outline-add-circle-outline"></i> Create Plan</a>
     </div>
 
+    <div class="content">
 
-    <!-- Filter & Search -->
-    <form method="get" class="card card-body mb-4">
-        <div class="row g-3 align-items-end">
-
-            <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input type="text" name="q" value="{{ current_q }}" class="form-control"
-                    placeholder="Search by plan name">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label">User Type</label>
-                <select name="user_type" class="form-select">
-                    <option value="">All</option>
-                    {% for value, label in user_types %}
-                    <option value="{{ value }}">
-                        {{ label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    Filter
-                </button>
-            </div>
-
+      <!-- Filter & Search -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="q" value="{{ current_q }}" placeholder="Search by plan name">
+          <i class="icon-material-outline-search"></i>
         </div>
-    </form>
+        <select name="user_type">
+          <option value="">All user types</option>
+          {% for value, label in user_types %}
+          <option value="{{ value }}" {% if current_user_type == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
 
-    <!-- Pricing Plans Table -->
-    <div class="card">
-        <div class="card-body p-0">
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>User Type</th>
+              <th>Monthly</th>
+              <th>Yearly</th>
+              <th>Features</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for plan in plans %}
+            <tr>
+              <td data-label="Name"><strong>{{ plan.name }}</strong></td>
+              <td data-label="User Type"><span class="au-pill au-blue">{{ plan.get_user_type_display }}</span></td>
+              <td data-label="Monthly">&#8358;{{ plan.monthly_price }}</td>
+              <td data-label="Yearly">{% if plan.yearly_price %}&#8358;{{ plan.yearly_price }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td data-label="Features">{{ plan.feature_count }}</td>
+              <td data-label="" class="au-action-cell">
+                <div class="au-row-actions">
+                  <a href="{% url 'admin-pricing-detail' plan.id %}" class="au-view">View</a>
+                  <a href="{% url 'admin-pricing-edit' plan.id %}" class="au-edit">Edit</a>
+                  <form method="post" action="{% url 'admin-pricing-delete' plan.id %}" class="au-del-form"
+                        onsubmit="return confirm('Delete the plan {{ plan.name|escapejs }}? This will also remove its features.');">
+                    {% csrf_token %}
+                    <button type="submit" class="au-del">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="6">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></span>
+                  <span class="alog-empty-title">{% if current_q or current_user_type %}No matching plans{% else %}No pricing plans yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if current_q or current_user_type %}Try a different search or user type.{% else %}Create your first plan to get started.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
-            <table class="table table-striped mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Name</th>
-                        <th>User Type</th>
-                        <th>Monthly Price</th>
-                        <th>Yearly Price</th>
-                        <th>Features</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+      {% if is_paginated %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_user_type %}&user_type={{ current_user_type }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_user_type %}&user_type={{ current_user_type }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if current_q %}&q={{ current_q }}{% endif %}{% if current_user_type %}&user_type={{ current_user_type }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
 
-                <tbody>
-                    {% for plan in plans %}
-                    <tr>
-                        <td>{{ plan.name }}</td>
-                        <td>
-                            <span class="badge bg-secondary">
-                                {{ plan.get_user_type_display }}
-                            </span>
-                        </td>
-                        <td>₦{{ plan.monthly_price }}</td>
-                        <td>
-                            {% if plan.yearly_price %}
-                            ₦{{ plan.yearly_price }}
-                            {% else %}
-                            —
-                            {% endif %}
-                        </td>
-                        <td>{{ plan.feature_count }}</td>
-                        <td>
-                            <a href="{% url 'admin-pricing-detail' plan.id %}"
-                                class="btn btn-sm btn-outline-primary">
-                                View
-                            </a>
-                            <a href="{% url 'admin-pricing-edit' plan.id %}" class="btn btn-sm btn-outline-secondary">
-                                Edit
-                            </a>
-                            <form method="post" action="{% url 'admin-pricing-delete' plan.id %}" class="d-inline"
-                                onsubmit="return confirm('Delete the plan \'{{ plan.name }}\'? This will also remove its features.');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                    Delete
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4">
-                            No pricing plans found.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-        </div>
     </div>
+  </div>
 
-    {% include "adminpanel/pagination.html" %}
 </div>
-
 {% endblock %}

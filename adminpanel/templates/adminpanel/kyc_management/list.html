@@ -2,76 +2,116 @@
 {% block title %}KYC Verification{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="admin-modern alog-modern au-modern">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="mb-0">Identity Verification (KYC)</h4>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Identity Verification (KYC)</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>KYC</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-verified-user"></i> Verification Requests</h3>
     </div>
 
-    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 640px;">
-        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or email">
-        <select name="status" class="form-select" style="max-width: 200px;">
-            <option value="">All statuses</option>
-            <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pending</option>
-            <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
-            <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
-        </select>
-        <button class="btn btn-outline-secondary" type="submit">Filter</button>
-    </form>
+    <div class="content">
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Freelancer</th>
-                            <th>ID Type</th>
-                            <th>Submitted</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for kyc in page_obj %}
-                            <tr>
-                                <td>{{ kyc.id }}</td>
-                                <td>{{ kyc.user.get_full_name|default:kyc.user.email }}<br><small class="text-muted">{{ kyc.user.email }}</small></td>
-                                <td>{{ kyc.get_id_type_display|default:"—" }}</td>
-                                <td>{{ kyc.created_at|date:"Y-m-d H:i" }}</td>
-                                <td>
-                                    {% if kyc.verification_status == 'approved' %}
-                                        <span class="badge bg-success">Approved</span>
-                                    {% elif kyc.verification_status == 'rejected' %}
-                                        <span class="badge bg-danger">Rejected</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Pending</span>
-                                    {% endif %}
-                                </td>
-                                <td><a href="{% url 'admin_kyc_detail' kyc.id %}" class="btn btn-sm btn-outline-primary">Review</a></td>
-                            </tr>
-                        {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted py-4">No KYC submissions.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+      <!-- Filter & Search -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="q" value="{{ q }}" placeholder="Search by name or email">
+          <i class="icon-material-outline-search"></i>
         </div>
-    </div>
+        <select name="status">
+          <option value="">All statuses</option>
+          <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
 
-    {% if page_obj.paginator.num_pages > 1 %}
-        <nav class="mt-3">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ status }}&q={{ q }}">Previous</a></li>
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Freelancer</th>
+              <th>ID Type</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for kyc in page_obj %}
+            <tr>
+              <td data-label="#">{{ kyc.id }}</td>
+              <td data-label="Freelancer">
+                <div>{{ kyc.user.get_full_name|default:kyc.user.email }}</div>
+                <span class="muted">{{ kyc.user.email }}</span>
+              </td>
+              <td data-label="ID Type">{{ kyc.get_id_type_display|default:"—" }}</td>
+              <td data-label="Submitted"><span class="alog-date">{{ kyc.created_at|date:"M j, Y H:i" }}</span></td>
+              <td data-label="Status">
+                {% if kyc.verification_status == 'approved' %}
+                  <span class="au-pill au-green">Approved</span>
+                {% elif kyc.verification_status == 'rejected' %}
+                  <span class="au-pill au-red">Rejected</span>
+                {% else %}
+                  <span class="au-pill au-amber">Pending</span>
                 {% endif %}
-                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-                {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ status }}&q={{ q }}">Next</a></li>
-                {% endif %}
-            </ul>
+              </td>
+              <td data-label="" class="au-action-cell">
+                <a href="{% url 'admin_kyc_detail' kyc.id %}" class="au-view">Review</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="6">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
+                  <span class="alog-empty-title">{% if q or status %}No matching requests{% else %}No KYC submissions{% endif %}</span>
+                  <span class="alog-empty-text">{% if q or status %}Try a different search or status filter.{% else %}Identity verification requests will appear here.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in page_obj.paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
         </nav>
-    {% endif %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
 </div>
 {% endblock %}

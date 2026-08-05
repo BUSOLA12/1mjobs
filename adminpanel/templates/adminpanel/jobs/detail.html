@@ -2,153 +2,101 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern au-modern od-modern">
 
-<div class="container-fluid">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>{{ job.title }}
+      {% if job.status == 'accepted' %}<span class="au-pill au-green">{{ job.get_status_display }}</span>
+      {% elif job.status == 'rejected' %}<span class="au-pill au-red">{{ job.get_status_display }}</span>
+      {% else %}<span class="au-pill au-amber">{{ job.get_status_display }}</span>{% endif %}
+    </h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_job_list' %}">Jobs</a></li>
+        <li>{{ job.title|truncatechars:24 }}</li>
+      </ul>
+    </nav>
+  </div>
+  <p class="od-sub">Posted by {{ job.user.email }} &middot; {{ job.created_at|date:"M j, Y" }}</p>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4>{{ job.title }}</h4>
-        <p class="text-muted mb-0">
-            Posted by {{ job.user.email }} · {{ job.created_at|date:"Y-m-d" }}
-        </p>
+  <!-- Stats -->
+  <div class="od-stats">
+    <div class="od-stat"><span class="od-stat-label">Status</span><span class="od-stat-val">{{ job.get_status_display }}</span></div>
+    <div class="od-stat"><span class="od-stat-label">Approved</span><span class="od-stat-val" style="color:{% if job.approved %}#1e7e46{% else %}#c47d0a{% endif %};">{% if job.approved %}Yes{% else %}No{% endif %}</span></div>
+    <div class="od-stat"><span class="od-stat-label">Active</span><span class="od-stat-val" style="color:{% if job.is_active %}#1e7e46{% else %}#8b909b{% endif %};">{% if job.is_active %}Active{% else %}Inactive{% endif %}</span></div>
+    <div class="od-stat"><span class="od-stat-label">Expires</span><span class="od-stat-val">{{ job.expiration_date|date:"M j, Y" }}</span></div>
+  </div>
+
+  <!-- Job Details -->
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-assignment"></i> Job Details</h3>
+      <a href="{% url 'admin_job_applications' job.id %}" class="au-view">View Applications</a>
     </div>
+    <div class="content">
+      <div class="od-kv"><span class="k">Type</span><span class="v">{{ job.get_job_type_display }}</span></div>
+      <div class="od-kv"><span class="k">Category</span><span class="v">{{ job.get_category_display }}</span></div>
+      <div class="od-kv"><span class="k">Location</span><span class="v">{{ job.location }}</span></div>
+      <div class="od-kv"><span class="k">Salary</span><span class="v">{% if job.salary_min %}&#8358;{{ job.salary_min }} – &#8358;{{ job.salary_max }}{% else %}Not specified{% endif %}</span></div>
+      <div class="od-kv"><span class="k">Tags</span><span class="v">{{ job.tags|default:"—" }}</span></div>
 
-    <div>
-        <a href="{% url 'admin_job_list' %}" class="btn btn-outline-secondary btn-sm">
-            ← Back to Jobs
-        </a>
-        <a href="{% url 'admin_job_applications' job.id %}"
-           class="btn btn-outline-primary btn-sm">
-            View Applications
-        </a>
+      <hr class="od-divider">
+      <span class="od-section-label">Description</span>
+      <div class="od-desc">{{ job.description|linebreaks }}</div>
     </div>
-</div>
+  </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <small>Status</small>
-                <h6>{{ job.get_status_display }}</h6>
-            </div>
-        </div>
+  {% if job.image or job.files %}
+  <!-- Attachments -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-attach-file"></i> Attachments</h3>
     </div>
-
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <small>Approved</small>
-                {% if job.approved %}
-                    <h6 class="text-success">Yes</h6>
-                {% else %}
-                    <h6 class="text-danger">No</h6>
-                {% endif %}
-            </div>
-        </div>
+    <div class="content">
+      {% if job.image %}<a href="{{ job.image.url }}" target="_blank" rel="noopener" class="od-file-link"><i class="icon-material-outline-insert-photo"></i> View Image</a>{% endif %}
+      {% if job.files %}<a href="{{ job.files.url }}" target="_blank" rel="noopener" class="od-file-link"><i class="icon-material-outline-description"></i> Download File</a>{% endif %}
     </div>
+  </div>
+  {% endif %}
 
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <small>Active</small>
-                {% if job.is_active %}
-                    <h6 class="text-success">Active</h6>
-                {% else %}
-                    <h6 class="text-muted">Inactive</h6>
-                {% endif %}
-            </div>
-        </div>
+  <!-- Admin Actions -->
+  <div class="dashboard-box">
+    <div class="headline">
+      <h3><i class="icon-material-outline-settings"></i> Admin Actions</h3>
     </div>
-
-    <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
-                <small>Expires</small>
-                <h6>{{ job.expiration_date|date:"Y-m-d" }}</h6>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="card mb-4">
-    <div class="card-header">Job Details</div>
-
-    <div class="card-body">
-        <p><strong>Type:</strong> {{ job.get_job_type_display }}</p>
-        <p><strong>Category:</strong> {{ job.get_category_display }}</p>
-        <p><strong>Location:</strong> {{ job.location }}</p>
-
-        <p><strong>Salary:</strong>
-            {% if job.salary_min %}
-                {{ job.salary_min }} – {{ job.salary_max }}
-            {% else %}
-                Not specified
-            {% endif %}
-        </p>
-
-        <p><strong>Tags:</strong> {{ job.tags }}</p>
-
-        <hr>
-
-        <p><strong>Description:</strong></p>
-        <p>{{ job.description|linebreaks }}</p>
-    </div>
-</div>
-
-{% if job.image or job.files %}
-<div class="card mb-4">
-    <div class="card-header">Attachments</div>
-    <div class="card-body">
-        {% if job.image %}
-            <p>
-                <a href="{{ job.image.url }}" target="_blank">View Image</a>
-            </p>
-        {% endif %}
-        {% if job.files %}
-            <p>
-                <a href="{{ job.files.url }}" target="_blank">Download File</a>
-            </p>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-
-<div class="card">
-    <div class="card-header">Admin Actions</div>
-    <div class="card-body d-flex gap-2">
-
+    <div class="content">
+      <div class="od-actions">
         {% if not job.approved %}
         <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="approve">
-            <button class="btn btn-success">Approve</button>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <button class="od-btn od-green">Approve</button>
         </form>
         {% endif %}
-
         <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="reject">
-            <button class="btn btn-danger">Reject</button>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <button class="od-btn od-red" onclick="return confirm('Reject this job?')">Reject</button>
         </form>
-
         <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="deactivate">
-            <button class="btn btn-warning">Deactivate</button>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="deactivate">
+          <button class="od-btn od-amber">Deactivate</button>
         </form>
-
         <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="extend">
-            <button class="btn btn-primary">Extend 30 Days</button>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="extend">
+          <button class="od-btn od-blue">Extend 30 Days</button>
         </form>
-
+      </div>
     </div>
+  </div>
+
+  <div class="od-footer">
+    <a href="{% url 'admin_job_list' %}" class="od-back"><i class="icon-material-outline-keyboard-arrow-left"></i> Back to Jobs</a>
+  </div>
+
 </div>
-
-
-
-</div>
-
 {% endblock %}

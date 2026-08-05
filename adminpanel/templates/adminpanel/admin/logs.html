@@ -3,48 +3,90 @@
 {% block title %}Admin Action Logs{% endblock %}
 
 {% block content %}
-<div class="dashboard-headline">
+<div class="admin-modern alog-modern">
+
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
     <h3>Admin Action Logs</h3>
-</div>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Admin Action Logs</li>
+      </ul>
+    </nav>
+  </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <form method="GET">
-            <input type="text" name="q" class="form-control"
-                   value="{{ search_query }}" placeholder="Search logs...">
-        </form>
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-history"></i> Action Logs</h3>
+      <form method="GET" class="alog-search">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search logs...">
+        <i class="icon-material-outline-search"></i>
+      </form>
     </div>
-</div>
 
-<div class="table-responsive">
-    <table class="table table-striped align-middle">
-        <thead class="table-light">
+    <div class="content">
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
             <tr>
-                <th>Admin</th>
-                <th>Target</th>
-                <th>Action</th>
-                <th>Details</th>
-                <th>Date</th>
+              <th>Admin</th>
+              <th>Target</th>
+              <th>Action</th>
+              <th>Details</th>
+              <th>Date</th>
             </tr>
-        </thead>
-        <tbody>
-        {% for log in logs %}
-        <tr>
-            <td>{{ log.admin.email|default:"-" }}</td>
-            <td>
+          </thead>
+          <tbody>
+          {% for log in logs %}
+            <tr>
+              <td data-label="Admin">{{ log.admin.email|default:"-" }}</td>
+              <td data-label="Target">
                 {{ log.target_label }}
-                {% if log.target_type %}<small class="text-muted">({{ log.target_type }})</small>{% endif %}
-            </td>
-            <td>{{ log.action }}</td>
-            <td>{{ log.details|default:"-" }}</td>
-            <td>{{ log.timestamp|date:"Y-m-d H:i" }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center">No logs found</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+                {% if log.target_type %}<span class="alog-target-type">({{ log.target_type }})</span>{% endif %}
+              </td>
+              <td data-label="Action"><span class="alog-action">{{ log.action }}</span></td>
+              <td data-label="Details"><span class="muted">{{ log.details|default:"-" }}</span></td>
+              <td data-label="Date"><span class="alog-date">{{ log.timestamp|date:"M j, Y H:i" }}</span></td>
+            </tr>
+          {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="5">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l3 2"></path></svg></span>
+                  <span class="alog-empty-title">{% if search_query %}No matching logs{% else %}No logs yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if search_query %}Try a different search term.{% else %}Admin actions across the platform will be recorded here.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if logs.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if logs.has_previous %}
+            <li class="pagination-arrow"><a href="?page={{ logs.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in logs.paginator.page_range %}
+              {% if n == logs.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > logs.number|add:'-3' and n < logs.number|add:'3' %}
+                <li><a href="?page={{ n }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ripple-effect">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if logs.has_next %}
+            <li class="pagination-arrow"><a href="?page={{ logs.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}" class="ripple-effect"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
-
-
 {% endblock %}

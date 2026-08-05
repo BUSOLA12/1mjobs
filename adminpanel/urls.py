@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import base_views
 from .views.dashboard import admin_dashboard
-from .views import ext, ext1, dev_tools, company_views, kyc_views, settings_views, message_views, appeal_views, finance_views
+from .views import ext, ext1, dev_tools, company_views, kyc_views, settings_views, message_views, appeal_views, finance_views, admin_accounts
 
 # app_name = 'adminpanel'
 
@@ -29,8 +29,11 @@ urlpatterns = [
     path("logs/user-actions/", base_views.user_activity_logs, name="user-action-logs"),
 
     # New User Management
+    path("admins/", admin_accounts.admin_admin_list, name="admin_admin_list"),
+    path("admins/create/", admin_accounts.admin_admin_create, name="admin_admin_create"),
     path("users/", ext.admin_user_list, name="admin_user_list"),
     path("users/<int:user_id>/", ext.admin_user_detail, name="admin_user_detail"),
+    path("users/<int:user_id>/delete/", ext.admin_user_delete, name="admin_user_delete"),
 
     path("users/<int:user_id>/billing/", ext.admin_user_billing_history, name="admin_user_billing_history"),
 
@@ -67,6 +70,11 @@ urlpatterns = [
     path("subscriptions/<int:pk>/deactivate/", base_views.admin_subscription_deactivate, name="admin_subscription_deactivate"),
     path("subscriptions/<int:pk>/activate/", base_views.admin_subscription_activate, name="admin_subscription_activate"),
 
+
+    # Job categories (admin-managed)
+    path("job-categories/", ext1.admin_job_category_list, name="admin_job_category_list"),
+    path("job-categories/<int:pk>/toggle/", ext1.admin_job_category_toggle, name="admin_job_category_toggle"),
+    path("job-categories/<int:pk>/delete/", ext1.admin_job_category_delete, name="admin_job_category_delete"),
 
     # Job Management
     path("jobs/", ext1.admin_job_list, name="admin_job_list"),
@@ -151,6 +159,10 @@ urlpatterns = [
     path("terminations/<int:pk>/", finance_views.admin_termination_detail, name="admin_termination_detail"),
     path("terminations/<int:pk>/execute/", finance_views.admin_termination_execute, name="admin_termination_execute"),
     path("terminations/<int:pk>/deny/", finance_views.admin_termination_deny, name="admin_termination_deny"),
+
+    # Admin <-> party messaging (from finance pages)
+    path("send-message/", finance_views.admin_send_message, name="admin_send_message"),
+    path("conversation/<int:pk>/messages/", finance_views.admin_conversation_messages, name="admin_conversation_messages"),
 
 
     # ------------------

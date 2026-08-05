@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -14,6 +14,22 @@
 {% include 'frontend/partials/css_links.html' %}
 <script src="{% static 'js/protectpage.js' %}"></script>
 
+<style>
+/* Replace the dark loading overlay with a slim brand top-progress bar */
+.loading-overlay {
+	position: fixed; inset: 0; z-index: 9999; background: transparent;
+	opacity: 0; visibility: hidden; pointer-events: none;
+	transition: opacity .3s ease, visibility .3s ease;
+}
+.loading-overlay.active { opacity: 1; visibility: visible; }
+.loading-popup { display: none; }
+.loading-overlay.active::before {
+	content: ""; position: fixed; top: 0; left: 0; right: 0; height: 3px;
+	background: linear-gradient(90deg, rgba(42,65,232,0), #2a41e8 50%, rgba(42,65,232,0));
+	background-size: 40% 100%; background-repeat: no-repeat;
+	animation: sk-loadbar 1.1s ease-in-out infinite;
+}
+</style>
 
 </head>
 <body class="gray" style="display:none" id="mainBody">
@@ -39,7 +55,7 @@
 	<!-- Dashboard Content
 	================================================== -->
 	<div class="dashboard-content-container" data-simplebar>
-		<div class="dashboard-content-inner" >
+		<div class="dashboard-content-inner bm-modern" >
 			
 			<!-- Dashboard Headline -->
 			<div class="dashboard-headline">
@@ -68,7 +84,21 @@
 
 						<div class="content">
 							<ul class="dashboard-box-list bookmarked-jobs-list">
-								<li>No Bookmarked Jobs</li>
+								{% for _ in "12" %}
+								<li class="bm-skeleton">
+									<span class="sk bm-sk-logo"></span>
+									<div class="bm-sk-lines">
+										<span class="sk bm-sk-title"></span>
+										<span class="sk bm-sk-meta"></span>
+									</div>
+								</li>
+								{% endfor %}
+								<li class="bm-empty" style="display:none;">
+									<span class="bm-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></span>
+									<span class="bm-empty-title">No bookmarked jobs</span>
+									<span class="bm-empty-text">Save jobs you're interested in and they'll appear here.</span>
+									<a href="{% url 'jobs_grid_layout_full_page_map_openstreetmap' %}" class="button ripple-effect">Browse Jobs</a>
+								</li>
 							</ul>
 						</div>
 					</div>
@@ -85,7 +115,21 @@
 
 						<div class="content">
 							<ul class="dashboard-box-list bookmarked-tasks-list">
-								<li>No Bookmarked Tasks</li>
+								{% for _ in "12" %}
+								<li class="bm-skeleton">
+									<span class="sk bm-sk-logo"></span>
+									<div class="bm-sk-lines">
+										<span class="sk bm-sk-title"></span>
+										<span class="sk bm-sk-meta"></span>
+									</div>
+								</li>
+								{% endfor %}
+								<li class="bm-empty" style="display:none;">
+									<span class="bm-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1"></rect><path d="M9 13l2 2 4-4"></path></svg></span>
+									<span class="bm-empty-title">No bookmarked tasks</span>
+									<span class="bm-empty-text">Bookmark tasks you'd like to revisit and find them here.</span>
+									<a href="{% url 'tasks_grid_layout_full_page' %}" class="button ripple-effect">Browse Tasks</a>
+								</li>
 							</ul>
 						</div>
 					</div>
@@ -102,7 +146,21 @@
 
 						<div class="content">
 							<ul class="dashboard-box-list bookmarked-freelancers-list">
-								<li>No Bookmarked Freelancers</li>
+								{% for _ in "12" %}
+								<li class="bm-skeleton">
+									<span class="sk bm-sk-avatar"></span>
+									<div class="bm-sk-lines">
+										<span class="sk bm-sk-title"></span>
+										<span class="sk bm-sk-meta"></span>
+									</div>
+								</li>
+								{% endfor %}
+								<li class="bm-empty" style="display:none;">
+									<span class="bm-empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
+									<span class="bm-empty-title">No bookmarked freelancers</span>
+									<span class="bm-empty-text">Save freelancers you'd like to work with and reach them quickly here.</span>
+									<a href="{% url 'freelancers' %}" class="button ripple-effect">Find Freelancers</a>
+								</li>
 							</ul>
 						</div>
 					</div>
@@ -186,8 +244,8 @@
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
-<script src="{% static 'js/for/dashboard-bookmarks.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
+<script src="{% static 'js/for/dashboard-bookmarks.js' %}?v=2"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
 <script>

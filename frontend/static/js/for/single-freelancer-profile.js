@@ -293,10 +293,24 @@ async function loadProfile(profileId) {
             }
         }
 
-        // ===== 6. Overview =====
+        // ===== 6. Overview + performance indicators =====
         document.getElementById("hourly_rate").textContent = parseInt(data.hourly_rate) || 0;
-        document.getElementById("jobs_done").textContent = data.job_success || 0;
+        document.getElementById("jobs_done").textContent = data.jobs_done || 0;
         document.getElementById("rehired").textContent = data.rehired || 0;
+
+        // Percentage indicators: set the number and fill the progress bar.
+        const setIndicator = (id, pct) => {
+            pct = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+            const strong = document.getElementById(id);
+            if (!strong) return;
+            strong.textContent = pct + "%";
+            const bar = strong.closest(".indicator")?.querySelector(".indicator-bar span");
+            if (bar) bar.style.width = pct + "%";
+        };
+        setIndicator("job_success", data.job_success);
+        setIndicator("recommendation", data.recommendation);
+        setIndicator("on_time", data.on_time);
+        setIndicator("on_budget", data.on_budget);
 
         // ===== 7. Skills =====
         const skillsContainer = document.querySelector(".task-tags");
@@ -444,6 +458,8 @@ async function submitOffer(formId, fileInputId) {
 async function loadOfferLinkOptions() {
     const select = document.getElementById("offer-link-select");
     if (!select) return;
+    // Offer links are the viewer's own jobs/tasks: skip entirely for guests.
+    if (!(await isAuthenticated())) return;
     try {
         const [jobsRes, tasksRes] = await Promise.all([
             fetchProtected("/api/jobs/managelist/"),
@@ -485,7 +501,17 @@ loadProfile(profileId);
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    loadOfferLinkOptions();
+    // Lazy-load the offer's job/task dropdown only when the "Make an Offer"
+    // dialog is opened, so viewing a profile (esp. logged out) never fires
+    // authenticated calls on page load.
+    let offerLinksLoaded = false;
+    document.querySelectorAll('.apply-now-button, a[href="#small-dialog"]').forEach(el => {
+        el.addEventListener("click", () => {
+            if (offerLinksLoaded) return;
+            offerLinksLoaded = true;
+            loadOfferLinkOptions();
+        });
+    });
 
     initiateFeatureCheck("make-an-offer-btn", "offers", () => {
         submitOffer("make-an-offer-form", "upload");

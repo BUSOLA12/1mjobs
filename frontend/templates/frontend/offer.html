@@ -5,7 +5,7 @@
 
 <!-- Basic Page Needs
 ================================================== -->
-<title>1mjobs</title>
+<title>Opportunity Hub</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -39,7 +39,7 @@
 	<!-- Dashboard Content
 	================================================== -->
 	<div class="dashboard-content-container" data-simplebar>
-		<div class="dashboard-content-inner" >
+		<div class="dashboard-content-inner of-modern" >
 			
 			<!-- Dashboard Headline -->
 			<div class="dashboard-headline">
@@ -68,7 +68,13 @@
 						</div>
 						<div class="content">
 							<ul class="dashboard-box-list" id="offers-received-list">
-								<!-- JS Injected -->
+								{% for _ in "12" %}
+								<li class="of-skeleton">
+									<span class="sk of-sk-title"></span>
+									<span class="sk of-sk-line"></span>
+									<span class="sk of-sk-btn"></span>
+								</li>
+								{% endfor %}
 							</ul>
 						</div>
 						<!-- No Subscription Box -->
@@ -90,7 +96,13 @@
 						</div>
 						<div class="content">
 							<ul class="dashboard-box-list" id="offers-sent-list">
-								<!-- JS Injected -->
+								{% for _ in "12" %}
+								<li class="of-skeleton">
+									<span class="sk of-sk-title"></span>
+									<span class="sk of-sk-line"></span>
+									<span class="sk of-sk-btn"></span>
+								</li>
+								{% endfor %}
 							</ul>
 						</div>
 					</div>
@@ -215,8 +227,8 @@
 ================================================== -->
 {% include 'frontend/partials/scripts.html' %}
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
-<script src="{% static 'js/for/offer.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
+<script src="{% static 'js/for/offer.js' %}?v=2"></script>
 
 <!-- Snackbar // documentation: https://www.polonel.com/snackbar/ -->
 <script>

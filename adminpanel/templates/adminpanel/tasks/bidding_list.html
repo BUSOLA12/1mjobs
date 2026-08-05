@@ -2,105 +2,93 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern alog-modern au-modern">
 
-<div class="container mt-4">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Bids</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_task_list' %}">Tasks</a></li>
+        <li><a href="{% url 'admin_task_detail' task.id %}">{{ task.project_name|truncatechars:20 }}</a></li>
+        <li>Bids</li>
+      </ul>
+    </nav>
+  </div>
 
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <h4>Bids for Task</h4>
-            <p class="text-muted mb-0">{{ task.project_name }}</p>
-        </div>
-        <a href="{% url 'admin_task_detail' task.id %}"
-           class="btn btn-outline-secondary btn-sm">
-            ← Back to Task
-        </a>
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-gavel"></i> Bids for &ldquo;{{ task.project_name }}&rdquo;</h3>
+      <a href="{% url 'admin_task_detail' task.id %}" class="al-back"><i class="icon-material-outline-keyboard-arrow-left"></i> Back to Task</a>
     </div>
 
-    <!-- Filters -->
-    <form method="get" class="row g-2 mb-3">
-        <div class="col-md-4">
-            <select name="status" class="form-select">
-                <option value="">All Statuses</option>
-                {% for key, label in status_choices %}
-                    <option value="{{ key }}"
-                        {% if request.GET.status == key %}selected{% endif %}>
-                        {{ label }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-primary w-100">Filter</button>
-        </div>
-    </form>
+    <div class="content">
 
-    <!-- Table -->
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Freelancer</th>
-                        <th>Bid Amount</th>
-                        <th>Delivery Time</th>
-                        <th>Status</th>
-                        <th>Submitted</th>
-                        <th width="180">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for bid in bids %}
-                        <tr>
-                            <td>
-                                {{ bid.freelancer.get_full_name }}<br>
-                                <small class="text-muted">
-                                    {{ bid.freelancer.email }}
-                                </small>
-                            </td>
-                            <td>₦{{ bid.bid_amount }}</td>
-                            <td>{{ bid.delivery_time }}</td>
-                            <td>
-                                <span class="badge
-                                    {% if bid.status == 'accepted' %}bg-success
-                                    {% elif bid.status == 'rejected' %}bg-danger
-                                    {% elif bid.status == 'cancelled' %}bg-secondary
-                                    {% else %}bg-warning{% endif %}">
-                                    {{ bid.status|title }}
-                                </span>
-                            </td>
-                            <td>{{ bid.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                <form method="post"
-                                      action="{% url 'admin_update_task_bid_status' bid.id %}">
-                                    {% csrf_token %}
-                                    <select name="status"
-                                            class="form-select form-select-sm mb-1">
-                                        {% for key, label in status_choices %}
-                                            <option value="{{ key }}"
-                                                {% if bid.status == key %}selected{% endif %}>
-                                                {{ label }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    <button class="btn btn-sm btn-outline-primary w-100">
-                                        Update
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
-                                No bids found for this task.
-                            </td>
-                        </tr>
+      <!-- Filter -->
+      <form method="get" class="au-filters">
+        <select name="status">
+          <option value="">All Statuses</option>
+          {% for key, label in status_choices %}
+          <option value="{{ key }}" {% if request.GET.status == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
+
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Freelancer</th><th>Bid Amount</th><th>Delivery Time</th><th>Status</th><th>Submitted</th><th>Update Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for bid in bids %}
+            <tr>
+              <td data-label="Freelancer">
+                <div>{{ bid.freelancer.get_full_name|default:bid.freelancer.email }}</div>
+                <span class="muted">{{ bid.freelancer.email }}</span>
+              </td>
+              <td data-label="Bid Amount"><strong>&#8358;{{ bid.bid_amount }}</strong></td>
+              <td data-label="Delivery Time">{{ bid.delivery_time }}</td>
+              <td data-label="Status">
+                {% if bid.status == 'accepted' %}<span class="au-pill au-green">Accepted</span>
+                {% elif bid.status == 'rejected' %}<span class="au-pill au-red">Rejected</span>
+                {% elif bid.status == 'cancelled' %}<span class="au-pill au-grey">Cancelled</span>
+                {% else %}<span class="au-pill au-amber">Pending</span>{% endif %}
+              </td>
+              <td data-label="Submitted"><span class="alog-date">{{ bid.created_at|date:"M j, Y" }}</span></td>
+              <td data-label="Update Status">
+                <form method="post" action="{% url 'admin_update_task_bid_status' bid.id %}" class="bl-form">
+                  {% csrf_token %}
+                  <select name="status" class="bl-select">
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if bid.status == key %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                  </select>
+                  <button type="submit" class="bl-update">Update</button>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="6">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-6 0v4"></path><rect x="2" y="9" width="20" height="12" rx="2"></rect></svg></span>
+                  <span class="alog-empty-title">{% if request.GET.status %}No bids with this status{% else %}No bids yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if request.GET.status %}Try a different status filter.{% else %}Freelancer bids for this task will appear here.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
     </div>
+  </div>
 
 </div>
-
 {% endblock %}

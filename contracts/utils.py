@@ -74,7 +74,7 @@ def notify_freelancer_of_offer(offer, request=None):
         f"Delivery time: {offer.delivery_days} day(s)\n"
         f"{('Note: ' + offer.note + chr(10)) if offer.note else ''}\n"
         f"Review and respond here: {link}\n\n"
-        f"One Million Jobs"
+        f"Opportunity Hub"
     )
     try:
         html_body = render_to_string("emails/job_offer_notification.html", context)
@@ -127,7 +127,7 @@ def notify_employer_of_offer_response(offer, request=None):
         f"Amount: NGN {offer.amount}\n"
         f"Delivery time: {offer.delivery_days} day(s)\n\n"
         f"View here: {link}\n\n"
-        f"One Million Jobs"
+        f"Opportunity Hub"
     )
     try:
         html_body = render_to_string("emails/job_offer_response_notification.html", context)
@@ -174,7 +174,7 @@ def notify_freelancer_escrow_funded(contract, request=None):
         f"Amount held: NGN {contract.amount}\n"
         f"Delivery time: {contract.delivery_days} day(s)\n\n"
         f"Open your contract to download any documents and start working: {link}\n\n"
-        f"One Million Jobs"
+        f"Opportunity Hub"
     )
     try:
         html_body = render_to_string("emails/contract_funded_notification.html", context)
@@ -200,7 +200,7 @@ def _notify_contract_event(recipient, contract, title, subject, lines, request=N
     if not to_email:
         return
     context = {"title": title, "lines": lines, "link": link, "site_url": site_url}
-    text_body = f"{title}\n\n" + "\n".join(lines) + f"\n\nView the contract: {link}\n\nOne Million Jobs"
+    text_body = f"{title}\n\n" + "\n".join(lines) + f"\n\nView the contract: {link}\n\nOpportunity Hub"
     try:
         html_body = render_to_string("emails/contract_event_notification.html", context)
         email = EmailMultiAlternatives(

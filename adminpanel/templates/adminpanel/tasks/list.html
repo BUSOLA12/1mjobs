@@ -2,92 +2,122 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern alog-modern au-modern">
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Tasks</h4>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Tasks</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Tasks</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-check-circle"></i> Tasks</h3>
     </div>
 
-    <table class="table table-bordered table-hover align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>#</th>
-                <th>Project</th>
-                <th>Owner</th>
-                <th>Category</th>
-                <th>Budget</th>
-                <th>Status</th>
-                <th>Expires</th>
-                <th>Featured</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
+    <div class="content">
 
-        <tbody>
+      <!-- Filters -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="q" value="{{ q }}" placeholder="Search project, owner, category">
+          <i class="icon-material-outline-search"></i>
+        </div>
+        <select name="status">
+          <option value="">All Status</option>
+          {% for key, value in status_choices %}
+          <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
+        </select>
+        <select name="featured">
+          <option value="">Featured</option>
+          <option value="true" {% if featured == "true" %}selected{% endif %}>Featured</option>
+          <option value="false" {% if featured == "false" %}selected{% endif %}>Not Featured</option>
+        </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
+
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>Project</th><th>Owner</th><th>Category</th><th>Budget</th><th>Status</th><th>Expires</th><th>Featured</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
             {% for task in tasks %}
             <tr>
-                <td>{{ forloop.counter }}</td>
-
-                <td>
-                    <strong>{{ task.project_name }}</strong><br>
-                    <small class="text-muted">
-                        {{ task.created_at|date:"M d, Y" }}
-                    </small>
-                </td>
-
-                <td>
-                    {{ task.user.get_full_name|default:task.user.email }}<br>
-                    <small class="text-muted">{{ task.user.email }}</small>
-                </td>
-
-                <td>{{ task.category }}</td>
-
-                <td>
-                    ₦{{ task.budget_min|floatformat:0 }} -
-                    ₦{{ task.budget_max|floatformat:0 }}
-                </td>
-
-                <td>
-                    <span class="badge bg-{% if task.status == 'published' %}success
-                    {% elif task.status == 'draft' %}secondary
-                    {% elif task.status == 'closed' %}danger
-                    {% else %}warning{% endif %}">
-                        {{ task.get_status_display }}
-                    </span>
-                </td>
-
-                <td>
-                    {% if task.expiration_date < now %}
-                        <span class="text-danger">Expired</span>
-                    {% else %}
-                        {{ task.expiration_date|date:"M d, Y" }}
-                    {% endif %}
-                </td>
-
-                <td class="text-center">
-                    {% if task.is_featured %}
-                        <span class="badge bg-success">Yes</span>
-                    {% else %}
-                        <span class="badge bg-secondary">No</span>
-                    {% endif %}
-                </td>
-
-                <td>
-                    <a href="{% url 'admin_task_detail' task.id %}"
-                       class="btn btn-sm btn-primary">
-                        View
-                    </a>
-                </td>
+              <td data-label="Project">
+                <div><strong>{{ task.project_name }}</strong></div>
+                <span class="muted">{{ task.created_at|date:"M j, Y" }}</span>
+              </td>
+              <td data-label="Owner">
+                <div>{{ task.user.get_full_name|default:task.user.email }}</div>
+                <span class="muted">{{ task.user.email }}</span>
+              </td>
+              <td data-label="Category">{{ task.get_category_display }}</td>
+              <td data-label="Budget">&#8358;{{ task.budget_min|floatformat:0 }} – &#8358;{{ task.budget_max|floatformat:0 }}</td>
+              <td data-label="Status">
+                {% if task.status == 'active' or task.status == 'completed' %}<span class="au-pill au-green">{{ task.get_status_display }}</span>
+                {% elif task.status == 'in_progress' %}<span class="au-pill au-blue">{{ task.get_status_display }}</span>
+                {% elif task.status == 'cancelled' or task.status == 'expired' %}<span class="au-pill au-red">{{ task.get_status_display }}</span>
+                {% else %}<span class="au-pill au-grey">{{ task.get_status_display }}</span>{% endif %}
+              </td>
+              <td data-label="Expires">
+                {% if task.expiration_date < now %}<span class="au-pill au-red">Expired</span>
+                {% else %}<span class="alog-date">{{ task.expiration_date|date:"M j, Y" }}</span>{% endif %}
+              </td>
+              <td data-label="Featured">
+                {% if task.is_featured %}<span class="au-pill au-green">Yes</span>
+                {% else %}<span class="au-pill au-grey">No</span>{% endif %}
+              </td>
+              <td data-label="" class="au-action-cell"><a href="{% url 'admin_task_detail' task.id %}" class="au-view">View</a></td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="9" class="text-center">
-                    No tasks found.
-                </td>
+            <tr class="alog-empty-row">
+              <td colspan="8">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg></span>
+                  <span class="alog-empty-title">{% if q or status or featured %}No matching tasks{% else %}No tasks yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if q or status or featured %}Try a different search or filter.{% else %}Posted tasks will appear here.{% endif %}</span>
+                </div>
+              </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
+          </tbody>
+        </table>
+      </div>
 
+      {% if tasks.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if tasks.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ tasks.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in tasks.paginator.page_range %}
+              {% if n == tasks.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > tasks.number|add:'-3' and n < tasks.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if tasks.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ tasks.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
 {% endblock %}

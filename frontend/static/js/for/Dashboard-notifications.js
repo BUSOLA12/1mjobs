@@ -98,10 +98,10 @@ function refreshEmptyState() {
     if (unreadItemCount() === 0) {
         if (!empty) {
             empty = document.createElement('li');
-            empty.className = 'notifications-empty';
+            empty.className = 'notifications-empty notif-empty';
             empty.innerHTML =
-                '<div class="notification-text" style="text-align:center;' +
-                'padding:28px 15px;color:#888;">No new messages</div>';
+                '<span class="notif-empty-icon"><i class="icon-feather-mail"></i></span>' +
+                '<span class="notif-empty-text">No new messages.</span>';
             messageList.appendChild(empty);
         }
     } else if (empty) {
@@ -164,9 +164,9 @@ async function renderUnread() {
 
     const notCount = document.getElementById("notification-count");
     if (notCount) {
-        const count = unreadItemCount();
-        notCount.textContent = count;
-        notCount.style.display = count > 0 ? "" : "none";
+        // Always show the badge (including "0"), to match the notification bell.
+        notCount.textContent = unreadItemCount();
+        notCount.style.display = "";
     }
     refreshEmptyState();
 }
@@ -179,11 +179,10 @@ function clearConversationNotifications(conversationId) {
     messageList
         .querySelectorAll(`li[data-conversation-id="${conversationId}"]`)
         .forEach(li => li.remove());
-    const count = unreadItemCount();
     const notCount = document.getElementById("notification-count");
     if (notCount) {
-        notCount.textContent = count;
-        notCount.style.display = count > 0 ? "" : "none";
+        notCount.textContent = unreadItemCount();
+        notCount.style.display = "";
     }
     refreshEmptyState();
 }
@@ -205,8 +204,10 @@ if (markAllReadBtn) {
                 const data = await response.json();
                 console.log(data.message);
 
-                // ✅ Alert success
-                alert("All notifications marked as read!");
+                if (window.Snackbar) Snackbar.show({
+                    text: "All messages marked as read.", pos: "bottom-center",
+                    showAction: false, duration: 2500, backgroundColor: "#38b653", textColor: "#fff"
+                });
 
                 // ✅ Re-render notifications list to reflect changes
                 await renderUnread();
@@ -215,7 +216,7 @@ if (markAllReadBtn) {
                 const countElement = document.getElementById("notification-count");
                 if (countElement) {
                     countElement.textContent = "0";
-                    countElement.style.display = "none"; // Hide badge if empty
+                    countElement.style.display = ""; // Keep badge visible, showing "0"
                 }
             } else {
                 console.error("Failed to mark all notifications as read.");
@@ -226,6 +227,58 @@ if (markAllReadBtn) {
             alert("Something went wrong!");
         }
     });
+}
+
+// ---- Live header message badge (all pages except the Messages page) --------
+// The full message-list WebSocket is only opened on the Messages page. On every
+// other page we open a slim connection here so the header message badge updates
+// the moment a new message arrives: on Message create the server pushes a
+// 'send_notification' event to the recipient's user_<id> channel group
+// (see Messaging/signals.py). Without this, the badge only reflected the count
+// at page load and never increased live.
+let headerNotifSocket = null;
+let headerNotifReconnect = null;
+
+async function connectHeaderNotifSocket() {
+    // The Messages page runs its own socket — don't open a second one there.
+    if (document.getElementById('conversations-list')) return;
+    if (!(await isAuthenticated())) return;
+
+    // getAccessToken() refreshes the token if needed, so reconnects stay valid.
+    let token = null;
+    try {
+        token = (typeof getAccessToken === "function") ? await getAccessToken() : accessToken;
+    } catch (e) { token = null; }
+    if (!token) return;
+
+    const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = `${scheme}://${window.location.host}/ws/messaging/?token=${encodeURIComponent(token)}`;
+
+    try {
+        headerNotifSocket = new WebSocket(url);
+    } catch (e) {
+        return;
+    }
+
+    headerNotifSocket.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch (e) { return; }
+        // A new message arrived for this user (or the conversation list changed):
+        // re-sync the header dropdown + badge from the server.
+        if (data.type === "send_notification" || data.type === "refresh_conv") {
+            renderUnread();
+        }
+    };
+
+    headerNotifSocket.onclose = () => {
+        // Reconnect after a short delay; the next attempt refreshes the token.
+        clearTimeout(headerNotifReconnect);
+        headerNotifReconnect = setTimeout(connectHeaderNotifSocket, 5000);
+    };
+
+    headerNotifSocket.onerror = () => {
+        try { headerNotifSocket.close(); } catch (e) {}
+    };
 }
 
 let contentLoaded = false;
@@ -243,6 +296,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     await whenReady();
     if (await isAuthenticated()){
         await renderUnread();
+        // Keep the header message badge live on non-Messages pages.
+        connectHeaderNotifSocket();
     }
 
 //const data = await fetchUserId();

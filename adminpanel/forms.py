@@ -36,14 +36,21 @@ class AdminPlanForm(forms.ModelForm):
 # admin_panel/forms.py
 from django import forms
 from pricing.models import PlanFeature
+from pricing.features import FEATURE_CHOICES
 
 class AdminPlanFeatureForm(forms.ModelForm):
+    # The feature name must be one of the keys the code actually checks, so it's
+    # a dropdown rather than free text (a typo would silently gate nothing).
+    feature_name = forms.ChoiceField(
+        choices=FEATURE_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
     class Meta:
         model = PlanFeature
         fields = ["feature_name", "is_boolean", "limit"]
 
         widgets = {
-            "feature_name": forms.TextInput(attrs={"class": "form-control"}),
             "is_boolean": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "limit": forms.NumberInput(attrs={"class": "form-control"}),
         }

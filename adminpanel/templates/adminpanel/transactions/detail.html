@@ -2,34 +2,79 @@
 {% load static %}
 
 {% block content %}
+<div class="admin-modern au-modern od-modern">
 
-<div class="card mb-3">
-    <div class="card-header">Transaction Info</div>
-    <div class="card-body">
-        <p><strong>Reference:</strong> {{ transaction.reference }}</p>
-        <p><strong>Status:</strong> {{ transaction.status }}</p>
-        <p><strong>Amount:</strong> {{ transaction.amount }}</p>
-        <p><strong>Date:</strong> {{ transaction.created_at }}</p>
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Transaction</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li><a href="{% url 'admin_transaction_list' %}">Transactions</a></li>
+        <li>{{ transaction.reference }}</li>
+      </ul>
+    </nav>
+  </div>
 
-        <a href="{{ transaction.authorization_url }}" target="_blank"
-           class="btn btn-outline-secondary btn-sm">
-            Open Authorization URL
-        </a>
+  <div class="od-grid">
+
+    <!-- Transaction Info -->
+    <div class="dashboard-box margin-top-0">
+      <div class="headline">
+        <h3><i class="icon-material-outline-account-balance-wallet"></i> Transaction Info</h3>
+      </div>
+      <div class="content">
+        <div class="od-kv"><span class="k">Reference</span><span class="v">{{ transaction.reference }}</span></div>
+        <div class="od-kv">
+          <span class="k">Status</span>
+          <span class="v">
+            {% if transaction.status == 'success' %}<span class="au-pill au-green">Success</span>
+            {% elif transaction.status == 'pending' %}<span class="au-pill au-amber">Pending</span>
+            {% else %}<span class="au-pill au-red">{{ transaction.status|title }}</span>{% endif %}
+          </span>
+        </div>
+        <div class="od-kv"><span class="k">Amount</span><span class="v">&#8358;{{ transaction.amount }}</span></div>
+        <div class="od-kv"><span class="k">Date</span><span class="v">{{ transaction.created_at|date:"M j, Y H:i" }}</span></div>
+        {% if transaction.authorization_url %}
+        <div class="od-actions" style="margin-top:16px;">
+          <a href="{{ transaction.authorization_url }}" target="_blank" rel="noopener" class="au-view">Open Authorization URL</a>
+        </div>
+        {% endif %}
+      </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header">Linked Order</div>
-    <div class="card-body">
-        <p><strong>Order ID:</strong> {{ transaction.order.id }}</p>
-        <p><strong>Order Status:</strong>
-            <span class="badge bg-info">{{ transaction.order.status }}</span>
-        </p>
-
-        <a href="{% url 'admin_order_detail' transaction.order.id %}"
-           class="btn btn-outline-primary btn-sm">
-            View Order
-        </a>
+    <!-- Linked Order -->
+    <div class="dashboard-box margin-top-0">
+      <div class="headline">
+        <h3><i class="icon-material-outline-account-balance"></i> Linked Order</h3>
+      </div>
+      <div class="content">
+        {% if transaction.order %}
+        <div class="od-kv"><span class="k">Order ID</span><span class="v">#{{ transaction.order.id }}</span></div>
+        <div class="od-kv">
+          <span class="k">Order Status</span>
+          <span class="v">
+            {% if transaction.order.status == 'paid' %}<span class="au-pill au-green">Paid</span>
+            {% elif transaction.order.status == 'pending' %}<span class="au-pill au-amber">Pending</span>
+            {% elif transaction.order.status == 'failed' %}<span class="au-pill au-red">Failed</span>
+            {% else %}<span class="au-pill au-grey">{{ transaction.order.status|title }}</span>{% endif %}
+          </span>
+        </div>
+        <div class="od-kv"><span class="k">User</span><span class="v">{{ transaction.order.user.email }}</span></div>
+        <div class="od-actions" style="margin-top:16px;">
+          <a href="{% url 'admin_order_detail' transaction.order.id %}" class="au-view">View Order</a>
+        </div>
+        {% else %}
+        <p class="od-none">No order linked to this transaction.</p>
+        {% endif %}
+      </div>
     </div>
+
+  </div>
+
+  <div class="od-footer">
+    <a href="{% url 'admin_transaction_list' %}" class="od-back"><i class="icon-material-outline-keyboard-arrow-left"></i> Back to Transactions</a>
+  </div>
+
 </div>
 {% endblock %}

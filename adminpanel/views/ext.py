@@ -83,6 +83,35 @@ def admin_user_detail(request, user_id):
     })
 
 
+@staff_member_required
+@require_POST
+def admin_user_delete(request, user_id):
+    """Permanently delete a (non-admin) user account.
+
+    Guards: you can't delete yourself, and admin/staff/superuser accounts are
+    protected here (manage those from the Admins page). The deletion is logged
+    with the email in the details, because the AdminActionLog target FK cascades
+    away with the user.
+    """
+    from adminpanel.utils.base_utils import log_admin_action
+
+    target = get_object_or_404(CustomUser, id=user_id)
+
+    if target.id == request.user.id:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect("admin_user_detail", user_id=user_id)
+
+    if target.is_staff or target.is_superuser or target.role == "admin":
+        messages.error(request, "Admin accounts can't be deleted from here.")
+        return redirect("admin_user_detail", user_id=user_id)
+
+    info = f"Deleted user {target.email} (id {target.id}, role {target.role})."
+    target.delete()
+    log_admin_action(request.user, None, "user_delete", info)
+    messages.success(request, f"User {target.email} has been permanently deleted.")
+    return redirect("admin_user_list")
+
+
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.admin.views.decorators import staff_member_required

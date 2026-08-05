@@ -2,69 +2,102 @@
 {% load static %}
 
 {% block content %}
-<form method="get" class="row g-2 mb-3">
-    <div class="col-md-4">
-        <input type="text" name="search" class="form-control"
-               placeholder="User or plan"
-               value="{{ search }}">
+<div class="admin-modern alog-modern au-modern">
+
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Subscriptions</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Subscriptions</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-autorenew"></i> Subscriptions</h3>
     </div>
 
-    <div class="col-md-3">
-        <select name="status" class="form-select">
-            <option value="">All</option>
-            <option value="active" {% if status == "active" %}selected{% endif %}>Active</option>
-            <option value="expired" {% if status == "expired" %}selected{% endif %}>Expired</option>
-            <option value="inactive" {% if status == "inactive" %}selected{% endif %}>Inactive</option>
+    <div class="content">
+
+      <!-- Filters -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="search" value="{{ search }}" placeholder="User or plan">
+          <i class="icon-material-outline-search"></i>
+        </div>
+        <select name="status">
+          <option value="">All</option>
+          <option value="active" {% if status == "active" %}selected{% endif %}>Active</option>
+          <option value="expired" {% if status == "expired" %}selected{% endif %}>Expired</option>
+          <option value="inactive" {% if status == "inactive" %}selected{% endif %}>Inactive</option>
         </select>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
+
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
+            <tr>
+              <th>User</th><th>Plan</th><th>Cycle</th><th>Status</th><th>End Date</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in page_obj %}
+            <tr>
+              <td data-label="User">{{ sub.user.email }}</td>
+              <td data-label="Plan">{% if sub.plan %}{{ sub.plan.name }}{% else %}<span class="muted">—</span>{% endif %}</td>
+              <td data-label="Cycle">{{ sub.billing_cycle|title }}</td>
+              <td data-label="Status">
+                {% if sub.is_active and not sub.has_expired %}<span class="au-pill au-green">Active</span>
+                {% elif sub.has_expired %}<span class="au-pill au-amber">Expired</span>
+                {% else %}<span class="au-pill au-grey">Inactive</span>{% endif %}
+              </td>
+              <td data-label="End Date"><span class="alog-date">{{ sub.end_date|date:"M j, Y H:i" }}</span></td>
+              <td data-label="" class="au-action-cell"><a href="{% url 'admin_subscription_detail' sub.id %}" class="au-view">View</a></td>
+            </tr>
+            {% empty %}
+            <tr class="alog-empty-row">
+              <td colspan="6">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></span>
+                  <span class="alog-empty-title">{% if search or status %}No matching subscriptions{% else %}No subscriptions yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if search or status %}Try a different search or filter.{% else %}Subscriptions will appear here as users subscribe.{% endif %}</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if page_obj.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in page_obj.paginator.page_range %}
+              {% if n == page_obj.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > page_obj.number|add:'-3' and n < page_obj.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status %}&status={{ status }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
     </div>
+  </div>
 
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">Filter</button>
-    </div>
-</form>
-
-<table class="table table-hover">
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Plan</th>
-            <th>Cycle</th>
-            <th>Status</th>
-            <th>End Date</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for sub in page_obj %}
-        <tr>
-            <td>{{ sub.user.email }}</td>
-            <td>{{ sub.plan.name }}</td>
-            <td>{{ sub.billing_cycle }}</td>
-            <td>
-                {% if sub.is_active and not sub.has_expired %}
-                    <span class="badge bg-success">ACTIVE</span>
-                {% elif sub.has_expired %}
-                    <span class="badge bg-warning">EXPIRED</span>
-                {% else %}
-                    <span class="badge bg-secondary">INACTIVE</span>
-                {% endif %}
-            </td>
-            <td>{{ sub.end_date }}</td>
-            <td>
-                <a href="{% url 'admin_subscription_detail' sub.id %}"
-                   class="btn btn-sm btn-outline-primary">
-                    View
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="6">No subscriptions found</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-{% include "adminpanel/pagination.html" %}
-
-
-
+</div>
 {% endblock %}

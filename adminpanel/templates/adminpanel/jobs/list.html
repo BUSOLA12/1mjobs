@@ -2,133 +2,118 @@
 {% load static %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4>Jobs Management</h4>
-</div>
+<div class="admin-modern alog-modern au-modern">
 
-<div class="container-fluid">
-<form method="get" class="row g-2 mb-4">
-    <div class="col-md-3">
-        <input type="text" name="q" class="form-control"
-               placeholder="Search title, employer, location"
-               value="{{ q }}">
+  <!-- Dashboard Headline -->
+  <div class="dashboard-headline">
+    <h3>Jobs</h3>
+    <nav id="breadcrumbs" class="dark">
+      <ul>
+        <li><a href="{% url 'admin-dashboard' %}">Home</a></li>
+        <li>Jobs</li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="dashboard-box margin-top-0">
+    <div class="headline">
+      <h3><i class="icon-material-outline-assignment"></i> Jobs Management</h3>
     </div>
 
-    <div class="col-md-2">
-        <select name="status" class="form-select">
-            <option value="">All Status</option>
-            {% for key, value in status_choices %}
-                <option value="{{ key }}" {% if status == key %}selected{% endif %}>
-                    {{ value }}
-                </option>
-            {% endfor %}
+    <div class="content">
+
+      <!-- Filters -->
+      <form method="get" class="au-filters">
+        <div class="au-search">
+          <input type="text" name="q" value="{{ q }}" placeholder="Search title, employer, location">
+          <i class="icon-material-outline-search"></i>
+        </div>
+        <select name="status">
+          <option value="">All Status</option>
+          {% for key, value in status_choices %}
+          <option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
         </select>
-    </div>
-
-    <div class="col-md-2">
-        <select name="approved" class="form-select">
-            <option value="">Approval</option>
-            <option value="true" {% if approved == "true" %}selected{% endif %}>Approved</option>
-            <option value="false" {% if approved == "false" %}selected{% endif %}>Not Approved</option>
+        <select name="approved">
+          <option value="">Approval</option>
+          <option value="true" {% if approved == "true" %}selected{% endif %}>Approved</option>
+          <option value="false" {% if approved == "false" %}selected{% endif %}>Not Approved</option>
         </select>
-    </div>
-
-    <div class="col-md-2">
-        <select name="job_type" class="form-select">
-            <option value="">Job Type</option>
-            {% for key, value in job_types %}
-                <option value="{{ key }}" {% if job_type == key %}selected{% endif %}>
-                    {{ value }}
-                </option>
-            {% endfor %}
+        <select name="job_type">
+          <option value="">Job Type</option>
+          {% for key, value in job_types %}
+          <option value="{{ key }}" {% if job_type == key %}selected{% endif %}>{{ value }}</option>
+          {% endfor %}
         </select>
-    </div>
+        <button type="submit" class="au-apply">Filter</button>
+      </form>
 
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">Filter</button>
-    </div>
-</form>
-
-<div class="card">
-    <table class="table table-hover mb-0">
-        <thead>
+      <!-- Table -->
+      <div class="alog-table-wrap">
+        <table class="alog-table">
+          <thead>
             <tr>
-                <th>Title</th>
-                <th>Employer</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Approved</th>
-                <th>Applications</th>
-                <th>Created</th>
-                <th></th>
+              <th>Title</th><th>Employer</th><th>Type</th><th>Status</th><th>Approved</th><th>Applications</th><th>Created</th><th></th>
             </tr>
-        </thead>
-
-        <tbody>
+          </thead>
+          <tbody>
             {% for job in jobs %}
             <tr>
-                <td>{{ job.title }}</td>
-                <td>{{ job.user.email }}</td>
-                <td>{{ job.get_job_type_display }}</td>
-
-                <td>
-                    <span class="badge bg-secondary">
-                        {{ job.get_status_display }}
-                    </span>
-                </td>
-
-                <td>
-                    {% if job.approved %}
-                        <span class="badge bg-success">Yes</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">No</span>
-                    {% endif %}
-                </td>
-
-                <td>{{ job.applications_count }}</td>
-                <td>{{ job.created_at|date:"Y-m-d" }}</td>
-
-                <td>
-                    <a href="{% url 'admin_job_detail' job.id %}"
-                       class="btn btn-sm btn-outline-primary">
-                        View
-                    </a>
-                </td>
+              <td data-label="Title"><strong>{{ job.title }}</strong></td>
+              <td data-label="Employer"><span class="muted">{{ job.user.email }}</span></td>
+              <td data-label="Type">{{ job.get_job_type_display }}</td>
+              <td data-label="Status">
+                {% if job.status == 'accepted' %}<span class="au-pill au-green">{{ job.get_status_display }}</span>
+                {% elif job.status == 'rejected' %}<span class="au-pill au-red">{{ job.get_status_display }}</span>
+                {% else %}<span class="au-pill au-amber">{{ job.get_status_display }}</span>{% endif %}
+              </td>
+              <td data-label="Approved">
+                {% if job.approved %}<span class="au-pill au-green">Yes</span>
+                {% else %}<span class="au-pill au-amber">No</span>{% endif %}
+              </td>
+              <td data-label="Applications">{{ job.applications_count }}</td>
+              <td data-label="Created"><span class="alog-date">{{ job.created_at|date:"M j, Y" }}</span></td>
+              <td data-label="" class="au-action-cell"><a href="{% url 'admin_job_detail' job.id %}" class="au-view">View</a></td>
             </tr>
             {% empty %}
-            <tr>
-                <td colspan="8" class="text-center text-muted">
-                    No jobs found
-                </td>
+            <tr class="alog-empty-row">
+              <td colspan="8">
+                <div class="alog-empty">
+                  <span class="alog-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></span>
+                  <span class="alog-empty-title">{% if q or status or approved or job_type %}No matching jobs{% else %}No jobs yet{% endif %}</span>
+                  <span class="alog-empty-text">{% if q or status or approved or job_type %}Try a different search or filter.{% else %}Posted jobs will appear here.{% endif %}</span>
+                </div>
+              </td>
             </tr>
             {% endfor %}
-        </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+
+      {% if jobs.paginator.num_pages > 1 %}
+      <div class="alog-pagination">
+        <nav class="pagination">
+          <ul>
+            {% if jobs.has_previous %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ jobs.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if approved %}&approved={{ approved }}{% endif %}{% if job_type %}&job_type={{ job_type }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-left"></i></a></li>
+            {% endif %}
+            {% for n in jobs.paginator.page_range %}
+              {% if n == jobs.number %}
+                <li><a href="#" class="ripple-effect current-page">{{ n }}</a></li>
+              {% elif n > jobs.number|add:'-3' and n < jobs.number|add:'3' %}
+                <li><a class="ripple-effect" href="?page={{ n }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if approved %}&approved={{ approved }}{% endif %}{% if job_type %}&job_type={{ job_type }}{% endif %}">{{ n }}</a></li>
+              {% endif %}
+            {% endfor %}
+            {% if jobs.has_next %}
+            <li class="pagination-arrow"><a class="ripple-effect" href="?page={{ jobs.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if approved %}&approved={{ approved }}{% endif %}{% if job_type %}&job_type={{ job_type }}{% endif %}"><i class="icon-material-outline-keyboard-arrow-right"></i></a></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
 </div>
-
-<nav class="mt-4">
-    <ul class="pagination">
-        {% if jobs.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ jobs.previous_page_number }}">&laquo;</a>
-            </li>
-        {% endif %}
-
-        {% for page in jobs.paginator.page_range %}
-            <li class="page-item {% if jobs.number == page %}active{% endif %}">
-                <a class="page-link" href="?page={{ page }}">{{ page }}</a>
-            </li>
-        {% endfor %}
-
-        {% if jobs.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ jobs.next_page_number }}">&raquo;</a>
-            </li>
-        {% endif %}
-    </ul>
-</nav>
-
-    {% include "adminpanel/pagination.html" %}
-</div>
-
 {% endblock %}

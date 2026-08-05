@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <!-- Basic Page Needs -->
-<title>1mjobs - Messages</title>
+<title>Opportunity Hub - Messages</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -62,7 +62,7 @@
                 </nav>
             </div>
 
-            <div class="messages-container margin-top-0">
+            <div class="messages-container msg-modern margin-top-0">
                 <div class="messages-container-inner">
 
                     <!-- Messages Inbox -->
@@ -82,8 +82,12 @@
                     <!-- Message Content -->
                     <div class="message-content">
                         <div class="messages-headline">
-                            <h4 id="current-user-name"></h4>
-                            <a href="#" class="message-action delete"><i class="icon-feather-trash-2"></i> Delete Conversation</a>
+                            <button type="button" class="mc-back" aria-label="Back to conversations"><i class="icon-feather-arrow-left"></i></button>
+                            <div class="mc-headline-info">
+                                <h4 id="current-user-name"></h4>
+                                <span id="current-conversation-subject" class="mc-subject" style="display:none;"></span>
+                            </div>
+                            <a href="#" class="message-action delete"><i class="icon-feather-trash-2"></i> <span class="mc-delete-label">Delete Conversation</span></a>
                         </div>
                         
                         <!-- Message Content Inner -->
@@ -133,7 +137,7 @@
 
 <!-- Scripts -->
 {% include 'frontend/partials/scripts.html' %}
-<script src="{% static 'js/for/Dashboard-notifications.js' %}"></script>
+<script src="{% static 'js/for/Dashboard-notifications.js' %}?v=2"></script>
 <script src="{% static 'js/for/dashboard-upper-notification-list.js' %}"></script>
 
 
@@ -198,6 +202,65 @@ function filterConversations(query) {
     renderConversations(list);
 }
 
+// Compact relative time for the conversation list (e.g. "4m", "1h", "2d").
+function formatCompactTime(ts) {
+    if (!ts) return "";
+    const secs = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (secs < 60) return "now";
+    const mins = Math.floor(secs / 60);
+    if (mins < 60) return mins + "m";
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h";
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return days + "d";
+    const wks = Math.floor(days / 7);
+    if (wks < 52) return wks + "w";
+    return Math.floor(days / 365) + "y";
+}
+
+// Current user id, fetched once and reused when building rows (to detect which
+// last messages the current user sent, for the "You:" prefix + read ticks).
+let _currentUserIdCache = null;
+async function getCurrentUserId() {
+    if (_currentUserIdCache != null) return _currentUserIdCache;
+    if (typeof UserId !== "undefined" && UserId && !isNaN(parseInt(UserId, 10))) {
+        _currentUserIdCache = parseInt(UserId, 10);
+        return _currentUserIdCache;
+    }
+    const me = await fetchUserId();
+    _currentUserIdCache = me ? me.id : null;
+    return _currentUserIdCache;
+}
+
+// Read-receipt double-check (like WhatsApp): grey = sent, blue = read.
+const CONV_TICK_SVG =
+    '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline><polyline points="23 6 12.5 17 11.5 16"></polyline></svg>';
+
+function escConv(s) {
+    const d = document.createElement("div");
+    d.textContent = s == null ? "" : String(s);
+    return d.innerHTML;
+}
+
+// Fallback avatar when a user has no picture, and an admin/support badge icon.
+const FALLBACK_AVATAR = "/static/images/user-avatar-placeholder.png";
+const ADMIN_AVATAR_SVG =
+    '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>';
+
+// Build the avatar element: admin badge for admins, the user's picture otherwise,
+// falling back to a placeholder when the picture is missing or fails to load.
+function buildConvAvatar(conv, user_data) {
+    const isAdmin = (conv.other_user && conv.other_user.is_admin) ||
+        /\badmin\b/i.test((conv.other_user && conv.other_user.name) || "");
+    if (isAdmin) {
+        return `<div class="conv-avatar conv-avatar-admin" title="Admin">${ADMIN_AVATAR_SVG}</div>`;
+    }
+    let url = user_data && user_data.avatar ? String(user_data.avatar) : "";
+    const hasAvatar = url && url !== "null" && !url.endsWith("/null") && !url.endsWith("/None");
+    const src = hasAvatar ? url : FALLBACK_AVATAR;
+    return `<div class="conv-avatar"><img src="${src}" alt="avatar" onerror="this.onerror=null;this.src='${FALLBACK_AVATAR}';"></div>`;
+}
+
 async function renderConversations(conversations = null) {
     if (!conversations) {
         conversations = await fetchConversation();
@@ -231,120 +294,44 @@ async function renderConversations(conversations = null) {
         li.dataset.conversationId = conv.conversation_id;
         li.classList.add('conversation-item');
 
+        const me = await getCurrentUserId();
+        const lm = conv.last_message;
+        const mine = lm && lm.sender_id != null && me != null && String(lm.sender_id) === String(me);
+        const unread = conv.unread_count > 0;
+
+        const subjectText = conv.subject || "";
+        const subjectAttr = (conv.subject || "this job or task").replace(/"/g, "&quot;");
+        const timeText = lm && lm.timestamp ? formatCompactTime(lm.timestamp) : "";
+        const preview = (mine ? "You: " : "") + escConv(lm ? lm.content : "No messages yet");
+
+        // Right-hand indicator: unread count for incoming, or read ticks for
+        // messages the current user sent (blue when the other side has read them).
+        let indicator = "";
+        if (unread) {
+            indicator = `<span class="conv-unread">${conv.unread_count}</span>`;
+        } else if (mine) {
+            indicator = `<span class="conv-tick ${lm && lm.is_read ? "read" : ""}">${CONV_TICK_SVG}</span>`;
+        }
+
+        const avatarHtml = buildConvAvatar(conv, user_data);
+
         li.innerHTML = `
-    <a href="#" style="
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background-color: #fff;
-        border-radius: 12px;
-        
-        margin-bottom: 12px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    " onmouseover="this.style.backgroundColor='#f9f9f9';" onmouseout="this.style.backgroundColor='#fff';">
-        
+    <a href="#" class="conv-row${unread ? " is-unread" : ""}">
         <!-- Avatar -->
-        <div class="message-avatar" style="position: relative; min-width: 55px;">
-            <i class="status-icon status-online" style="
-                position: absolute;
-                bottom: 3px;
-                right: 3px;
-                width: 12px;
-                height: 12px;
-                background-color: #4CAF50;
-                border: 2px solid #fff;
-                border-radius: 50%;
-                
-            "></i>
-            <img src=${user_data.avatar} alt="avatar" style="
-                width: 55px;
-                height: 55px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 2px solid #f1f1f1;
-                
-            " />
-        </div>
+        ${avatarHtml}
 
-        <!-- Message content -->
-        <div class="message-by" style="flex-grow: 1; min-width: 0;">
-            
-            <!-- User name -->
-            <h5 id="current-user-name" style="
-                margin: 0;
-                font-size: 16px;
-                font-weight: 600;
-                color: #333;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-            ">
-                ${conv.other_user.name}
-            </h5>
+        <!-- Conversation details -->
+        <div class="conv-body">
+            <div class="conv-top">
+                <span class="conv-name">${escConv(conv.other_user.name)}</span>
+                ${timeText ? `<span class="conv-time">${timeText}</span>` : ""}
+            </div>
 
-            <p title="This conversation is on ${(conv.subject || 'this job or task').replace(/"/g, '&quot;')}" style="
-                margin: 4px 0;
-                font-size: 12px;
-                color: #520afcff;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                max-width: 220px;
-                cursor: help;
-            ">
-                ${conv.subject}
-            </p>
+            ${subjectText ? `<span class="conv-subject" title="This conversation is on ${subjectAttr}">${escConv(subjectText)}</span>` : ""}
 
-            <!-- Last message -->
-            <p style="
-                margin: 4px 0;
-                font-size: 14px;
-                color: #777;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-                max-width: 220px;
-            ">
-                ${conv.last_message ? conv.last_message.content : "No messages yet"}
-            </p>
-
-            
-
-            <!-- Timestamp + unread badge -->
-            <div class="message-by-headline" style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 5px;
-            ">
-                ${conv.last_message && conv.last_message.timestamp 
-                    ? `<small style="
-                            font-size: 12px;
-                            color: #aaa;
-                            font-weight: 500;
-                        ">
-                            ${new Date(conv.last_message.timestamp).toLocaleString()}
-                        </small>` 
-                    : ""
-                }
-
-                ${conv.unread_count > 0 
-                    ? `<span class="unread-badge" style="
-                            background-color: #ff3b30;
-                            color: #fff;
-                            font-size: 12px;
-                            font-weight: bold;
-                            padding: 3px 8px;
-                            border-radius: 12px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-                        ">
-                            ${conv.unread_count}
-                        </span>` 
-                    : ""
-                }
+            <div class="conv-bottom">
+                <span class="conv-preview">${preview}</span>
+                ${indicator}
             </div>
         </div>
     </a>
@@ -356,6 +343,23 @@ async function renderConversations(conversations = null) {
     conversationsList.innerHTML = '';
     for (const li of items) {
         conversationsList.appendChild(li);
+    }
+
+    // Empty state: nothing to show, either because there are no conversations
+    // yet or because the current search matched none.
+    if (items.length === 0) {
+        const searching = !!(currentSearchQuery && currentSearchQuery.length);
+        const icon = '<span class="conv-empty-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></span>';
+        const empty = document.createElement('li');
+        empty.className = 'conv-empty';
+        empty.innerHTML = searching
+            ? icon +
+              '<span class="conv-empty-title">No matches</span>' +
+              '<span class="conv-empty-text">No conversations match your search.</span>'
+            : icon +
+              '<span class="conv-empty-title">No conversations yet</span>' +
+              '<span class="conv-empty-text">Message an employer or freelancer to start chatting.</span>';
+        conversationsList.appendChild(empty);
     }
 
     // Refresh the empty-state wording now that we know whether any conversations exist.
@@ -428,6 +432,7 @@ class MessagingApp {
         this.currentUserId = UserId; // This will now be guaranteed to exist
         this.ocurrentConversationId = convId;
         this.currentConversationId = 0;
+        this.currentConversationIsAdmin = false;
         this.isTyping = false;
         this.typingTimeout = null;
         this.idForConversationDelete = null;
@@ -454,6 +459,9 @@ class MessagingApp {
         this.conversationsList = document.getElementById('conversations-list');
         this.currentUserName = document.getElementById('current-user-name');
         this.deleteConvButton = document.querySelector('.message-action.delete');
+        // Mobile (WhatsApp-style) navigation between the list and the chat view.
+        this.messagesContainer = document.querySelector('.messages-container');
+        this.backButton = document.querySelector('.mc-back');
 
         // Validate that all required elements exist
         if (!this.messageList || !this.sendButton || !this.messageInput) {
@@ -643,6 +651,14 @@ class MessagingApp {
 
 
 
+        // Mobile: "back" returns from the chat view to the conversation list.
+        if (this.backButton) {
+            this.backButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.messagesContainer) this.messagesContainer.classList.remove('chat-open');
+            });
+        }
+
         this.conversationsList.addEventListener('click', (e) => {
             console.log("At least i got here");
             const conversationItem = e.target.closest('li');
@@ -694,6 +710,9 @@ class MessagingApp {
                     this.idForConversationDelete = null;
                     this.messageList.innerHTML = '';
                     if (this.currentUserName) this.currentUserName.textContent = '';
+                    const subjEl = document.getElementById('current-conversation-subject');
+                    if (subjEl) { subjEl.textContent = ''; subjEl.style.display = 'none'; }
+                    if (this.messagesContainer) this.messagesContainer.classList.remove('chat-open');
                     this.updateConversationPlaceholder();
 
                     renderConversations();
@@ -732,6 +751,20 @@ class MessagingApp {
         const content = this.messageInput.value.trim();
         if (!content) return;
 
+        // No conversation open yet — tell the user to pick one first.
+        if (!this.currentConversationId) {
+            if (window.Snackbar) {
+                Snackbar.show({
+                    text: "Open a conversation to start chatting.",
+                    pos: "bottom-center", showAction: false, duration: 2800,
+                    backgroundColor: "#ff6b3d", textColor: "#fff"
+                });
+            } else {
+                this.showError("Open a conversation to start chatting.");
+            }
+            return;
+        }
+
         this.stopTyping();
         console.log("From send Message:", this.currentConversationId);
         const messageData = {
@@ -762,6 +795,19 @@ class MessagingApp {
     }
     
 
+    // Avatar for a message bubble: admin badge for incoming admin messages,
+    // the sender's picture otherwise, falling back to a placeholder when missing.
+    bubbleAvatarHtml(isSentByCurrentUser, avatarSrc) {
+        const FB = "/static/images/user-avatar-placeholder.png";
+        if (!isSentByCurrentUser && this.currentConversationIsAdmin) {
+            return '<div class="message-avatar msg-avatar-admin"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg></div>';
+        }
+        const s = avatarSrc ? String(avatarSrc) : "";
+        const ok = s && s !== "null" && !s.endsWith("/null") && !s.endsWith("/None");
+        const src = ok ? s : FB;
+        return `<div class="message-avatar"><img src="${src}" alt="avatar" onerror="this.onerror=null;this.src='${FB}';" /></div>`;
+    }
+
     addMessageToUIRealTime(message, isSentByCurrentUser) {
         console.log("message data Real:", message);
         console.log("sender_avatar Real :", message.sender_avatar);
@@ -774,7 +820,7 @@ class MessagingApp {
         const messageHtmlR = `
             <div class="${messageClassR}">
                 <div class="message-bubble-inner">
-                    <div class="message-avatar"><img src="${avatarSrcR}" alt="avatar" /></div>
+                    ${this.bubbleAvatarHtml(isSentByCurrentUser, avatarSrcR)}
                     <div class="message-text"><p>${this.escapeHtml(message.content)}</p></div>
                 </div>
                 <div class="clearfix"></div>
@@ -797,7 +843,7 @@ class MessagingApp {
         const messageHtml = `
             <div class="${messageClass}">
                 <div class="message-bubble-inner">
-                    <div class="message-avatar"><img src="${avatarSrc}" alt="avatar" /></div>
+                    ${this.bubbleAvatarHtml(isSentByCurrentUser, avatarSrc)}
                     <div class="message-text"><p>${this.escapeHtml(message.content)}</p></div>
                 </div>
                 <div class="clearfix"></div>
@@ -963,6 +1009,15 @@ class MessagingApp {
         }
         console.log("Got here 4");
         this.currentConversationId = newConversationId;
+        // Remember if this conversation is with an admin, so incoming message
+        // bubbles use the admin badge (matches the conversation list).
+        const convMeta = (typeof allConversations !== 'undefined')
+            ? allConversations.find(c => String(c.conversation_id) === String(newConversationId))
+            : null;
+        this.currentConversationIsAdmin = !!(convMeta && convMeta.other_user &&
+            (convMeta.other_user.is_admin || /\badmin\b/i.test(convMeta.other_user.name || "")));
+        // Mobile: slide from the list to the chat view (no effect on desktop).
+        if (this.messagesContainer) this.messagesContainer.classList.add('chat-open');
         console.log(newConversationId);
         this.joinConversation(newConversationId);
         this.updateActiveConversation(newConversationId);
@@ -981,18 +1036,30 @@ class MessagingApp {
         const activeConversation = this.conversationsList.querySelector(`[data-conversation-id="${conversationId}"]`);
         if (activeConversation) {
             activeConversation.classList.add('active-message');
-            const userName = activeConversation.querySelector('h5').textContent;
-            this.currentUserName.textContent = userName;
+            const nameEl = activeConversation.querySelector('.conv-name');
+            if (nameEl) this.currentUserName.textContent = nameEl.textContent;
+        }
+
+        // Show the conversation subject under the name in the chat header.
+        const subjEl = document.getElementById('current-conversation-subject');
+        if (subjEl) {
+            const conv = (typeof allConversations !== 'undefined')
+                ? allConversations.find(c => String(c.conversation_id) === String(conversationId))
+                : null;
+            const subj = conv && conv.subject ? conv.subject : "";
+            subjEl.textContent = subj;
+            subjEl.style.display = subj ? "" : "none";
         }
     }
 
     updateUserStatus(username, isOnline, lastSeen) {
         this.conversationsList.querySelectorAll('li').forEach(li => {
-            const nameElement = li.querySelector('h5');
+            const nameElement = li.querySelector('.conv-name');
             if (nameElement && nameElement.textContent === username) {
-                const statusIcon = li.querySelector('.status-icon');
+                const statusIcon = li.querySelector('.conv-status');
                 if (statusIcon) {
-                    statusIcon.className = isOnline ? 'status-icon status-online' : 'status-icon status-offline';
+                    statusIcon.classList.toggle('online', isOnline);
+                    statusIcon.classList.toggle('offline', !isOnline);
                 }
             }
         });
